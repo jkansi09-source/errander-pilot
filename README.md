@@ -1,56 +1,84 @@
-# Errander Pilot — shared task feed
+# Errander Pilot — shared task feed (v2)
 
 This is a small, real backend: when someone posts a task on their phone, it's
 saved to shared storage (Netlify Blobs) and shows up live on everyone else's
-phone within a few seconds — no more per-browser fake data.
+phone within a few seconds.
 
-What's simplified on purpose, so the pilot stays testable:
-- No real login — a client or Errander just types their name.
-- No real payment — the "escrow" language is a note, not a live transaction.
-- Ghana Card verification is a form + a "simulate approval" button, not a real ID check.
-- First Errander to tap "Accept" gets a fixed-price task — no matching algorithm yet.
+**What's new in this version:**
+- **One active task at a time, per Errander.** Accepting or quoting is blocked
+  (both client-side and server-side) while an Errander already has a task in
+  progress. It unlocks the moment the client confirms the current one complete
+  — matching "one job at a time, back to back" rather than juggling several.
+- **Live-ish chat, once a task is matched.** A collapsible chat thread appears
+  on the task once an Errander has accepted or had a quote accepted. It's
+  polling-based (updates every ~4 seconds, same as the rest of the app) rather
+  than a real-time socket connection — for a small pilot that's indistinguishable
+  in practice, but it's not instant like a native chat app.
+- **In-app + browser notifications** — a toast appears when your task is
+  accepted, delivered, confirmed, or when a new chat message arrives. Tap the
+  🔔 in the header once to allow real browser notifications too (works while
+  the tab is open or backgrounded on desktop; mobile browsers may pause a
+  fully-closed tab, so this isn't a substitute for real push notifications in
+  a production build).
+- **Contact numbers revealed on match** — once a task is accepted, the client
+  sees the Errander's name + phone and vice versa. Nobody sees a stranger's
+  number before there's a committed job.
+- **Two-step completion, matching the escrow model** — the Errander can mark
+  a job "picked up" and "delivered," but only the **client** can confirm it
+  complete. That confirmation is what would trigger payout in a real build,
+  and it's what unlocks the mutual rating prompts.
+- **Mutual 1–5 star ratings** — after confirmation, the client rates the
+  Errander and the Errander rates the client. Ratings and completed jobs move
+  into a collapsed "Completed history" section so the active board stays
+  uncluttered.
+- **Distance-based sorting for Erranders** — tapping "Enable location" sorts
+  open tasks by real distance (using the browser's Geolocation API). Clients
+  can similarly tap "Use my current location" when posting so their task
+  carries real coordinates instead of just a typed place name.
+- **Cancel an open task** — a client can pull back a task nobody's accepted yet.
+
+**Still simplified on purpose:**
+- No real login — a client or Errander just types their name (matching is
+  done by name, so don't reuse the same name for two different people during
+  a pilot).
+- No real payment — "confirm" and "payout" are simulated, not a live transaction.
+- Ghana Card verification is a form + a "simulate approval" button.
+- First Errander to tap "Accept" gets a fixed-price task — no dispatch
+  algorithm, and a client can't currently choose between multiple interested
+  Erranders on a fixed-price task (only on quote-request tasks, via quotes).
+- No in-app chat — once contact numbers are revealed, coordination happens
+  by phone call/SMS outside the app.
+- **Chat messages aren't moderated or persisted beyond this pilot's storage** —
+  fine for supervised testing, not for a public launch without a reporting/
+  blocking mechanism.
 
 ## Deploy it (no coding required)
 
-**1. Put the code on GitHub**
-- Go to github.com, sign in (or create a free account).
-- Click "+" → "New repository". Name it `errander-pilot`, keep it Private or Public, click Create.
-- On the new repo's page, click "uploading an existing file".
-- Drag in every file and folder from this project (keep the folder structure —
-  `netlify/functions/api.js` and `public/index.html` need to stay in those subfolders).
-- Click "Commit changes".
+1. Unzip this folder.
+2. Push the contents to a GitHub repo (drag-and-drop upload works — see below).
+3. On app.netlify.com: "Add new site" → "Import an existing project" →
+   "Deploy with GitHub" → pick the repo → deploy. Netlify auto-detects the
+   `public` and `netlify/functions` folders from `netlify.toml`.
+4. Test on two phones — post a task on one, accept/quote it as an Errander
+   on the other.
 
-**2. Connect it to Netlify**
-- Go to app.netlify.com, sign in (or create a free account — no credit card needed).
-- Click "Add new site" → "Import an existing project" → "Deploy with GitHub".
-- Pick the `errander-pilot` repo.
-- Netlify should auto-detect the settings from `netlify.toml` (publish folder:
-  `public`, functions folder: `netlify/functions`). Leave them as detected.
-- Click "Deploy site".
+If GitHub's drag-and-drop flattens your folder structure, upload the
+`netlify` folder and `public` folder separately rather than all at once —
+`netlify/functions/api.js` and `public/index.html` need to stay nested.
 
-**3. Test it**
-- Netlify gives you a live URL like `random-name-123.netlify.app`.
-- Open that link on two different phones (or one phone + one laptop).
-- On phone A, switch to "I need something done" and post a task.
-- On phone B, switch to "I'm an Errander", complete the sign-up (any name +
-  a Ghana-Card-shaped number like `GHA-123456789-0`), tap "Simulate approval",
-  and the task from phone A should appear within a few seconds.
-
-Netlify Blobs needs no setup — it's automatically wired up to your site once
-deployed. If a build fails, check the Netlify "Deploys" log; the most common
-cause is the `@netlify/blobs` dependency failing to install, which usually
-means `package.json` wasn't uploaded to the repo root.
+Netlify Blobs needs no setup — it's automatically wired up once deployed.
+If the build fails, check that `package.json` made it into the repo root
+(the `@netlify/blobs` dependency install is the most common failure point).
 
 ## Limits to know about before a real pilot
 
 - **Not concurrency-safe at scale.** All tasks are stored as one JSON blob;
   two people accepting the same task in the same instant could race. Fine
   for a small pilot (tens of people), not for production volume.
-- **No real payments or ID checks yet** — see the notes above. Before
-  handling real money or real Ghana Card photos, revisit the escrow and
-  Data Protection Commission points from earlier.
-- **Anyone can rename themselves** — there's no authentication, so "being"
-  a specific Errander is just typing their name. Fine for a supervised
-  pilot, not for a public launch.
+- **Location requires the browser's permission prompt** — if someone denies
+  it, the app falls back to the typed location text, same as before.
+- **Anyone can rename themselves** — there's no authentication. Fine for a
+  supervised pilot, not for a public launch.
 - Use the "Reset demo data" button (Errander view) to clear the board
   between pilot test sessions.
+

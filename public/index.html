@@ -17,61 +17,85 @@
   body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
   h1,h2,.brand{font-family:'Space Grotesk',system-ui,sans-serif;}
   .wrap{max-width:640px; margin:0 auto; padding:0 18px;}
-  header{background:var(--navy); color:var(--white); padding:16px 0; position:sticky; top:0; z-index:5;}
-  header .wrap{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
-  .brand{font-size:1.15rem; font-weight:700;}
+  header{background:var(--navy); color:var(--white); padding:14px 0; position:sticky; top:0; z-index:6;}
+  header .wrap{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;}
+  .brand{font-size:1.1rem; font-weight:700;}
   .role-switch{display:flex; gap:4px; background:rgba(255,255,255,0.1); border-radius:9px; padding:4px;}
-  .role-btn{background:none; border:none; border-radius:6px; padding:8px 14px; font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.75); cursor:pointer;}
+  .role-btn{background:none; border:none; border-radius:6px; padding:8px 12px; font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.75); cursor:pointer;}
   .role-btn.active{background:var(--amber); color:var(--navy);}
-  main{padding:20px 0 60px;}
+  .bell-btn{background:none; border:1px solid rgba(255,255,255,0.3); border-radius:7px; padding:7px 9px; cursor:pointer; font-size:0.9rem; color:var(--white);}
+  main{padding:18px 0 60px;}
   .view{display:none;} .view.show{display:block;}
-  .panel{background:var(--white); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:16px;}
-  .panel h2{font-size:0.98rem; margin:0 0 12px;}
-  .muted{color:var(--slate); font-size:0.85rem;}
-  .field{margin-bottom:12px;}
-  .field label{display:block; font-size:0.8rem; color:var(--slate); margin-bottom:4px; font-weight:500;}
-  .field input, .field select, .field textarea{width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.92rem; background:var(--paper); color:var(--ink);}
-  .field textarea{min-height:54px; resize:vertical;}
-  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .panel{background:var(--white); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:14px;}
+  .panel h2{font-size:0.95rem; margin:0 0 10px;}
+  .muted{color:var(--slate); font-size:0.82rem;}
+  .field{margin-bottom:10px;}
+  .field label{display:block; font-size:0.78rem; color:var(--slate); margin-bottom:4px; font-weight:500;}
+  .field input, .field select, .field textarea{width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.9rem; background:var(--paper); color:var(--ink);}
+  .field textarea{min-height:50px; resize:vertical;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
   @media (max-width:480px){.row2{grid-template-columns:1fr;}}
   .hidden{display:none !important;}
-  .chip-row{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;}
-  .chip{border:1px solid var(--line); background:var(--paper); border-radius:20px; padding:6px 12px; font-size:0.76rem; font-weight:600; color:var(--slate); cursor:pointer;}
+  .chip-row{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;}
+  .chip{border:1px solid var(--line); background:var(--paper); border-radius:20px; padding:6px 11px; font-size:0.74rem; font-weight:600; color:var(--slate); cursor:pointer;}
   .chip.active{background:var(--navy); color:var(--white); border-color:var(--navy);}
-  .btn{appearance:none; border:none; border-radius:7px; padding:10px 16px; font-family:inherit; font-size:0.88rem; font-weight:600; cursor:pointer;}
+  .btn{appearance:none; border:none; border-radius:7px; padding:9px 14px; font-family:inherit; font-size:0.86rem; font-weight:600; cursor:pointer;}
   .btn-primary{background:var(--navy); color:var(--white);}
   .btn-primary:hover{background:var(--navy-soft);}
-  .btn-ghost{background:transparent; color:var(--navy); border:1px solid var(--line); padding:8px 14px; font-size:0.82rem;}
+  .btn-ghost{background:transparent; color:var(--navy); border:1px solid var(--line); padding:7px 12px; font-size:0.8rem;}
+  .btn-danger{background:transparent; color:var(--red); border:1px solid var(--line); padding:6px 10px; font-size:0.76rem;}
   .btn-block{width:100%;}
-  .task{border:1px solid var(--line); border-radius:9px; padding:13px; margin-bottom:10px; background:var(--paper);}
+  .btn-loc{background:var(--paper-raise); border:1px solid var(--line); color:var(--teal); padding:8px 10px; font-size:0.78rem; border-radius:7px; cursor:pointer; margin-bottom:10px;}
+  .task{border:1px solid var(--line); border-radius:9px; padding:12px; margin-bottom:9px; background:var(--paper);}
   .task-top{display:flex; justify-content:space-between; gap:8px;}
-  .task-cat{font-weight:600; font-size:0.78rem; color:var(--teal); margin-bottom:2px;}
-  .task-desc{font-weight:600; font-size:0.92rem; margin-bottom:3px;}
-  .task-meta{font-size:0.78rem; color:var(--slate);}
+  .task-cat{font-weight:600; font-size:0.76rem; color:var(--teal); margin-bottom:2px;}
+  .task-desc{font-weight:600; font-size:0.9rem; margin-bottom:3px;}
+  .task-meta{font-size:0.76rem; color:var(--slate);}
   .task-price{font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--green); white-space:nowrap;}
-  .status-pill{display:inline-block; font-size:0.7rem; font-weight:700; padding:2px 9px; border-radius:20px; margin-top:6px;}
+  .status-pill{display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 9px; border-radius:20px; margin-top:6px; margin-right:4px;}
   .status-open{background:rgba(226,166,59,0.2); color:var(--amber-deep);}
   .status-accepted{background:rgba(42,111,119,0.15); color:var(--teal);}
   .status-completed{background:rgba(63,125,92,0.15); color:var(--green);}
-  .task-actions{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;}
-  .quote-input{width:90px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.85rem;}
-  .quote-item{border-top:1px solid var(--line); padding:8px 0; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .task-actions{display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; align-items:center;}
+  .quote-input{width:80px; padding:8px 9px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.83rem;}
+  .quote-item{border-top:1px solid var(--line); padding:7px 0; font-size:0.82rem; display:flex; justify-content:space-between; align-items:center; gap:8px;}
   .quote-item:first-child{border-top:none;}
-  .trust-note{font-size:0.78rem; color:var(--slate); background:var(--paper); border:1px dashed var(--line); border-radius:7px; padding:8px 10px; margin-bottom:12px;}
+  .trust-note{font-size:0.76rem; color:var(--slate); background:var(--paper); border:1px dashed var(--line); border-radius:7px; padding:7px 9px; margin-bottom:10px;}
   .verify-badge{display:inline-block; font-size:0.78rem; font-weight:600; padding:5px 12px; border-radius:20px; background:rgba(226,166,59,0.2); color:var(--amber-deep); margin:8px 0 14px;}
-  .stat{display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); font-size:0.85rem;}
+  .stat{display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--line); font-size:0.83rem;}
   .stat:last-child{border-bottom:none;}
-  footer{padding:16px 0 40px; text-align:center; color:var(--slate); font-size:0.76rem;}
+  .contact-box{background:rgba(63,125,92,0.1); border:1px solid rgba(63,125,92,0.3); border-radius:7px; padding:8px 10px; font-size:0.82rem; margin:8px 0; color:var(--green); font-weight:600;}
+  .stars{display:flex; gap:4px; margin:6px 0;}
+  .star-pick{font-size:1.3rem; cursor:pointer; color:var(--line); background:none; border:none; padding:0;}
+  .star-pick.on{color:var(--amber-deep);}
+  details.history summary{cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--teal); padding:4px 0;}
+  .chat-box{margin-top:10px; border-top:1px dashed var(--line); padding-top:8px;}
+  .chat-box summary{cursor:pointer; font-size:0.82rem; font-weight:600; color:var(--teal);}
+  .chat-messages{max-height:200px; overflow-y:auto; margin:8px 0; padding-right:2px;}
+  .chat-bubble{display:inline-block; max-width:80%; padding:6px 10px; border-radius:10px; font-size:0.82rem; margin:3px 0;}
+  .chat-row{display:flex;}
+  .chat-input-row{display:flex; gap:6px; margin-top:4px;}
+  .chat-input-row input{flex:1; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.85rem;}
+  .busy-note{background:rgba(226,166,59,0.15); border:1px solid rgba(226,166,59,0.4); color:var(--amber-deep); border-radius:7px; padding:8px 10px; font-size:0.8rem; margin-bottom:10px;}
+  #toast-stack{position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; display:flex; flex-direction:column; gap:8px; width:min(92vw,420px);}
+  .toast{background:var(--navy); color:var(--white); padding:11px 14px; border-radius:8px; font-size:0.85rem; box-shadow:0 6px 18px rgba(0,0,0,0.25); animation:fadein .2s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
+  footer{padding:16px 0 40px; text-align:center; color:var(--slate); font-size:0.74rem;}
 </style>
 </head>
 <body>
 
+<div id="toast-stack"></div>
+
 <header>
   <div class="wrap">
-    <div class="brand">Errander <span style="font-weight:400; font-size:0.7rem; color:var(--amber);">· pilot</span></div>
-    <div class="role-switch">
-      <button class="role-btn active" id="role-client-btn" onclick="switchRole('client')">I need something done</button>
-      <button class="role-btn" id="role-errander-btn" onclick="switchRole('errander')">I'm an Errander</button>
+    <div class="brand">Errander <span style="font-weight:400; font-size:0.68rem; color:var(--amber);">· pilot</span></div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button class="bell-btn" id="bell-btn" onclick="enableNotifications()" title="Enable notifications">🔔</button>
+      <div class="role-switch">
+        <button class="role-btn active" id="role-client-btn" onclick="switchRole('client')">I need something done</button>
+        <button class="role-btn" id="role-errander-btn" onclick="switchRole('errander')">I'm an Errander</button>
+      </div>
     </div>
   </div>
 </header>
@@ -85,20 +109,26 @@
         <h2>Post a task</h2>
         <div class="chip-row" id="cat-chips"></div>
         <div class="field"><label>Describe the task</label><textarea id="c-desc" placeholder="e.g. Pick up a prescription from Ridge Pharmacy and drop it at my office"></textarea></div>
+        <button type="button" class="btn-loc" onclick="captureClientLocation()" id="c-loc-btn">📍 Use my current location</button>
         <div class="row2">
           <div class="field"><label>Location</label><input id="c-loc" type="text" placeholder="e.g. Adum, Kumasi"></div>
           <div class="field"><label>Urgency / timing</label><input id="c-urgency" type="text" placeholder="e.g. Today, or Sat 9am"></div>
         </div>
         <div class="field" id="c-budget-field"><label>Budget (GHS)</label><input id="c-budget" type="number" value="40"></div>
-        <div class="field hidden" id="c-quote-field"><div class="trust-note" style="margin:0;">This category requests quotes instead of a fixed budget — specialists will price it after seeing the job.</div></div>
-        <div class="field"><label>Your name</label><input id="c-name" type="text" value="Sam O."></div>
+        <div class="field hidden" id="c-quote-field"><div class="trust-note" style="margin:0;">This category requests quotes instead of a fixed budget.</div></div>
+        <div class="row2">
+          <div class="field"><label>Your name</label><input id="c-name" type="text" value="Sam O."></div>
+          <div class="field"><label>Your phone</label><input id="c-phone" type="tel" value="024 000 0001"></div>
+        </div>
         <button class="btn btn-primary btn-block" onclick="postTask()">Post task</button>
       </div>
 
       <div class="panel">
         <h2>Your posted tasks</h2>
-        <div class="trust-note">🔒 In a full build, payment is held in escrow until you confirm the job is done. This pilot doesn't move real money yet.</div>
-        <div id="client-tasks"></div>
+        <div class="trust-note">🔒 In a full build, payment is held in escrow and released only after you confirm the job is done — this pilot mirrors that: an Errander can mark a job delivered, but only you can confirm it complete.</div>
+        <div id="client-active"></div>
+        <div id="client-rate-prompt"></div>
+        <details class="history"><summary id="client-history-count">Completed history</summary><div id="client-history"></div></details>
       </div>
     </div>
 
@@ -107,11 +137,14 @@
       <div id="errander-gate">
         <div class="panel" id="signup-panel">
           <h2>Become an Errander</h2>
-          <p class="muted" style="margin:0 0 12px;">Real deployments verify a Ghana Card before you can accept tasks.</p>
-          <div class="field"><label>Full name</label><input id="su-name" type="text" placeholder="As shown on your Ghana Card"></div>
+          <p class="muted" style="margin:0 0 10px;">Real deployments verify a Ghana Card before you can accept tasks.</p>
+          <div class="row2">
+            <div class="field"><label>Full name</label><input id="su-name" type="text" placeholder="As shown on your Ghana Card"></div>
+            <div class="field"><label>Phone</label><input id="su-phone" type="tel" placeholder="024 000 0000"></div>
+          </div>
           <div class="field"><label>Ghana Card number</label><input id="su-card" type="text" placeholder="GHA-000000000-0"></div>
           <button class="btn btn-primary btn-block" onclick="submitSignup()">Submit for verification</button>
-          <p class="muted" id="signup-error" style="display:none; color:var(--red); margin:8px 0 0;">Enter your name and a valid Ghana Card number.</p>
+          <p class="muted" id="signup-error" style="display:none; color:var(--red); margin:8px 0 0;">Enter your name, phone, and a valid Ghana Card number.</p>
         </div>
         <div class="panel hidden" id="pending-panel">
           <h2>Verification submitted</h2>
@@ -122,6 +155,8 @@
       </div>
 
       <div class="hidden" id="errander-dashboard">
+        <button type="button" class="btn-loc" onclick="captureErranderLocation()" id="e-loc-btn">📍 Enable location (sorts tasks by distance)</button>
+
         <div class="panel">
           <h2>Open tasks near you</h2>
           <div id="open-tasks"></div>
@@ -132,9 +167,12 @@
           <div id="active-task"></div>
         </div>
 
+        <div id="errander-rate-prompt"></div>
+
         <div class="panel">
           <h2>Your earnings (this pilot)</h2>
           <div id="earnings"></div>
+          <details class="history" style="margin-top:8px;"><summary id="errander-history-count">Completed history</summary><div id="errander-history"></div></details>
         </div>
 
         <button class="btn btn-ghost" onclick="resetDemo()">Reset demo data</button>
@@ -143,7 +181,7 @@
 
   </div>
 </main>
-<footer>Errander pilot — real shared data via Netlify Functions + Blobs. Escrow, ID checks and matching logic are simplified for testing.</footer>
+<footer>Errander pilot — shared data via Netlify Functions + Blobs. Payments, ID checks and matching are simplified for testing.</footer>
 
 <script>
   const API = '/.netlify/functions/api';
@@ -157,6 +195,83 @@
 
   let activeCategory = CATEGORIES[0];
   let allTasks = [];
+  let clientCoords = null;
+  let erranderCoords = null;
+  let prevSnapshot = null; // null until first load completes
+  let notifyEnabled = false;
+
+  /* ---------- helpers ---------- */
+  function timeAgo(ts){
+    const mins = Math.round((Date.now() - ts) / 60000);
+    if(mins < 1) return 'just now';
+    if(mins < 60) return mins + ' min ago';
+    const hrs = Math.round(mins/60);
+    return hrs + (hrs===1 ? ' hour ago' : ' hours ago');
+  }
+  function distKm(lat1,lng1,lat2,lng2){
+    const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+  function toast(msg){
+    const stack = document.getElementById('toast-stack');
+    const el = document.createElement('div');
+    el.className = 'toast'; el.textContent = msg;
+    stack.appendChild(el);
+    setTimeout(()=> el.remove(), 5000);
+    if(notifyEnabled && document.hidden){
+      try{ new Notification('Errander', { body: msg }); }catch(e){}
+    }
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function chatHtml(t, myName){
+    const msgs = (t.messages||[]).map(m=>{
+      const mine = m.sender === myName;
+      return `<div class="chat-row" style="justify-content:${mine?'flex-end':'flex-start'};">
+        <div class="chat-bubble" style="background:${mine?'var(--navy)':'var(--paper-raise)'}; color:${mine?'var(--white)':'var(--ink)'};">
+          <b>${mine?'You':escapeHtml(m.sender)}:</b> ${escapeHtml(m.text)}
+        </div></div>`;
+    }).join('');
+    return `<details class="chat-box">
+      <summary>💬 Chat${t.messages && t.messages.length ? ' (' + t.messages.length + ')' : ''}</summary>
+      <div class="chat-messages" id="chat-msgs-${t.id}">${msgs || '<p class="muted">No messages yet — say hello.</p>'}</div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input-${t.id}" placeholder="Message ${escapeHtml(myName===t.clientName? t.erranderName : t.clientName)}">
+        <button class="btn btn-ghost" onclick="sendChatMessage('${t.id}', ${JSON.stringify(myName)}, 'chat-input-${t.id}')">Send</button>
+      </div>
+    </details>`;
+  }
+  async function sendChatMessage(id, sender, inputElId){
+    const input = document.getElementById(inputElId);
+    const text = input.value.trim();
+    if(!text) return;
+    input.value = '';
+    await api('message', 'POST', { id, sender, text });
+    refresh();
+  }
+  function enableNotifications(){
+    if(!('Notification' in window)){ toast('Notifications not supported in this browser.'); return; }
+    Notification.requestPermission().then(p=>{
+      notifyEnabled = (p === 'granted');
+      toast(notifyEnabled ? 'Notifications enabled.' : 'Notifications not enabled.');
+    });
+  }
+  function starRow(idPrefix, taskId, onPick){
+    const wrap = document.createElement('div');
+    wrap.className = 'stars';
+    for(let i=1;i<=5;i++){
+      const b = document.createElement('button');
+      b.type='button'; b.className='star-pick'; b.textContent='★'; b.dataset.v=i;
+      b.onclick = ()=>{
+        wrap.querySelectorAll('.star-pick').forEach(s=> s.classList.toggle('on', Number(s.dataset.v) <= i));
+        onPick(i);
+      };
+      wrap.appendChild(b);
+    }
+    return wrap;
+  }
 
   function switchRole(role){
     document.getElementById('view-client').classList.toggle('show', role === 'client');
@@ -182,6 +297,24 @@
     });
   }
 
+  function captureClientLocation(){
+    if(!navigator.geolocation){ toast('Location not supported.'); return; }
+    document.getElementById('c-loc-btn').textContent = 'Getting location…';
+    navigator.geolocation.getCurrentPosition(pos=>{
+      clientCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      document.getElementById('c-loc-btn').textContent = '📍 Location captured';
+    }, ()=>{ document.getElementById('c-loc-btn').textContent = '📍 Use my current location (permission denied)'; });
+  }
+  function captureErranderLocation(){
+    if(!navigator.geolocation){ toast('Location not supported.'); return; }
+    document.getElementById('e-loc-btn').textContent = 'Getting location…';
+    navigator.geolocation.getCurrentPosition(pos=>{
+      erranderCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      document.getElementById('e-loc-btn').textContent = '📍 Location enabled — sorting by distance';
+      refresh();
+    }, ()=>{ document.getElementById('e-loc-btn').textContent = '📍 Enable location (permission denied)'; });
+  }
+
   async function api(action, method, body){
     const opts = { method: method || 'GET', headers: {'Content-Type':'application/json'} };
     if(body) opts.body = JSON.stringify(body);
@@ -192,100 +325,198 @@
   async function refresh(){
     try{
       const data = await api('list', 'GET');
-      allTasks = data.tasks || [];
+      const fresh = data.tasks || [];
+      checkNotifications(fresh);
+      allTasks = fresh;
       renderClientTasks();
       renderOpenTasks();
       renderActiveTask();
+      renderErranderRatePrompt();
       renderEarnings();
-    }catch(e){ /* network hiccup — next poll will retry */ }
+    }catch(e){ /* network hiccup — next poll retries */ }
+  }
+
+  function checkNotifications(fresh){
+    if(prevSnapshot === null){
+      prevSnapshot = {};
+      fresh.forEach(t=> prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:(t.messages||[]).length });
+      return; // don't notify on first load
+    }
+    const myClientName = document.getElementById('c-name').value.trim();
+    const myErrander = myErranderName();
+    fresh.forEach(t=>{
+      const prev = prevSnapshot[t.id];
+      const involvesMe = t.clientName === myClientName || t.erranderName === myErrander;
+      if(prev){
+        if(t.clientName === myClientName){
+          if(prev.status === 'open' && t.status === 'accepted') toast(`🎉 ${t.erranderName} accepted "${t.desc.slice(0,30)}…"`);
+          if(prev.stage !== 'delivered' && t.stage === 'delivered') toast(`📦 Delivered — please confirm "${t.desc.slice(0,30)}…"`);
+        }
+        if(t.erranderName === myErrander){
+          if(prev.status === 'accepted' && t.status === 'completed') toast(`✅ Client confirmed — payout released for "${t.desc.slice(0,30)}…"`);
+        }
+        const newMsgCount = (t.messages||[]).length;
+        if(involvesMe && newMsgCount > prev.msgCount){
+          const last = t.messages[t.messages.length-1];
+          const myName = (t.clientName === myClientName) ? myClientName : myErrander;
+          if(last && last.sender !== myName) toast(`💬 ${last.sender}: ${last.text.slice(0,50)}`);
+        }
+      }
+      prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:(t.messages||[]).length };
+    });
   }
 
   /* ---------- Client side ---------- */
   async function postTask(){
     const clientName = document.getElementById('c-name').value.trim() || 'Client';
+    const clientPhone = document.getElementById('c-phone').value.trim();
     const task = {
       category: activeCategory.id,
       quoteRequest: activeCategory.quote,
       desc: document.getElementById('c-desc').value.trim(),
       loc: document.getElementById('c-loc').value.trim(),
+      lat: clientCoords ? clientCoords.lat : null,
+      lng: clientCoords ? clientCoords.lng : null,
       urgency: document.getElementById('c-urgency').value.trim(),
       budget: document.getElementById('c-budget').value,
-      clientName
+      clientName, clientPhone
     };
-    if(!task.desc){ alert('Describe the task first.'); return; }
+    if(!task.desc){ toast('Describe the task first.'); return; }
     localStorage.setItem('errander_client_name', clientName);
+    localStorage.setItem('errander_client_phone', clientPhone);
     await api('create', 'POST', task);
     document.getElementById('c-desc').value = '';
     refresh();
   }
 
+  async function cancelTask(id){
+    if(!confirm('Cancel this task?')) return;
+    await api('cancel', 'POST', { id });
+    refresh();
+  }
+
   function renderClientTasks(){
     const myName = document.getElementById('c-name').value.trim() || localStorage.getItem('errander_client_name') || 'Client';
-    const wrap = document.getElementById('client-tasks');
     const mine = allTasks.filter(t => t.clientName === myName);
-    if(mine.length === 0){ wrap.innerHTML = '<p class="muted">Nothing posted yet.</p>'; return; }
-    wrap.innerHTML = '';
-    mine.forEach(t=>{
-      const el = document.createElement('div');
-      el.className = 'task';
-      const pill = `<span class="status-pill status-${t.status}">${t.status}${t.erranderName ? ' · ' + t.erranderName : ''}</span>`;
+    const active = mine.filter(t => t.status !== 'completed');
+    const awaitingRating = mine.filter(t => t.status === 'completed' && !t.ratingForErrander);
+    const history = mine.filter(t => t.status === 'completed' && t.ratingForErrander);
+
+    const activeWrap = document.getElementById('client-active');
+    activeWrap.innerHTML = active.length ? '' : '<p class="muted">Nothing active right now.</p>';
+    active.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      const pill = `<span class="status-pill status-${t.status}">${t.stage === 'delivered' ? 'delivered' : t.status}</span>`;
       let quotesHtml = '';
       if(t.quoteRequest && t.status === 'open' && t.quotes.length){
         quotesHtml = t.quotes.map(q => `
           <div class="quote-item">
             <span>${q.erranderName} — GHS ${q.price} <span class="muted">${q.note ? '· ' + q.note : ''}</span></span>
-            <button class="btn btn-ghost" onclick="acceptQuote('${t.id}','${q.erranderName.replace(/'/g,"")}',${q.price})">Accept</button>
+            <button class="btn btn-ghost" onclick='acceptQuote(${JSON.stringify(t.id)},${JSON.stringify(q.erranderName)},${JSON.stringify(q.erranderPhone)},${q.price})'>Accept</button>
           </div>`).join('');
       }
+      let contactHtml = '';
+      if(t.status !== 'open' && t.erranderName){
+        contactHtml = `<div class="contact-box">📞 ${t.erranderName} — ${t.erranderPhone || 'no number given'}</div>`;
+      }
+      let confirmHtml = '';
+      if(t.stage === 'delivered'){
+        confirmHtml = `<div class="task-actions"><button class="btn btn-primary" onclick="confirmTask('${t.id}')">Confirm job complete</button></div>`;
+      }
+      let cancelHtml = t.status === 'open' ? `<div class="task-actions"><button class="btn btn-danger" onclick="cancelTask('${t.id}')">Cancel task</button></div>` : '';
+      let chatBoxHtml = t.erranderName ? chatHtml(t, myName) : '';
       el.innerHTML = `
         <div class="task-top">
           <div>
             <div class="task-cat">${t.category}</div>
             <div class="task-desc">${t.desc}</div>
-            <div class="task-meta">${t.loc} · ${t.urgency}</div>
+            <div class="task-meta">${t.loc} · ${t.urgency} · ${timeAgo(t.createdAt)}</div>
             ${pill}
           </div>
           ${t.budget ? `<div class="task-price">GHS ${t.budget}</div>` : ''}
         </div>
-        ${quotesHtml}`;
-      wrap.appendChild(el);
+        ${contactHtml}${quotesHtml}${confirmHtml}${cancelHtml}${chatBoxHtml}`;
+      activeWrap.appendChild(el);
+    });
+
+    const rateWrap = document.getElementById('client-rate-prompt');
+    rateWrap.innerHTML = '';
+    awaitingRating.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `<div class="task-desc">Rate ${t.erranderName} for "${t.desc.slice(0,40)}…"</div><p class="muted" style="margin:2px 0 0;">Were they prompt and reliable?</p>`;
+      const stars = starRow('c', t.id, (n)=> rateTask(t.id, { ratingForErrander: n }));
+      el.appendChild(stars);
+      rateWrap.appendChild(el);
+    });
+
+    document.getElementById('client-history-count').textContent = `Completed history (${history.length})`;
+    const histWrap = document.getElementById('client-history');
+    histWrap.innerHTML = history.length ? '' : '<p class="muted">Nothing here yet.</p>';
+    history.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `<div class="task-desc">${t.desc}</div><div class="task-meta">${t.erranderName} · GHS ${t.budget} · you rated them ${'★'.repeat(t.ratingForErrander)}</div>`;
+      histWrap.appendChild(el);
     });
   }
 
-  async function acceptQuote(id, erranderName, price){
-    await api('accept', 'POST', { id, erranderName, acceptedPrice: price });
+  async function acceptQuote(id, erranderName, erranderPhone, price){
+    await api('accept', 'POST', { id, erranderName, erranderPhone, acceptedPrice: price });
+    refresh();
+  }
+  async function confirmTask(id){
+    const res = await api('confirm', 'POST', { id });
+    if(res.error){ toast(res.error); }
+    refresh();
+  }
+  async function rateTask(id, payload){
+    payload.id = id;
+    await api('rate', 'POST', payload);
     refresh();
   }
 
   /* ---------- Errander side ---------- */
   function submitSignup(){
     const name = document.getElementById('su-name').value.trim();
+    const phone = document.getElementById('su-phone').value.trim();
     const card = document.getElementById('su-card').value.trim().replace(/\s/g,'');
-    const valid = name.length > 0 && /^GHA-?\d{9}-?\d$/i.test(card);
+    const valid = name.length > 0 && phone.length > 0 && /^GHA-?\d{9}-?\d$/i.test(card);
     document.getElementById('signup-error').style.display = valid ? 'none' : 'block';
     if(!valid) return;
     localStorage.setItem('errander_name', name);
+    localStorage.setItem('errander_phone', phone);
     document.getElementById('signup-panel').classList.add('hidden');
     document.getElementById('pending-panel').classList.remove('hidden');
   }
-
   function simulateApproval(){
     localStorage.setItem('errander_verified', '1');
     document.getElementById('errander-gate').classList.add('hidden');
     document.getElementById('errander-dashboard').classList.remove('hidden');
     refresh();
   }
-
   function myErranderName(){ return localStorage.getItem('errander_name') || 'Errander'; }
+  function myErranderPhone(){ return localStorage.getItem('errander_phone') || ''; }
 
   function renderOpenTasks(){
     const wrap = document.getElementById('open-tasks');
-    const open = allTasks.filter(t => t.status === 'open');
+    const busy = allTasks.some(t => t.erranderName === myErranderName() && t.status === 'accepted');
+    let open = allTasks.filter(t => t.status === 'open');
+    if(erranderCoords){
+      open = open.map(t=> ({ t, d: (t.lat!=null && t.lng!=null) ? distKm(erranderCoords.lat, erranderCoords.lng, t.lat, t.lng) : null }))
+                 .sort((a,b)=> (a.d ?? 9999) - (b.d ?? 9999))
+                 .map(x=>x.t);
+    }
+    if(busy){
+      wrap.innerHTML = '<div class="busy-note">🔒 You have an active task — finish it before accepting or quoting on another.</div>';
+      return;
+    }
     if(open.length === 0){ wrap.innerHTML = '<p class="muted">No open tasks right now.</p>'; return; }
     wrap.innerHTML = '';
     open.forEach(t=>{
-      const el = document.createElement('div');
-      el.className = 'task';
+      let distLabel = '';
+      if(erranderCoords && t.lat!=null && t.lng!=null){
+        distLabel = ' · ' + distKm(erranderCoords.lat, erranderCoords.lng, t.lat, t.lng).toFixed(1) + ' km away';
+      }
+      const el = document.createElement('div'); el.className = 'task';
       const actions = t.quoteRequest
         ? `<div class="task-actions">
              <input type="number" class="quote-input" id="qi-${t.id}" placeholder="GHS">
@@ -297,7 +528,7 @@
           <div>
             <div class="task-cat">${t.category}</div>
             <div class="task-desc">${t.desc}</div>
-            <div class="task-meta">${t.loc} · ${t.urgency} · ${t.clientName}</div>
+            <div class="task-meta">${t.loc}${distLabel} · ${t.urgency} · ${t.clientName} · ${timeAgo(t.createdAt)}</div>
           </div>
           ${t.budget ? `<div class="task-price">GHS ${t.budget}</div>` : '<div class="task-price" style="color:var(--amber-deep);">Quote</div>'}
         </div>
@@ -307,16 +538,15 @@
   }
 
   async function acceptTask(id){
-    const res = await api('accept', 'POST', { id, erranderName: myErranderName() });
-    if(res.error){ alert(res.error); }
+    const res = await api('accept', 'POST', { id, erranderName: myErranderName(), erranderPhone: myErranderPhone() });
+    if(res.error){ toast(res.error); }
     refresh();
   }
-
   async function sendQuote(id){
     const input = document.getElementById('qi-' + id);
     const price = parseInt(input.value, 10);
     if(!price || price <= 0){ input.style.borderColor = 'var(--red)'; return; }
-    await api('quote', 'POST', { id, erranderName: myErranderName(), price });
+    await api('quote', 'POST', { id, erranderName: myErranderName(), erranderPhone: myErranderPhone(), price });
     input.value = '';
     refresh();
   }
@@ -328,35 +558,67 @@
     const wrap = document.getElementById('active-task');
     if(!t){ panel.classList.add('hidden'); return; }
     panel.classList.remove('hidden');
-    const labels = ['Accepted — head to pickup.', 'Picked up — on the way.', 'Delivered — awaiting confirmation.'];
-    const buttons = ['Confirm pickup', 'Confirm delivery', 'Mark job complete'];
-    const step = t.step || 0;
+    const labels = { accepted:'Accepted — head to pickup.', picked_up:'Picked up — on the way.', delivered:'Delivered — waiting for client to confirm.' };
+    const buttons = { accepted:'Confirm pickup', picked_up:'Confirm delivery' };
+    const btnHtml = t.stage === 'delivered'
+      ? '<p class="muted">Waiting for the client to confirm — payout releases automatically once they do.</p>'
+      : `<button class="btn btn-primary" onclick="advanceTask('${t.id}')">${buttons[t.stage]}</button>`;
     wrap.innerHTML = `
       <div class="task-desc">${t.desc}</div>
-      <div class="task-meta">${t.loc} · ${t.clientName}</div>
+      <div class="task-meta">${t.loc} · ${t.urgency}</div>
+      <div class="contact-box">📞 ${t.clientName} — ${t.clientPhone || 'no number given'}</div>
       <div class="task-price" style="margin:6px 0;">GHS ${t.budget}</div>
-      <p class="muted">${labels[step] || 'In progress.'}</p>
-      <button class="btn btn-primary" onclick="advanceTask('${t.id}')">${buttons[step] || 'Advance'}</button>`;
+      <p class="muted">${labels[t.stage]}</p>
+      ${btnHtml}
+      ${chatHtml(t, me)}`;
   }
-
   async function advanceTask(id){
     await api('advance', 'POST', { id });
     refresh();
+  }
+
+  function renderErranderRatePrompt(){
+    const me = myErranderName();
+    const wrap = document.getElementById('errander-rate-prompt');
+    wrap.innerHTML = '';
+    const needsRating = allTasks.filter(t => t.erranderName === me && t.status === 'completed' && !t.ratingForClient);
+    if(needsRating.length === 0) return;
+    const panel = document.createElement('div'); panel.className = 'panel';
+    panel.innerHTML = '<h2>Rate your client</h2>';
+    needsRating.forEach(t=>{
+      const row = document.createElement('div'); row.className = 'task';
+      row.innerHTML = `<div class="task-desc">${t.clientName} — "${t.desc.slice(0,40)}…"</div><p class="muted" style="margin:2px 0 0;">Did they live up to their word?</p>`;
+      const stars = starRow('e', t.id, (n)=> rateTask(t.id, { ratingForClient: n }));
+      row.appendChild(stars);
+      panel.appendChild(row);
+    });
+    wrap.appendChild(panel);
   }
 
   function renderEarnings(){
     const me = myErranderName();
     const mine = allTasks.filter(x => x.erranderName === me && x.status === 'completed');
     const total = mine.reduce((sum,t)=> sum + (Number(t.budget)||0), 0);
-    const wrap = document.getElementById('earnings');
-    wrap.innerHTML = `<div class="stat"><span>Completed jobs</span><span>${mine.length}</span></div>
-                       <div class="stat"><span>Total earned</span><span>GHS ${total}</span></div>` +
-                       mine.map(t=>`<div class="stat"><span>${t.desc.slice(0,26)}…</span><span>GHS ${t.budget}</span></div>`).join('');
+    const rated = mine.filter(t=>t.ratingForErrander);
+    const avg = rated.length ? (rated.reduce((s,t)=>s+t.ratingForErrander,0)/rated.length).toFixed(1) : '—';
+    document.getElementById('earnings').innerHTML = `
+      <div class="stat"><span>Completed jobs</span><span>${mine.length}</span></div>
+      <div class="stat"><span>Total earned</span><span>GHS ${total}</span></div>
+      <div class="stat"><span>Your average rating</span><span>${avg}${rated.length ? ' ★' : ''}</span></div>`;
+    document.getElementById('errander-history-count').textContent = `Completed history (${mine.length})`;
+    const histWrap = document.getElementById('errander-history');
+    histWrap.innerHTML = mine.length ? '' : '<p class="muted">Nothing here yet.</p>';
+    mine.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `<div class="task-desc">${t.desc}</div><div class="task-meta">${t.clientName} · GHS ${t.budget}${t.ratingForErrander ? ' · they rated you ' + '★'.repeat(t.ratingForErrander) : ''}</div>`;
+      histWrap.appendChild(el);
+    });
   }
 
   async function resetDemo(){
     if(!confirm('Reset all pilot task data for everyone?')) return;
     await api('reset', 'POST', {});
+    prevSnapshot = null;
     refresh();
   }
 
@@ -366,9 +628,9 @@
     document.getElementById('errander-gate').classList.add('hidden');
     document.getElementById('errander-dashboard').classList.remove('hidden');
   }
-  if(localStorage.getItem('errander_client_name')){
-    document.getElementById('c-name').value = localStorage.getItem('errander_client_name');
-  }
+  if(localStorage.getItem('errander_client_name')) document.getElementById('c-name').value = localStorage.getItem('errander_client_name');
+  if(localStorage.getItem('errander_client_phone')) document.getElementById('c-phone').value = localStorage.getItem('errander_client_phone');
+  if('Notification' in window && Notification.permission === 'granted') notifyEnabled = true;
   refresh();
   setInterval(refresh, 4000);
 </script>
