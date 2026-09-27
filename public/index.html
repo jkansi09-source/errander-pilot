@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Errander Pilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#152238; --navy-soft:#223252; --amber:#E2A63B; --amber-deep:#C88A22;
+    --paper:#F6F4EF; --paper-raise:#EDE9DE; --ink:#181B20; --slate:#5C6470;
+    --green:#3F7D5C; --teal:#2A6F77; --red:#B14B3E; --line:#DAD5C8; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  h1,h2,.brand{font-family:'Space Grotesk',system-ui,sans-serif;}
+  .wrap{max-width:640px; margin:0 auto; padding:0 18px;}
+  header{background:var(--navy); color:var(--white); padding:16px 0; position:sticky; top:0; z-index:5;}
+  header .wrap{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .brand{font-size:1.15rem; font-weight:700;}
+  .role-switch{display:flex; gap:4px; background:rgba(255,255,255,0.1); border-radius:9px; padding:4px;}
+  .role-btn{background:none; border:none; border-radius:6px; padding:8px 14px; font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.75); cursor:pointer;}
+  .role-btn.active{background:var(--amber); color:var(--navy);}
+  main{padding:20px 0 60px;}
+  .view{display:none;} .view.show{display:block;}
+  .panel{background:var(--white); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:16px;}
+  .panel h2{font-size:0.98rem; margin:0 0 12px;}
+  .muted{color:var(--slate); font-size:0.85rem;}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:0.8rem; color:var(--slate); margin-bottom:4px; font-weight:500;}
+  .field input, .field select, .field textarea{width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.92rem; background:var(--paper); color:var(--ink);}
+  .field textarea{min-height:54px; resize:vertical;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:480px){.row2{grid-template-columns:1fr;}}
+  .hidden{display:none !important;}
+  .chip-row{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;}
+  .chip{border:1px solid var(--line); background:var(--paper); border-radius:20px; padding:6px 12px; font-size:0.76rem; font-weight:600; color:var(--slate); cursor:pointer;}
+  .chip.active{background:var(--navy); color:var(--white); border-color:var(--navy);}
+  .btn{appearance:none; border:none; border-radius:7px; padding:10px 16px; font-family:inherit; font-size:0.88rem; font-weight:600; cursor:pointer;}
+  .btn-primary{background:var(--navy); color:var(--white);}
+  .btn-primary:hover{background:var(--navy-soft);}
+  .btn-ghost{background:transparent; color:var(--navy); border:1px solid var(--line); padding:8px 14px; font-size:0.82rem;}
+  .btn-block{width:100%;}
+  .task{border:1px solid var(--line); border-radius:9px; padding:13px; margin-bottom:10px; background:var(--paper);}
+  .task-top{display:flex; justify-content:space-between; gap:8px;}
+  .task-cat{font-weight:600; font-size:0.78rem; color:var(--teal); margin-bottom:2px;}
+  .task-desc{font-weight:600; font-size:0.92rem; margin-bottom:3px;}
+  .task-meta{font-size:0.78rem; color:var(--slate);}
+  .task-price{font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--green); white-space:nowrap;}
+  .status-pill{display:inline-block; font-size:0.7rem; font-weight:700; padding:2px 9px; border-radius:20px; margin-top:6px;}
+  .status-open{background:rgba(226,166,59,0.2); color:var(--amber-deep);}
+  .status-accepted{background:rgba(42,111,119,0.15); color:var(--teal);}
+  .status-completed{background:rgba(63,125,92,0.15); color:var(--green);}
+  .task-actions{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;}
+  .quote-input{width:90px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.85rem;}
+  .quote-item{border-top:1px solid var(--line); padding:8px 0; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .quote-item:first-child{border-top:none;}
+  .trust-note{font-size:0.78rem; color:var(--slate); background:var(--paper); border:1px dashed var(--line); border-radius:7px; padding:8px 10px; margin-bottom:12px;}
+  .verify-badge{display:inline-block; font-size:0.78rem; font-weight:600; padding:5px 12px; border-radius:20px; background:rgba(226,166,59,0.2); color:var(--amber-deep); margin:8px 0 14px;}
+  .stat{display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); font-size:0.85rem;}
+  .stat:last-child{border-bottom:none;}
+  footer{padding:16px 0 40px; text-align:center; color:var(--slate); font-size:0.76rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">Errander <span style="font-weight:400; font-size:0.7rem; color:var(--amber);">· pilot</span></div>
+    <div class="role-switch">
+      <button class="role-btn active" id="role-client-btn" onclick="switchRole('client')">I need something done</button>
+      <button class="role-btn" id="role-errander-btn" onclick="switchRole('errander')">I'm an Errander</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <!-- CLIENT VIEW -->
+    <div class="view show" id="view-client">
+      <div class="panel">
+        <h2>Post a task</h2>
+        <div class="chip-row" id="cat-chips"></div>
+        <div class="field"><label>Describe the task</label><textarea id="c-desc" placeholder="e.g. Pick up a prescription from Ridge Pharmacy and drop it at my office"></textarea></div>
+        <div class="row2">
+          <div class="field"><label>Location</label><input id="c-loc" type="text" placeholder="e.g. Adum, Kumasi"></div>
+          <div class="field"><label>Urgency / timing</label><input id="c-urgency" type="text" placeholder="e.g. Today, or Sat 9am"></div>
+        </div>
+        <div class="field" id="c-budget-field"><label>Budget (GHS)</label><input id="c-budget" type="number" value="40"></div>
+        <div class="field hidden" id="c-quote-field"><div class="trust-note" style="margin:0;">This category requests quotes instead of a fixed budget — specialists will price it after seeing the job.</div></div>
+        <div class="field"><label>Your name</label><input id="c-name" type="text" value="Sam O."></div>
+        <button class="btn btn-primary btn-block" onclick="postTask()">Post task</button>
+      </div>
+
+      <div class="panel">
+        <h2>Your posted tasks</h2>
+        <div class="trust-note">🔒 In a full build, payment is held in escrow until you confirm the job is done. This pilot doesn't move real money yet.</div>
+        <div id="client-tasks"></div>
+      </div>
+    </div>
+
+    <!-- ERRANDER VIEW -->
+    <div class="view" id="view-errander">
+      <div id="errander-gate">
+        <div class="panel" id="signup-panel">
+          <h2>Become an Errander</h2>
+          <p class="muted" style="margin:0 0 12px;">Real deployments verify a Ghana Card before you can accept tasks.</p>
+          <div class="field"><label>Full name</label><input id="su-name" type="text" placeholder="As shown on your Ghana Card"></div>
+          <div class="field"><label>Ghana Card number</label><input id="su-card" type="text" placeholder="GHA-000000000-0"></div>
+          <button class="btn btn-primary btn-block" onclick="submitSignup()">Submit for verification</button>
+          <p class="muted" id="signup-error" style="display:none; color:var(--red); margin:8px 0 0;">Enter your name and a valid Ghana Card number.</p>
+        </div>
+        <div class="panel hidden" id="pending-panel">
+          <h2>Verification submitted</h2>
+          <span class="verify-badge">⏳ Pending review</span>
+          <p class="muted">This is where a real ID check would run.</p>
+          <button class="btn btn-ghost" onclick="simulateApproval()">Simulate approval (demo only)</button>
+        </div>
+      </div>
+
+      <div class="hidden" id="errander-dashboard">
+        <div class="panel">
+          <h2>Open tasks near you</h2>
+          <div id="open-tasks"></div>
+        </div>
+
+        <div class="panel hidden" id="active-panel">
+          <h2>Your active task</h2>
+          <div id="active-task"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Your earnings (this pilot)</h2>
+          <div id="earnings"></div>
+        </div>
+
+        <button class="btn btn-ghost" onclick="resetDemo()">Reset demo data</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+<footer>Errander pilot — real shared data via Netlify Functions + Blobs. Escrow, ID checks and matching logic are simplified for testing.</footer>
+
+<script>
+  const API = '/.netlify/functions/api';
+  const CATEGORIES = [
+    { id:'Delivery & Pickup', quote:false },
+    { id:'Errands & Queuing', quote:false },
+    { id:'Home Services · Plumbing', quote:true },
+    { id:'Home Services · Cleaning', quote:true },
+    { id:'Business & Field', quote:false }
+  ];
+
+  let activeCategory = CATEGORIES[0];
+  let allTasks = [];
+
+  function switchRole(role){
+    document.getElementById('view-client').classList.toggle('show', role === 'client');
+    document.getElementById('view-errander').classList.toggle('show', role === 'errander');
+    document.getElementById('role-client-btn').classList.toggle('active', role === 'client');
+    document.getElementById('role-errander-btn').classList.toggle('active', role === 'errander');
+  }
+
+  function buildCatChips(){
+    const wrap = document.getElementById('cat-chips');
+    CATEGORIES.forEach((c,i)=>{
+      const b = document.createElement('button');
+      b.className = 'chip' + (i===0 ? ' active' : '');
+      b.textContent = c.id;
+      b.onclick = ()=>{
+        activeCategory = c;
+        document.querySelectorAll('#cat-chips .chip').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        document.getElementById('c-budget-field').classList.toggle('hidden', c.quote);
+        document.getElementById('c-quote-field').classList.toggle('hidden', !c.quote);
+      };
+      wrap.appendChild(b);
+    });
+  }
+
+  async function api(action, method, body){
+    const opts = { method: method || 'GET', headers: {'Content-Type':'application/json'} };
+    if(body) opts.body = JSON.stringify(body);
+    const res = await fetch(API + '?action=' + action, opts);
+    return res.json();
+  }
+
+  async function refresh(){
+    try{
+      const data = await api('list', 'GET');
+      allTasks = data.tasks || [];
+      renderClientTasks();
+      renderOpenTasks();
+      renderActiveTask();
+      renderEarnings();
+    }catch(e){ /* network hiccup — next poll will retry */ }
+  }
+
+  /* ---------- Client side ---------- */
+  async function postTask(){
+    const clientName = document.getElementById('c-name').value.trim() || 'Client';
+    const task = {
+      category: activeCategory.id,
+      quoteRequest: activeCategory.quote,
+      desc: document.getElementById('c-desc').value.trim(),
+      loc: document.getElementById('c-loc').value.trim(),
+      urgency: document.getElementById('c-urgency').value.trim(),
+      budget: document.getElementById('c-budget').value,
+      clientName
+    };
+    if(!task.desc){ alert('Describe the task first.'); return; }
+    localStorage.setItem('errander_client_name', clientName);
+    await api('create', 'POST', task);
+    document.getElementById('c-desc').value = '';
+    refresh();
+  }
+
+  function renderClientTasks(){
+    const myName = document.getElementById('c-name').value.trim() || localStorage.getItem('errander_client_name') || 'Client';
+    const wrap = document.getElementById('client-tasks');
+    const mine = allTasks.filter(t => t.clientName === myName);
+    if(mine.length === 0){ wrap.innerHTML = '<p class="muted">Nothing posted yet.</p>'; return; }
+    wrap.innerHTML = '';
+    mine.forEach(t=>{
+      const el = document.createElement('div');
+      el.className = 'task';
+      const pill = `<span class="status-pill status-${t.status}">${t.status}${t.erranderName ? ' · ' + t.erranderName : ''}</span>`;
+      let quotesHtml = '';
+      if(t.quoteRequest && t.status === 'open' && t.quotes.length){
+        quotesHtml = t.quotes.map(q => `
+          <div class="quote-item">
+            <span>${q.erranderName} — GHS ${q.price} <span class="muted">${q.note ? '· ' + q.note : ''}</span></span>
+            <button class="btn btn-ghost" onclick="acceptQuote('${t.id}','${q.erranderName.replace(/'/g,"")}',${q.price})">Accept</button>
+          </div>`).join('');
+      }
+      el.innerHTML = `
+        <div class="task-top">
+          <div>
+            <div class="task-cat">${t.category}</div>
+            <div class="task-desc">${t.desc}</div>
+            <div class="task-meta">${t.loc} · ${t.urgency}</div>
+            ${pill}
+          </div>
+          ${t.budget ? `<div class="task-price">GHS ${t.budget}</div>` : ''}
+        </div>
+        ${quotesHtml}`;
+      wrap.appendChild(el);
+    });
+  }
+
+  async function acceptQuote(id, erranderName, price){
+    await api('accept', 'POST', { id, erranderName, acceptedPrice: price });
+    refresh();
+  }
+
+  /* ---------- Errander side ---------- */
+  function submitSignup(){
+    const name = document.getElementById('su-name').value.trim();
+    const card = document.getElementById('su-card').value.trim().replace(/\s/g,'');
+    const valid = name.length > 0 && /^GHA-?\d{9}-?\d$/i.test(card);
+    document.getElementById('signup-error').style.display = valid ? 'none' : 'block';
+    if(!valid) return;
+    localStorage.setItem('errander_name', name);
+    document.getElementById('signup-panel').classList.add('hidden');
+    document.getElementById('pending-panel').classList.remove('hidden');
+  }
+
+  function simulateApproval(){
+    localStorage.setItem('errander_verified', '1');
+    document.getElementById('errander-gate').classList.add('hidden');
+    document.getElementById('errander-dashboard').classList.remove('hidden');
+    refresh();
+  }
+
+  function myErranderName(){ return localStorage.getItem('errander_name') || 'Errander'; }
+
+  function renderOpenTasks(){
+    const wrap = document.getElementById('open-tasks');
+    const open = allTasks.filter(t => t.status === 'open');
+    if(open.length === 0){ wrap.innerHTML = '<p class="muted">No open tasks right now.</p>'; return; }
+    wrap.innerHTML = '';
+    open.forEach(t=>{
+      const el = document.createElement('div');
+      el.className = 'task';
+      const actions = t.quoteRequest
+        ? `<div class="task-actions">
+             <input type="number" class="quote-input" id="qi-${t.id}" placeholder="GHS">
+             <button class="btn btn-primary" onclick="sendQuote('${t.id}')">Send quote</button>
+           </div>`
+        : `<div class="task-actions"><button class="btn btn-primary" onclick="acceptTask('${t.id}')">Accept</button></div>`;
+      el.innerHTML = `
+        <div class="task-top">
+          <div>
+            <div class="task-cat">${t.category}</div>
+            <div class="task-desc">${t.desc}</div>
+            <div class="task-meta">${t.loc} · ${t.urgency} · ${t.clientName}</div>
+          </div>
+          ${t.budget ? `<div class="task-price">GHS ${t.budget}</div>` : '<div class="task-price" style="color:var(--amber-deep);">Quote</div>'}
+        </div>
+        ${actions}`;
+      wrap.appendChild(el);
+    });
+  }
+
+  async function acceptTask(id){
+    const res = await api('accept', 'POST', { id, erranderName: myErranderName() });
+    if(res.error){ alert(res.error); }
+    refresh();
+  }
+
+  async function sendQuote(id){
+    const input = document.getElementById('qi-' + id);
+    const price = parseInt(input.value, 10);
+    if(!price || price <= 0){ input.style.borderColor = 'var(--red)'; return; }
+    await api('quote', 'POST', { id, erranderName: myErranderName(), price });
+    input.value = '';
+    refresh();
+  }
+
+  function renderActiveTask(){
+    const me = myErranderName();
+    const t = allTasks.find(x => x.erranderName === me && x.status === 'accepted');
+    const panel = document.getElementById('active-panel');
+    const wrap = document.getElementById('active-task');
+    if(!t){ panel.classList.add('hidden'); return; }
+    panel.classList.remove('hidden');
+    const labels = ['Accepted — head to pickup.', 'Picked up — on the way.', 'Delivered — awaiting confirmation.'];
+    const buttons = ['Confirm pickup', 'Confirm delivery', 'Mark job complete'];
+    const step = t.step || 0;
+    wrap.innerHTML = `
+      <div class="task-desc">${t.desc}</div>
+      <div class="task-meta">${t.loc} · ${t.clientName}</div>
+      <div class="task-price" style="margin:6px 0;">GHS ${t.budget}</div>
+      <p class="muted">${labels[step] || 'In progress.'}</p>
+      <button class="btn btn-primary" onclick="advanceTask('${t.id}')">${buttons[step] || 'Advance'}</button>`;
+  }
+
+  async function advanceTask(id){
+    await api('advance', 'POST', { id });
+    refresh();
+  }
+
+  function renderEarnings(){
+    const me = myErranderName();
+    const mine = allTasks.filter(x => x.erranderName === me && x.status === 'completed');
+    const total = mine.reduce((sum,t)=> sum + (Number(t.budget)||0), 0);
+    const wrap = document.getElementById('earnings');
+    wrap.innerHTML = `<div class="stat"><span>Completed jobs</span><span>${mine.length}</span></div>
+                       <div class="stat"><span>Total earned</span><span>GHS ${total}</span></div>` +
+                       mine.map(t=>`<div class="stat"><span>${t.desc.slice(0,26)}…</span><span>GHS ${t.budget}</span></div>`).join('');
+  }
+
+  async function resetDemo(){
+    if(!confirm('Reset all pilot task data for everyone?')) return;
+    await api('reset', 'POST', {});
+    refresh();
+  }
+
+  /* ---------- init ---------- */
+  buildCatChips();
+  if(localStorage.getItem('errander_verified') === '1'){
+    document.getElementById('errander-gate').classList.add('hidden');
+    document.getElementById('errander-dashboard').classList.remove('hidden');
+  }
+  if(localStorage.getItem('errander_client_name')){
+    document.getElementById('c-name').value = localStorage.getItem('errander_client_name');
+  }
+  refresh();
+  setInterval(refresh, 4000);
+</script>
+</body>
+</html>

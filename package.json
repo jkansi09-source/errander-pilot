@@ -1,0 +1,9 @@
+{
+  "name": "errander-pilot",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Errander pilot: shared task feed backed by Netlify Functions and Netlify Blobs",
+  "dependencies": {
+    "@netlify/blobs": "^8.0.0"
+  }
+}
