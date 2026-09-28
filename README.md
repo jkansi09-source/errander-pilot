@@ -1,13 +1,34 @@
-# Errander Pilot — shared task feed (v2)
+# Errander Pilot — shared task feed (v4)
 
 This is a small, real backend: when someone posts a task on their phone, it's
 saved to shared storage (Netlify Blobs) and shows up live on everyone else's
 phone within a few seconds.
 
 **What's new in this version:**
+- **A home/welcome screen on launch** — no more landing straight in a form
+  with no context. It explains what Errander does, shows the slogan, and
+  offers two clear paths: "I'm a Boss" (task requester) or "I'm an Errander."
+  Clicking the "Errander" wordmark in the header always brings you back here.
+- **"Boss" replaces "Client" in the UI** for whoever's requesting a task — it
+  pairs naturally with "Errander" and reads more like how people actually
+  talk. (Code and API fields still say `client` internally — only the
+  on-screen wording changed.)
+- **No duplicate Errander registrations.** ID numbers are now checked against
+  a real server-side registry, not just stored locally — signing up twice
+  with the same Ghana Card or license number is rejected.
+- **Driver's License added as a second ID option** alongside Ghana Card.
+  Ghana Card format is validated against the standard `GHA-000000000-0`
+  pattern; license numbers just need to look plausible (6+ characters) since
+  there's no single published DVLA format to validate against — tighten this
+  once you have real examples.
+- **Photos for both sides.** A Boss can attach a photo when posting (reused
+  across future posts once uploaded), and an Errander uploads one at
+  sign-up. Photos are resized client-side before upload and shown to the
+  other party once a task is matched — same reveal-on-match rule as phone
+  numbers.
 - **One active task at a time, per Errander.** Accepting or quoting is blocked
   (both client-side and server-side) while an Errander already has a task in
-  progress. It unlocks the moment the client confirms the current one complete
+  progress. It unlocks the moment the Boss confirms the current one complete
   — matching "one job at a time, back to back" rather than juggling several.
 - **Live-ish chat, once a task is matched.** A collapsible chat thread appears
   on the task once an Errander has accepted or had a quote accepted. It's
@@ -20,22 +41,22 @@ phone within a few seconds.
   the tab is open or backgrounded on desktop; mobile browsers may pause a
   fully-closed tab, so this isn't a substitute for real push notifications in
   a production build).
-- **Contact numbers revealed on match** — once a task is accepted, the client
+- **Contact numbers revealed on match** — once a task is accepted, the Boss
   sees the Errander's name + phone and vice versa. Nobody sees a stranger's
   number before there's a committed job.
 - **Two-step completion, matching the escrow model** — the Errander can mark
-  a job "picked up" and "delivered," but only the **client** can confirm it
+  a job "picked up" and "delivered," but only the **Boss** can confirm it
   complete. That confirmation is what would trigger payout in a real build,
   and it's what unlocks the mutual rating prompts.
-- **Mutual 1–5 star ratings** — after confirmation, the client rates the
-  Errander and the Errander rates the client. Ratings and completed jobs move
+- **Mutual 1–5 star ratings** — after confirmation, the Boss rates the
+  Errander and the Errander rates the Boss. Ratings and completed jobs move
   into a collapsed "Completed history" section so the active board stays
   uncluttered.
 - **Distance-based sorting for Erranders** — tapping "Enable location" sorts
-  open tasks by real distance (using the browser's Geolocation API). Clients
+  open tasks by real distance (using the browser's Geolocation API). A Boss
   can similarly tap "Use my current location" when posting so their task
   carries real coordinates instead of just a typed place name.
-- **Cancel an open task** — a client can pull back a task nobody's accepted yet.
+- **Cancel an open task** — a Boss can pull back a task nobody's accepted yet.
 
 **Still simplified on purpose:**
 - No real login — a client or Errander just types their name (matching is

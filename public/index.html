@@ -77,6 +77,11 @@
   .chat-input-row{display:flex; gap:6px; margin-top:4px;}
   .chat-input-row input{flex:1; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.85rem;}
   .busy-note{background:rgba(226,166,59,0.15); border:1px solid rgba(226,166,59,0.4); color:var(--amber-deep); border-radius:7px; padding:8px 10px; font-size:0.8rem; margin-bottom:10px;}
+  .photo-thumb{width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--line); vertical-align:middle; margin-right:8px;}
+  .contact-box{display:flex; align-items:center;}
+  .id-type-row{display:flex; gap:8px; margin-bottom:10px;}
+  .id-type-row .chip{flex:1; text-align:center;}
+  .photo-preview{width:64px; height:64px; border-radius:50%; object-fit:cover; border:1px solid var(--line); margin-top:6px; display:block;}
   #toast-stack{position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; display:flex; flex-direction:column; gap:8px; width:min(92vw,420px);}
   .toast{background:var(--navy); color:var(--white); padding:11px 14px; border-radius:8px; font-size:0.85rem; box-shadow:0 6px 18px rgba(0,0,0,0.25); animation:fadein .2s ease;}
   @keyframes fadein{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
@@ -89,11 +94,11 @@
 
 <header>
   <div class="wrap">
-    <div class="brand">Errander <span style="font-weight:400; font-size:0.68rem; color:var(--amber);">· pilot</span></div>
+    <div class="brand" style="cursor:pointer;" onclick="switchRole('home')">Errander <span style="font-weight:400; font-size:0.68rem; color:var(--amber);">· pilot</span></div>
     <div style="display:flex; gap:8px; align-items:center;">
       <button class="bell-btn" id="bell-btn" onclick="enableNotifications()" title="Enable notifications">🔔</button>
       <div class="role-switch">
-        <button class="role-btn active" id="role-client-btn" onclick="switchRole('client')">I need something done</button>
+        <button class="role-btn" id="role-client-btn" onclick="switchRole('client')">I'm a Boss</button>
         <button class="role-btn" id="role-errander-btn" onclick="switchRole('errander')">I'm an Errander</button>
       </div>
     </div>
@@ -103,8 +108,24 @@
 <main>
   <div class="wrap">
 
+    <!-- HOME / WELCOME VIEW -->
+    <div class="view show" id="view-home">
+      <div class="panel" style="text-align:center;">
+        <h1 style="margin:6px 0 2px;">Errander</h1>
+        <p style="margin:0 0 12px;"><em>Your Kpakpa money making place</em></p>
+        <p class="muted" style="margin:0 0 18px;">Post any legal task — deliveries, errands, home services and more — and get matched with a nearby, ID-verified Errander. Or sign up as an Errander yourself and start earning, one job at a time.</p>
+        <button class="btn btn-primary btn-block" style="margin-bottom:10px;" onclick="switchRole('client')">I'm a Boss — I need something done</button>
+        <button class="btn btn-ghost btn-block" onclick="switchRole('errander')">I'm an Errander — I get it done</button>
+      </div>
+      <div class="panel">
+        <h2>How it works</h2>
+        <div class="stat"><span>1. Post or browse</span><span class="muted">A Boss posts a task; nearby Erranders see it</span></div>
+        <div class="stat"><span>2. Match &amp; chat</span><span class="muted">Accept or send a quote, then coordinate</span></div>
+        <div class="stat"><span>3. Confirm &amp; rate</span><span class="muted">Boss confirms it's done — both sides rate</span></div>
+      </div>
+    </div>
     <!-- CLIENT VIEW -->
-    <div class="view show" id="view-client">
+    <div class="view" id="view-client">
       <div class="panel">
         <h2>Post a task</h2>
         <div class="chip-row" id="cat-chips"></div>
@@ -119,6 +140,11 @@
         <div class="row2">
           <div class="field"><label>Your name</label><input id="c-name" type="text" value="Sam O."></div>
           <div class="field"><label>Your phone</label><input id="c-phone" type="tel" value="024 000 0001"></div>
+        </div>
+        <div class="field">
+          <label>Your photo <span class="muted">(shown to the Errander once matched)</span></label>
+          <input type="file" id="c-photo-input" accept="image/*" capture="user" onchange="handlePhotoUpload(this,'errander_client_photo','c-photo-preview')">
+          <img id="c-photo-preview" class="photo-preview hidden" alt="Your photo">
         </div>
         <button class="btn btn-primary btn-block" onclick="postTask()">Post task</button>
       </div>
@@ -139,12 +165,24 @@
           <h2>Become an Errander</h2>
           <p class="muted" style="margin:0 0 10px;">Real deployments verify a Ghana Card before you can accept tasks.</p>
           <div class="row2">
-            <div class="field"><label>Full name</label><input id="su-name" type="text" placeholder="As shown on your Ghana Card"></div>
+            <div class="field"><label>Full name</label><input id="su-name" type="text" placeholder="As shown on your ID"></div>
             <div class="field"><label>Phone</label><input id="su-phone" type="tel" placeholder="024 000 0000"></div>
           </div>
-          <div class="field"><label>Ghana Card number</label><input id="su-card" type="text" placeholder="GHA-000000000-0"></div>
+          <div class="field">
+            <label>ID type</label>
+            <div class="id-type-row" id="id-type-row">
+              <button type="button" class="chip active" data-type="ghana_card" onclick="selectIdType('ghana_card', this)">Ghana Card</button>
+              <button type="button" class="chip" data-type="license" onclick="selectIdType('license', this)">Driver's License</button>
+            </div>
+          </div>
+          <div class="field"><label id="su-id-label">Ghana Card number</label><input id="su-card" type="text" placeholder="GHA-000000000-0"></div>
+          <div class="field">
+            <label>Your photo <span class="muted">(shown to clients once matched)</span></label>
+            <input type="file" id="su-photo-input" accept="image/*" capture="user" onchange="handlePhotoUpload(this,'errander_photo','su-photo-preview')">
+            <img id="su-photo-preview" class="photo-preview hidden" alt="Your photo">
+          </div>
           <button class="btn btn-primary btn-block" onclick="submitSignup()">Submit for verification</button>
-          <p class="muted" id="signup-error" style="display:none; color:var(--red); margin:8px 0 0;">Enter your name, phone, and a valid Ghana Card number.</p>
+          <p class="muted" id="signup-error" style="display:none; color:var(--red); margin:8px 0 0;"></p>
         </div>
         <div class="panel hidden" id="pending-panel">
           <h2>Verification submitted</h2>
@@ -226,6 +264,36 @@
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
+  function fileToResizedDataUrl(file, maxDim){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = e=>{
+        const img = new Image();
+        img.onload = ()=>{
+          let w = img.width, h = img.height;
+          if(w > h){ if(w > maxDim){ h = Math.round(h*maxDim/w); w = maxDim; } }
+          else { if(h > maxDim){ w = Math.round(w*maxDim/h); h = maxDim; } }
+          const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+  function handlePhotoUpload(input, storageKey, previewId){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    fileToResizedDataUrl(file, 200).then(dataUrl=>{
+      localStorage.setItem(storageKey, dataUrl);
+      const img = document.getElementById(previewId);
+      img.src = dataUrl;
+      img.classList.remove('hidden');
+    }).catch(()=> toast('Could not read that photo — try a different file.'));
+  }
   function chatHtml(t, myName){
     const msgs = (t.messages||[]).map(m=>{
       const mine = m.sender === myName;
@@ -274,6 +342,7 @@
   }
 
   function switchRole(role){
+    document.getElementById('view-home').classList.toggle('show', role === 'home');
     document.getElementById('view-client').classList.toggle('show', role === 'client');
     document.getElementById('view-errander').classList.toggle('show', role === 'errander');
     document.getElementById('role-client-btn').classList.toggle('active', role === 'client');
@@ -379,7 +448,8 @@
       lng: clientCoords ? clientCoords.lng : null,
       urgency: document.getElementById('c-urgency').value.trim(),
       budget: document.getElementById('c-budget').value,
-      clientName, clientPhone
+      clientName, clientPhone,
+      clientPhoto: localStorage.getItem('errander_client_photo') || null
     };
     if(!task.desc){ toast('Describe the task first.'); return; }
     localStorage.setItem('errander_client_name', clientName);
@@ -475,13 +545,40 @@
   }
 
   /* ---------- Errander side ---------- */
-  function submitSignup(){
+  let signupIdType = 'ghana_card';
+  function selectIdType(type, btn){
+    signupIdType = type;
+    document.querySelectorAll('#id-type-row .chip').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    const label = document.getElementById('su-id-label');
+    const input = document.getElementById('su-card');
+    if(type === 'ghana_card'){ label.textContent = 'Ghana Card number'; input.placeholder = 'GHA-000000000-0'; }
+    else { label.textContent = "Driver's License number"; input.placeholder = 'e.g. DVLA-2201234'; }
+  }
+
+  async function submitSignup(){
     const name = document.getElementById('su-name').value.trim();
     const phone = document.getElementById('su-phone').value.trim();
-    const card = document.getElementById('su-card').value.trim().replace(/\s/g,'');
-    const valid = name.length > 0 && phone.length > 0 && /^GHA-?\d{9}-?\d$/i.test(card);
-    document.getElementById('signup-error').style.display = valid ? 'none' : 'block';
-    if(!valid) return;
+    const idRaw = document.getElementById('su-card').value.trim();
+    const idClean = idRaw.replace(/\s/g,'');
+    const errEl = document.getElementById('signup-error');
+    const formatValid = signupIdType === 'ghana_card'
+      ? /^GHA-?\d{9}-?\d$/i.test(idClean)
+      : idClean.replace(/[^A-Za-z0-9]/g,'').length >= 6;
+    if(!name || !phone || !formatValid){
+      errEl.textContent = signupIdType === 'ghana_card'
+        ? 'Enter your name, phone, and a valid Ghana Card number (format GHA-000000000-0).'
+        : "Enter your name, phone, and a valid driver's license number.";
+      errEl.style.display = 'block';
+      return;
+    }
+    const res = await api('register-errander', 'POST', { idType: signupIdType, idNumber: idClean, name });
+    if(res.error){
+      errEl.textContent = res.error;
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
     localStorage.setItem('errander_name', name);
     localStorage.setItem('errander_phone', phone);
     document.getElementById('signup-panel').classList.add('hidden');
@@ -495,6 +592,7 @@
   }
   function myErranderName(){ return localStorage.getItem('errander_name') || 'Errander'; }
   function myErranderPhone(){ return localStorage.getItem('errander_phone') || ''; }
+  function myErranderPhoto(){ return localStorage.getItem('errander_photo') || null; }
 
   function renderOpenTasks(){
     const wrap = document.getElementById('open-tasks');
@@ -538,7 +636,7 @@
   }
 
   async function acceptTask(id){
-    const res = await api('accept', 'POST', { id, erranderName: myErranderName(), erranderPhone: myErranderPhone() });
+    const res = await api('accept', 'POST', { id, erranderName: myErranderName(), erranderPhone: myErranderPhone(), erranderPhoto: myErranderPhoto() });
     if(res.error){ toast(res.error); }
     refresh();
   }
@@ -546,7 +644,7 @@
     const input = document.getElementById('qi-' + id);
     const price = parseInt(input.value, 10);
     if(!price || price <= 0){ input.style.borderColor = 'var(--red)'; return; }
-    await api('quote', 'POST', { id, erranderName: myErranderName(), erranderPhone: myErranderPhone(), price });
+    await api('quote', 'POST', { id, erranderName: myErranderName(), erranderPhone: myErranderPhone(), erranderPhoto: myErranderPhoto(), price });
     input.value = '';
     refresh();
   }

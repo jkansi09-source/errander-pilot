@@ -74,13 +74,32 @@ exports.handler = async (event) => {
     tasks = seedTasks();
     await store.setJSON('all-tasks', tasks);
   }
-  // backfill messages array for tasks created before this version
-  tasks.forEach(t => { if (!t.messages) t.messages = []; });
+  // backfill fields for tasks created before this version
+  tasks.forEach(t => {
+    if (!t.messages) t.messages = [];
+    if (t.clientPhoto === undefined) t.clientPhoto = null;
+    if (t.erranderPhoto === undefined) t.erranderPhoto = null;
+  });
 
   const save = () => store.setJSON('all-tasks', tasks);
   const isBusy = (erranderName) => tasks.some(x => x.erranderName === erranderName && x.status === 'accepted');
+  const normalizeId = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
   switch (action) {
+    case 'register-errander': {
+      if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
+      const idType = body.idType === 'license' ? 'license' : 'ghana_card';
+      const idNumber = normalizeId(body.idNumber);
+      if (!idNumber) return json(400, { error: 'ID number required' });
+      let registry = await store.get('errander-registry', { type: 'json' });
+      if (!registry) registry = [];
+      const dup = registry.find(r => r.idNumber === idNumber);
+      if (dup) return json(409, { error: 'This ID has already been used to register an Errander account.' });
+      registry.push({ idType, idNumber, name: String(body.name || '').slice(0, 60), registeredAt: Date.now() });
+      await store.setJSON('errander-registry', registry);
+      return json(200, { ok: true });
+    }
+
     case 'list':
       return json(200, { tasks: tasks.filter(t => t.status !== 'cancelled') });
 
@@ -98,6 +117,7 @@ exports.handler = async (event) => {
         quoteRequest: !!body.quoteRequest,
         clientName: String(body.clientName || 'Client').slice(0, 60),
         clientPhone: String(body.clientPhone || '').slice(0, 30),
+        clientPhoto: typeof body.clientPhoto === 'string' ? body.clientPhoto.slice(0, 200000) : null,
         status: 'open', stage: null,
         quotes: [], messages: [],
         erranderName: null, erranderPhone: null,
@@ -128,6 +148,7 @@ exports.handler = async (event) => {
       t.quotes.push({
         erranderName,
         erranderPhone: String(body.erranderPhone || '').slice(0, 30),
+        erranderPhoto: typeof body.erranderPhoto === 'string' ? body.erranderPhoto.slice(0, 200000) : null,
         price: Number(body.price) || 0,
         note: String(body.note || '').slice(0, 200)
       });
@@ -146,6 +167,7 @@ exports.handler = async (event) => {
       t.stage = 'accepted';
       t.erranderName = erranderName;
       t.erranderPhone = String(body.erranderPhone || '').slice(0, 30);
+      t.erranderPhoto = typeof body.erranderPhoto === 'string' ? body.erranderPhoto.slice(0, 200000) : (t.erranderPhoto || null);
       if (body.acceptedPrice) t.budget = Number(body.acceptedPrice);
       await save();
       return json(200, { task: t });
