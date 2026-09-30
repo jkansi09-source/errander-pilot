@@ -1,10 +1,54 @@
-# Errander Pilot — shared task feed (v4)
+# Errander Pilot — shared task feed (v5)
 
 This is a small, real backend: when someone posts a task on their phone, it's
 saved to shared storage (Netlify Blobs) and shows up live on everyone else's
 phone within a few seconds.
 
+## ⚠️ v5 is a structural change — read this first
+
+Earlier versions had no real accounts — "being" someone was just typing a
+name into a box on that one device. **v5 replaces that with real accounts**:
+phone number + PIN, one profile per person, and that profile is what "Boss"
+and "Errander" now hang off. This means:
+
+- **Old pilot testers need to create a new account.** There's no migration
+  from the old name-based identity — it wasn't a real identity to migrate.
+- **Erranders now need admin approval to actually transact**, not just a
+  "simulate approval" button. Applications sit as "pending" until someone
+  logs into `/` → the "Admin" link in the footer → approves or rejects them.
+  **Someone (you) needs to actually do this** for any Errander to be able to
+  accept or quote on tasks — it's not automatic anymore.
+- **Change the admin passcode before using this with real people.** It's set
+  in `netlify/functions/api.js` as `ADMIN_PASSCODE = 'errander-admin-2026'`
+  near the top of the file — edit that line in your GitHub repo before
+  deploying to anyone outside your own testing.
+- **The PIN system is pilot-grade security, not production security.** PINs
+  are hashed (not stored in plain text) but there's no session/token system —
+  the app just remembers your phone number locally and trusts it. Someone who
+  knows another person's phone number and can get at their unlocked phone
+  could act as them. Fine for a supervised pilot with people you know; not
+  fine for a public launch.
+
 **What's new in this version:**
+- **Real accounts** (phone + PIN) replace per-device name typing. One profile
+  can act as a Boss and, once approved, also as an Errander — switching
+  between the two is just switching tabs on your own dashboard, not
+  re-registering.
+- **A personal dashboard** — your profile card (name, phone, photo, Errander
+  approval status), three tabs: **Post a Task** (Boss), **Find Jobs**
+  (Errander — locked until approved), and **My Report**.
+- **My Report** — as a Boss: total tasks requested, completed, active,
+  cancelled, total spent. As an approved Errander: jobs completed, total
+  earned, and total expected from jobs currently in progress.
+- **An Admin portal** — reachable via the small "Admin" link in the footer.
+  Shows pending Errander applications (name, phone, ID type/number, photo)
+  with Approve/Reject buttons, a full user roster with each person's
+  Errander status, and task counts by status across the whole pilot.
+- **Server-enforced approval gating** — accepting or quoting on a task now
+  checks, on the server, that the phone number belongs to an account with
+  `errander.status === 'approved'`. A pending or rejected applicant is
+  blocked even if they try to call the API directly, not just hidden by the
+  UI.
 - **A home/welcome screen on launch** — no more landing straight in a form
   with no context. It explains what Errander does, shows the slogan, and
   offers two clear paths: "I'm a Boss" (task requester) or "I'm an Errander."
@@ -59,19 +103,17 @@ phone within a few seconds.
 - **Cancel an open task** — a Boss can pull back a task nobody's accepted yet.
 
 **Still simplified on purpose:**
-- No real login — a client or Errander just types their name (matching is
-  done by name, so don't reuse the same name for two different people during
-  a pilot).
+- Login is phone + PIN with no session tokens, SMS verification, or password
+  reset flow — see the security note above.
 - No real payment — "confirm" and "payout" are simulated, not a live transaction.
-- Ghana Card verification is a form + a "simulate approval" button.
+- ID verification is a form a human (you, via the Admin portal) approves —
+  not an automated check against a government database.
 - First Errander to tap "Accept" gets a fixed-price task — no dispatch
-  algorithm, and a client can't currently choose between multiple interested
+  algorithm, and a Boss can't currently choose between multiple interested
   Erranders on a fixed-price task (only on quote-request tasks, via quotes).
-- No in-app chat — once contact numbers are revealed, coordination happens
-  by phone call/SMS outside the app.
-- **Chat messages aren't moderated or persisted beyond this pilot's storage** —
-  fine for supervised testing, not for a public launch without a reporting/
-  blocking mechanism.
+- Chat messages aren't moderated or exportable beyond this pilot's storage —
+  fine for supervised testing, not for a public launch without a
+  reporting/blocking mechanism.
 
 ## Deploy it (no coding required)
 
@@ -97,9 +139,14 @@ If the build fails, check that `package.json` made it into the repo root
   two people accepting the same task in the same instant could race. Fine
   for a small pilot (tens of people), not for production volume.
 - **Location requires the browser's permission prompt** — if someone denies
-  it, the app falls back to the typed location text, same as before.
-- **Anyone can rename themselves** — there's no authentication. Fine for a
-  supervised pilot, not for a public launch.
-- Use the "Reset demo data" button (Errander view) to clear the board
-  between pilot test sessions.
+  it, the app falls back to the typed location text.
+- **Phone + PIN has no recovery flow** — if someone forgets their PIN in
+  this pilot, the only fix right now is creating a new account with the
+  same phone number... which the backend will reject as a duplicate. For a
+  short supervised pilot that's an acceptable rough edge; add a real PIN
+  reset before running this longer.
+- Use the "Reset demo data" button (My Report tab) to clear the task board
+  between pilot test sessions. It does not clear user accounts — there's no
+  UI for that yet, since wiping real people's accounts mid-pilot would be
+  more disruptive than useful.
 
