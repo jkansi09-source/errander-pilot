@@ -1,4 +1,89 @@
-# Errander Pilot — shared task feed (v5)
+# Errander Pilot — shared task feed (v7.1)
+
+## Brand update: real logo + palette
+
+- Colors sampled directly from the submitted logo file: navy `#0B2A57`
+  (trust), green `#0E7A3B` (safety/service/"done"), gold `#FDC902` /
+  `#E09500` (speed/value — a brighter tone for text on navy, a deeper tone
+  for text on white), background shifted to true white per the brand's
+  "transparency & simplicity" note. The off-brand teal that had crept into
+  category labels and badges now resolves to the same brand green.
+- The actual logo is in the app: the icon mark (the "E" + shield) is the
+  favicon and sits in the header next to the wordmark; the full lockup
+  (icon + wordmark + tagline) is the hero image on the home screen. Both
+  live at `public/assets/logo-icon.png` and `public/assets/logo-hero.png`
+  — replace those two files directly if the logo is revised later, no code
+  changes needed.
+
+
+## New in v7: KNUST-sponsored tasks, with fraud controls
+
+For the 100-student KNUST pilot where Errander (the company) pays instead of
+the Boss, the risk is obvious: if the Boss isn't the one paying, a Boss and
+Errander who know each other have no financial reason not to just fake a
+job and split the free money. This version builds in the controls we
+discussed to close that gap:
+
+- **A "🎓 KNUST-sponsored" toggle** on the post-task form. When checked, the
+  Errander-company (not the Boss) covers the agreed price — the Boss pays
+  nothing, no platform fee applies. A live counter shows remaining slots out
+  of the `SPONSORED_CAP` (100 by default, edit the constant in `api.js`).
+  Once the cap is hit, the toggle disappears for everyone.
+- **Photo proof is mandatory on sponsored jobs**, enforced server-side, not
+  just in the UI. The Errander can't advance from "accepted" to "picked up,"
+  or "picked up" to "delivered," without attaching a photo at each step —
+  the API rejects the advance otherwise.
+- **The Boss's confirmation no longer pays out instantly for sponsored
+  jobs.** Confirming moves the job into an admin review queue instead
+  (`reviewStatus: 'pending'`) — a human has to look at the photos and
+  approve it before it counts as completed or anyone's earnings reflect it.
+  This is the main structural fix: money now requires an approver who isn't
+  party to the transaction, not just the two people who'd benefit from
+  faking it.
+- **One sponsored job per Boss–Errander pair, for the whole pilot.** Once a
+  specific pair has done one sponsored job together, the API blocks them
+  from doing a second — makes repeat collusion between the same two people
+  meaningfully harder, since every attempt needs a new accomplice.
+- **Rejecting a review flags both accounts.** A `flagCount` appears on the
+  Boss's and Errander's profile (visible to them, and prominently in the
+  Admin portal's user list) — not an automated ban, just a visible signal
+  for you to act on with institutional consequences (e.g. reporting to the
+  Dean of Students' office, as discussed).
+
+**What this doesn't solve, and what still needs a human:** the person
+reviewing sponsored jobs in the Admin portal needs to actually look
+critically at the photos and occasionally spot-check by contacting the Boss
+directly — photo proof raises the bar on casual fraud but doesn't stop two
+people willing to stage photos together. At 100 transactions, following up
+on all of them directly is realistic; that follow-up is still on you, not
+something software can fully replace.
+
+## New in v6: negotiation, platform fee, Errander University
+
+- **Negotiation.** A Boss's posted price is now an opening offer, not fixed.
+  Any approved Errander viewing it can **Accept** outright or **Counter**
+  with their own number. The Boss sees every counter (if several Erranders
+  are interested, each gets their own thread) and can **Accept** or
+  **counter back** — this can go back and forth until someone accepts.
+- **Platform fee, shown to both sides, everywhere a price appears.** It's
+  added on top and paid by the Boss — the Errander always receives exactly
+  the agreed amount. Rate is `PLATFORM_FEE_RATE` near the top of
+  `netlify/functions/api.js` (10% by default) — change it there, not in the
+  frontend; the frontend fetches it from the API on load so there's one
+  source of truth.
+- **Errander University certification.** A 🎓 badge an admin can grant to
+  an approved Errander (Admin portal → "All users" → grant/remove button).
+  It shows next to their name wherever a Boss sees them — most usefully
+  when several Erranders have countered on the same task and the Boss is
+  choosing who to engage. **The course content itself isn't built** — this
+  is the verification badge mechanic only; authoring an actual curriculum
+  is a separate, non-software task.
+
+This is a small, real backend: when someone posts a task on their phone, it's
+saved to shared storage (Netlify Blobs) and shows up live on everyone else's
+phone within a few seconds.
+
+## v5: accounts replaced per-device identity
 
 This is a small, real backend: when someone posts a task on their phone, it's
 saved to shared storage (Netlify Blobs) and shows up live on everyone else's
@@ -108,9 +193,12 @@ and "Errander" now hang off. This means:
 - No real payment — "confirm" and "payout" are simulated, not a live transaction.
 - ID verification is a form a human (you, via the Admin portal) approves —
   not an automated check against a government database.
-- First Errander to tap "Accept" gets a fixed-price task — no dispatch
-  algorithm, and a Boss can't currently choose between multiple interested
-  Erranders on a fixed-price task (only on quote-request tasks, via quotes).
+- First Errander to tap "Accept" gets the task at the Boss's listed price —
+  no dispatch algorithm. If multiple Erranders counter instead of accepting
+  outright, the Boss can compare and choose between them (see "Negotiation"
+  above); but once any one Errander is accepted, every other thread on that
+  task simply stops mattering — there's no notification to the Erranders who
+  didn't get picked.
 - Chat messages aren't moderated or exportable beyond this pilot's storage —
   fine for supervised testing, not for a public launch without a
   reporting/blocking mechanism.

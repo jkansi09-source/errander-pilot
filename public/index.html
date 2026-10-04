@@ -4,14 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Errander Pilot</title>
+<link rel="icon" type="image/png" href="/assets/logo-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy:#152238; --navy-soft:#223252; --amber:#E2A63B; --amber-deep:#C88A22;
-    --paper:#F6F4EF; --paper-raise:#EDE9DE; --ink:#181B20; --slate:#5C6470;
-    --green:#3F7D5C; --teal:#2A6F77; --red:#B14B3E; --line:#DAD5C8; --white:#FFFFFF;
+    /* Brand palette sampled directly from the Errander logo */
+    --navy:#0B2A57; --navy-soft:#163F7A;        /* trust & reliability */
+    --green:#0E7A3B; --teal:#0E7A3B;             /* safety, service, "done" — teal alias kept for existing class names */
+    --amber:#FDC902; --amber-deep:#E09500;       /* speed, value, energy */
+    --paper:#FFFFFF; --paper-raise:#F2F4F7;      /* transparency & simplicity */
+    --ink:#181B20; --slate:#5C6470; --red:#B14B3E; --line:#DDE2E8; --white:#FFFFFF;
   }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
@@ -52,25 +56,31 @@
   .task-cat{font-weight:600; font-size:0.76rem; color:var(--teal); margin-bottom:2px;}
   .task-desc{font-weight:600; font-size:0.9rem; margin-bottom:3px;}
   .task-meta{font-size:0.76rem; color:var(--slate);}
-  .task-price{font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--green); white-space:nowrap;}
+  .task-price{font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--green); white-space:nowrap; text-align:right;}
+  .fee-line{font-size:0.68rem; color:var(--slate); white-space:nowrap; text-align:right; margin-top:1px;}
   .status-pill{display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 9px; border-radius:20px; margin-top:6px; margin-right:4px;}
-  .status-open{background:rgba(226,166,59,0.2); color:var(--amber-deep);}
-  .status-accepted{background:rgba(42,111,119,0.15); color:var(--teal);}
-  .status-completed{background:rgba(63,125,92,0.15); color:var(--green);}
-  .status-cancelled{background:rgba(177,75,62,0.12); color:var(--red);}
+  .status-open{background:rgba(224,149,0,0.2); color:var(--amber-deep);}
+  .status-accepted{background:rgba(14,122,59,0.15); color:var(--teal);}
+  .status-completed{background:rgba(14,122,59,0.15); color:var(--green);}
+  .status-flagged{background:rgba(177,75,62,0.12); color:var(--red);}
   .task-actions{display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; align-items:center;}
-  .quote-input{width:80px; padding:8px 9px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.83rem;}
-  .quote-item{border-top:1px solid var(--line); padding:7px 0; font-size:0.82rem; display:flex; justify-content:space-between; align-items:center; gap:8px;}
-  .quote-item:first-child{border-top:none;}
+  .amount-input{width:80px; padding:8px 9px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.83rem;}
+  .negotiation-box{border-top:1px solid var(--line); margin-top:9px; padding-top:9px;}
+  .nego-item{border:1px solid var(--line); border-radius:8px; padding:9px; margin-bottom:7px; background:var(--white);}
+  .nego-top{display:flex; justify-content:space-between; align-items:center; gap:8px;}
   .trust-note{font-size:0.76rem; color:var(--slate); background:var(--paper); border:1px dashed var(--line); border-radius:7px; padding:7px 9px; margin-bottom:10px;}
-  .verify-badge{display:inline-block; font-size:0.76rem; font-weight:600; padding:5px 12px; border-radius:20px; margin:6px 0;}
-  .badge-pending{background:rgba(226,166,59,0.2); color:var(--amber-deep);}
-  .badge-approved{background:rgba(63,125,92,0.15); color:var(--green);}
+  .sponsor-note{font-size:0.78rem; color:var(--amber-deep); background:rgba(224,149,0,0.12); border:1px solid rgba(224,149,0,0.4); border-radius:7px; padding:8px 10px; margin-bottom:10px; font-weight:600;}
+  .verify-badge{display:inline-block; font-size:0.76rem; font-weight:600; padding:5px 12px; border-radius:20px; margin:6px 4px 6px 0;}
+  .badge-pending{background:rgba(224,149,0,0.2); color:var(--amber-deep);}
+  .badge-approved{background:rgba(14,122,59,0.15); color:var(--green);}
   .badge-rejected{background:rgba(177,75,62,0.12); color:var(--red);}
   .badge-none{background:var(--paper-raise); color:var(--slate);}
+  .uni-badge{display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(224,149,0,0.25); color:var(--amber-deep); margin-left:4px;}
+  .sponsor-badge{display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(224,149,0,0.25); color:var(--amber-deep); margin-left:4px;}
+  .flag-badge{display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(177,75,62,0.15); color:var(--red); margin-left:4px;}
   .stat{display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--line); font-size:0.83rem;}
   .stat:last-child{border-bottom:none;}
-  .contact-box{background:rgba(63,125,92,0.1); border:1px solid rgba(63,125,92,0.3); border-radius:7px; padding:8px 10px; font-size:0.82rem; margin:8px 0; color:var(--green); font-weight:600; display:flex; align-items:center;}
+  .contact-box{background:rgba(14,122,59,0.1); border:1px solid rgba(14,122,59,0.3); border-radius:7px; padding:8px 10px; font-size:0.82rem; margin:8px 0; color:var(--green); font-weight:600; display:flex; align-items:center;}
   .stars{display:flex; gap:4px; margin:6px 0;}
   .star-pick{font-size:1.3rem; cursor:pointer; color:var(--line); background:none; border:none; padding:0;}
   .star-pick.on{color:var(--amber-deep);}
@@ -82,8 +92,9 @@
   .chat-row{display:flex;}
   .chat-input-row{display:flex; gap:6px; margin-top:4px;}
   .chat-input-row input{flex:1; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.85rem;}
-  .busy-note{background:rgba(226,166,59,0.15); border:1px solid rgba(226,166,59,0.4); color:var(--amber-deep); border-radius:7px; padding:8px 10px; font-size:0.8rem; margin-bottom:10px;}
+  .busy-note{background:rgba(224,149,0,0.15); border:1px solid rgba(224,149,0,0.4); color:var(--amber-deep); border-radius:7px; padding:8px 10px; font-size:0.8rem; margin-bottom:10px;}
   .photo-thumb{width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--line); vertical-align:middle; margin-right:8px;}
+  .proof-photo{width:64px; height:64px; border-radius:8px; object-fit:cover; border:1px solid var(--line); margin-right:6px;}
   .id-type-row{display:flex; gap:8px; margin-bottom:10px;}
   .id-type-row .chip{flex:1; text-align:center;}
   .photo-preview{width:64px; height:64px; border-radius:50%; object-fit:cover; border:1px solid var(--line); margin-top:6px; display:block;}
@@ -110,7 +121,10 @@
 
 <header>
   <div class="wrap">
-    <div class="brand" onclick="goHome()">Errander <span style="font-weight:400; font-size:0.68rem; color:var(--amber);">· pilot</span></div>
+    <div class="brand" onclick="goHome()" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+      <img src="/assets/logo-icon.png" alt="" style="height:30px; width:auto;">
+      Errander <span style="font-weight:400; font-size:0.68rem; color:var(--amber);">· pilot</span>
+    </div>
     <div class="hdr-actions">
       <button class="bell-btn" onclick="enableNotifications()" title="Enable notifications">🔔</button>
       <span class="hdr-name hidden" id="hdr-name"></span>
@@ -127,15 +141,15 @@
     <!-- HOME -->
     <div class="view show" id="view-home">
       <div class="panel" style="text-align:center;">
-        <h1 style="margin:6px 0 2px;">Errander</h1>
+        <img src="/assets/logo-hero.png" alt="Errander — Anything Legal. Anywhere. Anytime." style="width:100%; max-width:320px; height:auto; margin:0 auto 8px;">
         <p style="margin:0 0 12px;"><em>Your Kpakpa money making place</em></p>
-        <p class="muted" style="margin:0 0 18px;">Post any legal task — deliveries, errands, home services and more — and get matched with a nearby, ID-verified Errander. Or become an Errander yourself and start earning, one job at a time.</p>
+        <p class="muted" style="margin:0 0 18px;">Post any legal task — deliveries, errands, home services and more. Negotiate a fair price with a nearby, ID-verified Errander. Or become an Errander yourself and start earning, one job at a time.</p>
         <button class="btn btn-primary btn-block" onclick="switchView('auth')">Get started — log in or sign up</button>
       </div>
       <div class="panel">
         <h2>How it works</h2>
         <div class="stat"><span>1. Create one profile</span><span class="muted">Use it as a Boss, or apply to be an Errander too</span></div>
-        <div class="stat"><span>2. Post or browse</span><span class="muted">A Boss posts a task; nearby Erranders see it</span></div>
+        <div class="stat"><span>2. Post &amp; negotiate</span><span class="muted">Boss sets an offer; Erranders can counter</span></div>
         <div class="stat"><span>3. Match, chat &amp; confirm</span><span class="muted">Boss confirms it's done — both sides rate</span></div>
       </div>
     </div>
@@ -147,13 +161,11 @@
           <button class="active" id="auth-tab-login" onclick="setAuthMode('login')">Log in</button>
           <button id="auth-tab-signup" onclick="setAuthMode('signup')">Create account</button>
         </div>
-
         <div id="auth-login-form">
           <div class="field"><label>Phone number</label><input id="li-phone" type="tel" placeholder="024 000 0000"></div>
           <div class="field"><label>PIN</label><input id="li-pin" type="password" inputmode="numeric" placeholder="4+ digit PIN"></div>
           <button class="btn btn-primary btn-block" onclick="doLogin()">Log in</button>
         </div>
-
         <div id="auth-signup-form" class="hidden">
           <div class="field"><label>Full name</label><input id="su-name" type="text" placeholder="Your name"></div>
           <div class="field"><label>Phone number</label><input id="su-phone" type="tel" placeholder="024 000 0000"></div>
@@ -174,16 +186,10 @@
       <div class="panel">
         <div class="profile-card">
           <img class="profile-photo" id="profile-photo" alt="">
-          <div>
-            <div class="profile-name" id="profile-name"></div>
-            <div class="muted" id="profile-phone"></div>
-          </div>
+          <div><div class="profile-name" id="profile-name"></div><div class="muted" id="profile-phone"></div></div>
         </div>
-        <span class="verify-badge" id="errander-badge"></span>
-        <div>
-          <input type="file" id="edit-photo-input" accept="image/*" capture="user" class="hidden" onchange="handleProfilePhotoChange(this)">
-          <button class="btn btn-ghost" onclick="document.getElementById('edit-photo-input').click()">Change photo</button>
-        </div>
+        <span class="verify-badge" id="errander-badge"></span><span class="uni-badge hidden" id="profile-uni-badge">🎓 Errander University Certified</span><span class="flag-badge hidden" id="profile-flag-badge"></span>
+        <div><input type="file" id="edit-photo-input" accept="image/*" capture="user" class="hidden" onchange="handleProfilePhotoChange(this)"><button class="btn btn-ghost" onclick="document.getElementById('edit-photo-input').click()">Change photo</button></div>
       </div>
 
       <nav class="tabs">
@@ -203,8 +209,18 @@
             <div class="field"><label>Location</label><input id="c-loc" type="text" placeholder="e.g. Adum, Kumasi"></div>
             <div class="field"><label>Urgency / timing</label><input id="c-urgency" type="text" placeholder="e.g. Today, or Sat 9am"></div>
           </div>
-          <div class="field" id="c-budget-field"><label>Budget (GHS)</label><input id="c-budget" type="number" value="40"></div>
-          <div class="field hidden" id="c-quote-field"><div class="trust-note" style="margin:0;">This category requests quotes instead of a fixed budget.</div></div>
+          <div class="field">
+            <label>Your offer (GHS) <span class="muted">— Erranders can accept or counter this</span></label>
+            <input id="c-budget" type="number" value="40">
+          </div>
+          <div class="field hidden" id="sponsor-field">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="c-sponsored" style="width:auto;" onchange="updateFeePreview()">
+              🎓 KNUST-sponsored pilot slot — Errander (the company) pays, free for you
+            </label>
+            <div class="muted" id="sponsor-slots" style="margin-top:4px;"></div>
+          </div>
+          <div class="trust-note" id="c-fee-preview"></div>
           <button class="btn btn-primary btn-block" onclick="postTask()">Post task</button>
         </div>
         <div class="panel">
@@ -232,7 +248,6 @@
           <button class="btn btn-primary btn-block" onclick="applyErrander()">Submit for verification</button>
           <p class="muted" id="apply-error" style="display:none; color:var(--red); margin:8px 0 0;"></p>
         </div>
-
         <div class="hidden" id="errander-dashboard-inner">
           <button type="button" class="btn-loc" onclick="captureErranderLocation()" id="e-loc-btn">📍 Enable location (sorts tasks by distance)</button>
           <div class="panel"><h2>Open tasks near you</h2><div id="open-tasks"></div></div>
@@ -248,14 +263,8 @@
 
       <!-- REPORT -->
       <div class="tab-panel" id="dash-report">
-        <div class="panel">
-          <h2>As a Boss</h2>
-          <div id="report-boss"></div>
-        </div>
-        <div class="panel">
-          <h2>As an Errander</h2>
-          <div id="report-errander"></div>
-        </div>
+        <div class="panel"><h2>As a Boss</h2><div id="report-boss"></div></div>
+        <div class="panel"><h2>As an Errander</h2><div id="report-errander"></div></div>
         <button class="btn btn-ghost" onclick="resetDemo()">Reset demo data</button>
       </div>
     </div>
@@ -272,18 +281,10 @@
 
     <!-- ADMIN DASHBOARD -->
     <div class="view" id="view-admin">
-      <div class="panel">
-        <h2>Pending Errander applications</h2>
-        <div id="admin-pending"></div>
-      </div>
-      <div class="panel">
-        <h2>All users</h2>
-        <div id="admin-users"></div>
-      </div>
-      <div class="panel">
-        <h2>Task overview</h2>
-        <div id="admin-task-stats"></div>
-      </div>
+      <div class="panel"><h2>🎓 Sponsored jobs awaiting review</h2><div id="admin-sponsor-review"></div></div>
+      <div class="panel"><h2>Pending Errander applications</h2><div id="admin-pending"></div></div>
+      <div class="panel"><h2>All users</h2><div id="admin-users"></div></div>
+      <div class="panel"><h2>Task overview</h2><div id="admin-task-stats"></div></div>
       <button class="btn btn-ghost" onclick="switchView('home'); adminAuthed=false;">Log out of admin</button>
     </div>
 
@@ -293,13 +294,7 @@
 
 <script>
   const API = '/.netlify/functions/api';
-  const CATEGORIES = [
-    { id:'Delivery & Pickup', quote:false },
-    { id:'Errands & Queuing', quote:false },
-    { id:'Home Services · Plumbing', quote:true },
-    { id:'Home Services · Cleaning', quote:true },
-    { id:'Business & Field', quote:false }
-  ];
+  const CATEGORIES = ['Delivery & Pickup','Errands & Queuing','Home Services · Plumbing','Home Services · Cleaning','Business & Field'];
 
   let activeCategory = CATEGORIES[0];
   let allTasks = [];
@@ -310,6 +305,7 @@
   let adminAuthed = false;
   let signupIdType = 'ghana_card';
   let authMode = 'login';
+  let feeRate = 0.10, sponsoredCap = 100, sponsoredUsed = 0;
 
   /* ---------- helpers ---------- */
   function timeAgo(ts){
@@ -323,6 +319,12 @@
     const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
     const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+  function fee(amount){ return Math.round(amount * feeRate); }
+  function priceBlock(amount, sponsored){
+    if(sponsored) return `<div><div class="task-price">GHS ${amount}</div><div class="fee-line">🎓 Sponsored — no charge to Boss</div></div>`;
+    const f = fee(amount), total = amount + f;
+    return `<div><div class="task-price">GHS ${amount}</div><div class="fee-line">+GHS ${f} fee = GHS ${total} Boss pays</div></div>`;
   }
   function toast(msg){
     const stack = document.getElementById('toast-stack');
@@ -405,6 +407,21 @@
     const res = await fetch(API + '?action=' + action + (method==='GET' && body ? '&' + new URLSearchParams(body) : ''), opts);
     return res.json();
   }
+  async function loadConfig(){
+    const res = await api('config','GET');
+    if(res.feeRate!=null) feeRate = res.feeRate;
+    if(res.sponsoredCap!=null) sponsoredCap = res.sponsoredCap;
+    if(res.sponsoredUsed!=null) sponsoredUsed = res.sponsoredUsed;
+    const field = document.getElementById('sponsor-field');
+    const slotsEl = document.getElementById('sponsor-slots');
+    if(sponsoredUsed < sponsoredCap){
+      field.classList.remove('hidden');
+      slotsEl.textContent = `${sponsoredCap - sponsoredUsed} of ${sponsoredCap} sponsored slots remaining`;
+    } else {
+      field.classList.add('hidden');
+    }
+    updateFeePreview();
+  }
 
   /* ---------- view switching ---------- */
   function switchView(view){
@@ -448,16 +465,13 @@
     myPhone = user.phone; myProfile = user;
     localStorage.setItem('my_phone', myPhone);
     document.getElementById('auth-error').style.display = 'none';
-    renderHeaderAuth();
-    renderProfileCard();
-    switchView('dashboard');
-    refresh();
+    renderHeaderAuth(); renderProfileCard();
+    switchView('dashboard'); refresh();
   }
   function logout(){
     myPhone = null; myProfile = null;
     localStorage.removeItem('my_phone');
-    renderHeaderAuth();
-    switchView('home');
+    renderHeaderAuth(); switchView('home');
   }
   function renderHeaderAuth(){
     document.getElementById('hdr-name').classList.toggle('hidden', !myProfile);
@@ -479,12 +493,12 @@
     const labels = { none:'Not an Errander yet', pending:'⏳ Errander application pending review', approved:'✅ Approved Errander', rejected:'❌ Errander application rejected' };
     badge.className = 'verify-badge badge-' + st;
     badge.textContent = labels[st];
-
+    document.getElementById('profile-uni-badge').classList.toggle('hidden', !(myProfile.errander && myProfile.errander.universityCertified));
+    const flagBadge = document.getElementById('profile-flag-badge');
+    if(myProfile.flagCount > 0){ flagBadge.textContent = `⚠️ ${myProfile.flagCount} flagged job${myProfile.flagCount>1?'s':''}`; flagBadge.classList.remove('hidden'); }
+    else flagBadge.classList.add('hidden');
     document.getElementById('errander-apply-panel').classList.toggle('hidden', st === 'approved' || st === 'pending');
     document.getElementById('errander-dashboard-inner').classList.toggle('hidden', st !== 'approved');
-    if(st === 'pending'){
-      document.getElementById('dash-jobs').insertAdjacentHTML('afterbegin', '');
-    }
   }
   function handleProfilePhotoChange(input){
     const file = input.files && input.files[0];
@@ -500,22 +514,22 @@
     document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
   }
-
   function buildCatChips(){
     const wrap = document.getElementById('cat-chips');
     CATEGORIES.forEach((c,i)=>{
       const b = document.createElement('button');
       b.className = 'chip' + (i===0 ? ' active' : '');
-      b.textContent = c.id;
-      b.onclick = ()=>{
-        activeCategory = c;
-        document.querySelectorAll('#cat-chips .chip').forEach(x=>x.classList.remove('active'));
-        b.classList.add('active');
-        document.getElementById('c-budget-field').classList.toggle('hidden', c.quote);
-        document.getElementById('c-quote-field').classList.toggle('hidden', !c.quote);
-      };
+      b.textContent = c;
+      b.onclick = ()=>{ activeCategory = c; document.querySelectorAll('#cat-chips .chip').forEach(x=>x.classList.remove('active')); b.classList.add('active'); };
       wrap.appendChild(b);
     });
+  }
+  function updateFeePreview(){
+    const amt = Number(document.getElementById('c-budget').value) || 0;
+    const sponsored = document.getElementById('c-sponsored').checked;
+    document.getElementById('c-fee-preview').innerHTML = sponsored
+      ? `🎓 Sponsored slot — Errander receives GHS ${amt}, the company covers it. <b>You pay nothing.</b>`
+      : `Errander receives GHS ${amt} · platform fee (${Math.round(feeRate*100)}%) GHS ${fee(amt)} · <b>you pay GHS ${amt+fee(amt)}</b>`;
   }
   function captureClientLocation(){
     if(!navigator.geolocation){ toast('Location not supported.'); return; }
@@ -542,19 +556,16 @@
       const fresh = data.tasks || [];
       checkNotifications(fresh);
       allTasks = fresh;
-      renderClientTasks();
-      renderOpenTasks();
-      renderActiveTask();
-      renderErranderRatePrompt();
-      renderEarnings();
-      renderReport();
+      renderClientTasks(); renderOpenTasks(); renderActiveTask();
+      renderErranderRatePrompt(); renderEarnings(); renderReport();
+      // refresh own profile occasionally to pick up flagCount / review outcomes
+      api('get-user','GET',{phone:myPhone}).then(r=>{ if(r.user){ myProfile = r.user; renderProfileCard(); } });
     }catch(e){ /* retried next poll */ }
   }
-
   function checkNotifications(fresh){
     if(prevSnapshot === null){
       prevSnapshot = {};
-      fresh.forEach(t=> prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:(t.messages||[]).length });
+      fresh.forEach(t=> prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:(t.messages||[]).length, reviewStatus:t.reviewStatus });
       return;
     }
     fresh.forEach(t=>{
@@ -568,40 +579,69 @@
         if(t.erranderPhone === myPhone){
           if(prev.status === 'accepted' && t.status === 'completed') toast(`✅ Boss confirmed — payout released for "${t.desc.slice(0,30)}…"`);
         }
+        if(involvesMe && prev.reviewStatus === 'pending' && t.reviewStatus === 'approved') toast(`✅ Sponsored job approved — payout released.`);
+        if(involvesMe && prev.reviewStatus === 'pending' && t.reviewStatus === 'rejected') toast(`❌ Sponsored job flagged on review — not paid.`);
         const newMsgCount = (t.messages||[]).length;
         if(involvesMe && newMsgCount > prev.msgCount){
           const last = t.messages[t.messages.length-1];
-          const myName = (t.clientPhone === myPhone) ? myProfile.name : myProfile.name;
           if(last && last.sender !== myProfile.name) toast(`💬 ${last.sender}: ${last.text.slice(0,50)}`);
         }
       }
-      prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:(t.messages||[]).length };
+      prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:(t.messages||[]).length, reviewStatus:t.reviewStatus };
     });
   }
 
   /* ---------- Boss side ---------- */
   async function postTask(){
     const task = {
-      category: activeCategory.id,
-      quoteRequest: activeCategory.quote,
+      category: activeCategory,
       desc: document.getElementById('c-desc').value.trim(),
       loc: document.getElementById('c-loc').value.trim(),
       lat: clientCoords ? clientCoords.lat : null,
       lng: clientCoords ? clientCoords.lng : null,
       urgency: document.getElementById('c-urgency').value.trim(),
       budget: document.getElementById('c-budget').value,
-      clientPhone: myPhone
+      clientPhone: myPhone,
+      sponsored: document.getElementById('c-sponsored').checked
     };
     if(!task.desc){ toast('Describe the task first.'); return; }
     const res = await api('create', 'POST', task);
     if(res.error){ toast(res.error); return; }
     document.getElementById('c-desc').value = '';
+    document.getElementById('c-sponsored').checked = false;
+    loadConfig();
     refresh();
   }
   async function cancelTask(id){
     if(!confirm('Cancel this task?')) return;
     await api('cancel', 'POST', { id });
     refresh();
+  }
+  function negotiationHtmlForBoss(t){
+    if(t.status !== 'open' || !t.negotiations.length) return '';
+    const rows = t.negotiations.map(n=>{
+      const waitingOnBoss = n.lastBy === 'errander';
+      return `<div class="nego-item">
+        <div class="nego-top">
+          <span>${contactPhoto(n.erranderPhoto)}${n.erranderName}</span>
+          ${priceBlock(n.amount, false)}
+        </div>
+        <div class="muted" style="margin:4px 0;">${waitingOnBoss ? 'Waiting for your response' : 'You countered — waiting for them'}</div>
+        ${waitingOnBoss ? `
+          <div class="task-actions">
+            <button class="btn btn-primary" onclick='acceptOffer(${JSON.stringify(t.id)},${JSON.stringify(n.erranderPhone)})'>Accept GHS ${n.amount}</button>
+            <input type="number" class="amount-input" id="bc-${t.id}-${n.erranderPhone}" placeholder="Counter GHS">
+            <button class="btn btn-ghost" onclick='sendCounter(${JSON.stringify(t.id)},${JSON.stringify(n.erranderPhone)},"boss")'>Counter</button>
+          </div>` : ''}
+      </div>`;
+    }).join('');
+    return `<div class="negotiation-box"><div class="muted" style="font-weight:600; margin-bottom:6px;">Offers from Erranders</div>${rows}</div>`;
+  }
+  function reviewStatusHtml(t){
+    if(!t.sponsored || !t.bossConfirmedAt) return '';
+    if(t.reviewStatus === 'pending') return `<div class="sponsor-note">🎓 Confirmed — awaiting Errander's review before this counts as complete.</div>`;
+    if(t.reviewStatus === 'rejected') return `<div class="trust-note" style="color:var(--red); border-color:var(--red);">❌ Flagged during review — not marked complete, no payout.</div>`;
+    return '';
   }
   function renderClientTasks(){
     if(!myProfile) return;
@@ -614,20 +654,13 @@
     activeWrap.innerHTML = active.length ? '' : '<p class="muted">Nothing active right now.</p>';
     active.forEach(t=>{
       const el = document.createElement('div'); el.className = 'task';
-      const pill = `<span class="status-pill status-${t.status}">${t.stage === 'delivered' ? 'delivered' : t.status}</span>`;
-      let quotesHtml = '';
-      if(t.quoteRequest && t.status === 'open' && t.quotes.length){
-        quotesHtml = t.quotes.map(q => `
-          <div class="quote-item">
-            <span>${contactPhoto(q.erranderPhoto)}${q.erranderName} — GHS ${q.price} <span class="muted">${q.note ? '· ' + q.note : ''}</span></span>
-            <button class="btn btn-ghost" onclick='acceptQuote(${JSON.stringify(t.id)},${JSON.stringify(q.erranderName)},${JSON.stringify(q.erranderPhone)},${JSON.stringify(q.erranderPhoto)},${q.price})'>Accept</button>
-          </div>`).join('');
-      }
+      const statusLabel = t.status === 'flagged' ? 'flagged' : (t.stage === 'delivered' ? 'delivered' : t.status);
+      const pill = `<span class="status-pill status-${t.status === 'flagged' ? 'flagged' : t.status}">${statusLabel}</span>${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}`;
       let contactHtml = '';
       if(t.status !== 'open' && t.erranderName){
         contactHtml = `<div class="contact-box">${contactPhoto(t.erranderPhoto)}📞 ${t.erranderName} — ${t.erranderPhone || 'no number given'}</div>`;
       }
-      let confirmHtml = t.stage === 'delivered' ? `<div class="task-actions"><button class="btn btn-primary" onclick="confirmTask('${t.id}')">Confirm job complete</button></div>` : '';
+      let confirmHtml = (t.stage === 'delivered' && !t.bossConfirmedAt) ? `<div class="task-actions"><button class="btn btn-primary" onclick="confirmTask('${t.id}')">Confirm job complete</button></div>` : '';
       let cancelHtml = t.status === 'open' ? `<div class="task-actions"><button class="btn btn-danger" onclick="cancelTask('${t.id}')">Cancel task</button></div>` : '';
       let chatBoxHtml = t.erranderName ? chatHtml(t, myProfile.name) : '';
       el.innerHTML = `
@@ -638,9 +671,9 @@
             <div class="task-meta">${t.loc} · ${t.urgency} · ${timeAgo(t.createdAt)}</div>
             ${pill}
           </div>
-          ${t.budget ? `<div class="task-price">GHS ${t.budget}</div>` : ''}
+          ${priceBlock(t.budget, t.sponsored)}
         </div>
-        ${contactHtml}${quotesHtml}${confirmHtml}${cancelHtml}${chatBoxHtml}`;
+        ${contactHtml}${negotiationHtmlForBoss(t)}${reviewStatusHtml(t)}${confirmHtml}${cancelHtml}${chatBoxHtml}`;
       activeWrap.appendChild(el);
     });
 
@@ -658,12 +691,25 @@
     histWrap.innerHTML = history.length ? '' : '<p class="muted">Nothing here yet.</p>';
     history.forEach(t=>{
       const el = document.createElement('div'); el.className = 'task';
-      el.innerHTML = `<div class="task-desc">${t.desc}</div><div class="task-meta">${t.erranderName} · GHS ${t.budget} · you rated them ${'★'.repeat(t.ratingForErrander)}</div>`;
+      el.innerHTML = `<div class="task-desc">${t.desc}</div><div class="task-meta">${t.erranderName} · GHS ${t.budget}${t.sponsored ? ' (sponsored)' : ' (+GHS ' + fee(t.budget) + ' fee)'} · you rated them ${'★'.repeat(t.ratingForErrander)}</div>`;
       histWrap.appendChild(el);
     });
   }
-  async function acceptQuote(id, erranderName, erranderPhone, erranderPhoto, price){
-    await api('accept', 'POST', { id, erranderPhone, acceptedPrice: price });
+  async function acceptOffer(id, erranderPhone){
+    const entry = allTasks.find(t=>t.id===id).negotiations.find(n=>n.erranderPhone===erranderPhone);
+    const res = await api('accept', 'POST', { id, erranderPhone, acceptedPrice: entry ? entry.amount : undefined });
+    if(res.error) toast(res.error);
+    refresh();
+  }
+  async function sendCounter(id, erranderPhone, by){
+    const input = document.getElementById(by==='boss' ? `bc-${id}-${erranderPhone}` : `ec-${id}`);
+    const amount = parseInt(input.value, 10);
+    if(!amount || amount <= 0){ input.style.borderColor = 'var(--red)'; return; }
+    const payload = { id, erranderPhone, amount, by };
+    if(by==='boss') payload.bossPhone = myPhone;
+    const res = await api('counter', 'POST', payload);
+    if(res.error) toast(res.error);
+    input.value = '';
     refresh();
   }
   async function confirmTask(id){
@@ -702,6 +748,25 @@
     renderProfileCard();
     toast('Application submitted — pending review.');
   }
+  function negotiationHtmlForErrander(t){
+    const entry = t.negotiations.find(n => n.erranderPhone === myPhone);
+    if(!entry){
+      return `<div class="task-actions">
+        <button class="btn btn-primary" onclick="acceptTask('${t.id}')">Accept GHS ${t.budget}</button>
+        <input type="number" class="amount-input" id="ec-${t.id}" placeholder="Counter GHS">
+        <button class="btn btn-ghost" onclick='sendCounter(${JSON.stringify(t.id)},${JSON.stringify(myPhone)},"errander")'>Counter</button>
+      </div>`;
+    }
+    if(entry.lastBy === 'errander'){
+      return `<p class="muted" style="margin-top:8px;">Your offer: GHS ${entry.amount} — waiting for the Boss.</p>`;
+    }
+    return `<div class="muted" style="margin-top:8px;">Boss countered: GHS ${entry.amount}</div>
+      <div class="task-actions">
+        <button class="btn btn-primary" onclick="acceptTask('${t.id}',${entry.amount})">Accept GHS ${entry.amount}</button>
+        <input type="number" class="amount-input" id="ec-${t.id}" placeholder="Counter GHS">
+        <button class="btn btn-ghost" onclick='sendCounter(${JSON.stringify(t.id)},${JSON.stringify(myPhone)},"errander")'>Counter again</button>
+      </div>`;
+  }
   function renderOpenTasks(){
     if(!myProfile || !myProfile.errander || myProfile.errander.status !== 'approved') return;
     const wrap = document.getElementById('open-tasks');
@@ -711,41 +776,30 @@
       open = open.map(t=> ({ t, d: (t.lat!=null && t.lng!=null) ? distKm(erranderCoords.lat, erranderCoords.lng, t.lat, t.lng) : null }))
                  .sort((a,b)=> (a.d ?? 9999) - (b.d ?? 9999)).map(x=>x.t);
     }
-    if(busy){ wrap.innerHTML = '<div class="busy-note">🔒 You have an active task — finish it before accepting or quoting on another.</div>'; return; }
+    if(busy){ wrap.innerHTML = '<div class="busy-note">🔒 You have an active task — finish it before accepting or offering on another.</div>'; return; }
     if(open.length === 0){ wrap.innerHTML = '<p class="muted">No open tasks right now.</p>'; return; }
     wrap.innerHTML = '';
     open.forEach(t=>{
       let distLabel = '';
       if(erranderCoords && t.lat!=null && t.lng!=null) distLabel = ' · ' + distKm(erranderCoords.lat, erranderCoords.lng, t.lat, t.lng).toFixed(1) + ' km away';
       const el = document.createElement('div'); el.className = 'task';
-      const actions = t.quoteRequest
-        ? `<div class="task-actions"><input type="number" class="quote-input" id="qi-${t.id}" placeholder="GHS"><button class="btn btn-primary" onclick="sendQuote('${t.id}')">Send quote</button></div>`
-        : `<div class="task-actions"><button class="btn btn-primary" onclick="acceptTask('${t.id}')">Accept</button></div>`;
       el.innerHTML = `
         <div class="task-top">
           <div>
-            <div class="task-cat">${t.category}</div>
+            <div class="task-cat">${t.category}${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}</div>
             <div class="task-desc">${t.desc}</div>
             <div class="task-meta">${contactPhoto(t.clientPhoto)}${t.loc}${distLabel} · ${t.urgency} · ${t.clientName} · ${timeAgo(t.createdAt)}</div>
           </div>
-          ${t.budget ? `<div class="task-price">GHS ${t.budget}</div>` : '<div class="task-price" style="color:var(--amber-deep);">Quote</div>'}
+          ${priceBlock(t.budget, t.sponsored)}
         </div>
-        ${actions}`;
+        ${t.sponsored ? '<div class="sponsor-note">🎓 Pickup &amp; delivery photos required for this sponsored job.</div>' : ''}
+        ${negotiationHtmlForErrander(t)}`;
       wrap.appendChild(el);
     });
   }
-  async function acceptTask(id){
-    const res = await api('accept', 'POST', { id, erranderPhone: myPhone });
+  async function acceptTask(id, acceptedPrice){
+    const res = await api('accept', 'POST', { id, erranderPhone: myPhone, acceptedPrice });
     if(res.error) toast(res.error);
-    refresh();
-  }
-  async function sendQuote(id){
-    const input = document.getElementById('qi-' + id);
-    const price = parseInt(input.value, 10);
-    if(!price || price <= 0){ input.style.borderColor = 'var(--red)'; return; }
-    const res = await api('quote', 'POST', { id, erranderPhone: myPhone, price });
-    if(res.error) toast(res.error);
-    input.value = '';
     refresh();
   }
   function renderActiveTask(){
@@ -755,21 +809,46 @@
     const wrap = document.getElementById('active-task');
     if(!t){ panel.classList.add('hidden'); return; }
     panel.classList.remove('hidden');
-    const labels = { accepted:'Accepted — head to pickup.', picked_up:'Picked up — on the way.', delivered:'Delivered — waiting for the Boss to confirm.' };
+    const labels = { accepted:'Accepted — head to pickup.', picked_up:'Picked up — on the way.', delivered:'Delivered.' };
     const buttons = { accepted:'Confirm pickup', picked_up:'Confirm delivery' };
-    const btnHtml = t.stage === 'delivered'
-      ? '<p class="muted">Waiting for the Boss to confirm — payout releases automatically once they do.</p>'
-      : `<button class="btn btn-primary" onclick="advanceTask('${t.id}')">${buttons[t.stage]}</button>`;
+
+    let actionHtml;
+    if(t.stage === 'delivered'){
+      actionHtml = t.sponsored && t.reviewStatus === 'pending'
+        ? '<div class="sponsor-note">🎓 Boss confirmed — awaiting Errander review before payout.</div>'
+        : '<p class="muted">Waiting for the Boss to confirm — payout releases automatically once they do.</p>';
+    } else if(t.sponsored){
+      actionHtml = `<input type="file" accept="image/*" capture="environment" id="proof-${t.id}" class="hidden" onchange="advanceWithPhoto('${t.id}', this)">
+        <button class="btn btn-primary" onclick="document.getElementById('proof-${t.id}').click()">📷 ${buttons[t.stage]} (photo required)</button>`;
+    } else {
+      actionHtml = `<button class="btn btn-primary" onclick="advanceTask('${t.id}')">${buttons[t.stage]}</button>`;
+    }
+
+    const proofsHtml = (t.pickupPhoto || t.deliveryPhoto) ? `<div style="margin-top:8px;">
+        ${t.pickupPhoto ? `<img src="${t.pickupPhoto}" class="proof-photo" alt="Pickup proof">` : ''}
+        ${t.deliveryPhoto ? `<img src="${t.deliveryPhoto}" class="proof-photo" alt="Delivery proof">` : ''}
+      </div>` : '';
+
     wrap.innerHTML = `
-      <div class="task-desc">${t.desc}</div>
+      <div class="task-desc">${t.desc}${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}</div>
       <div class="task-meta">${t.loc} · ${t.urgency}</div>
       <div class="contact-box">${contactPhoto(t.clientPhoto)}📞 ${t.clientName} — ${t.clientPhone || 'no number given'}</div>
       <div class="task-price" style="margin:6px 0;">GHS ${t.budget}</div>
       <p class="muted">${labels[t.stage]}</p>
-      ${btnHtml}
+      ${proofsHtml}
+      ${actionHtml}
       ${chatHtml(t, myProfile.name)}`;
   }
   async function advanceTask(id){ await api('advance', 'POST', { id }); refresh(); }
+  function advanceWithPhoto(id, input){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    fileToResizedDataUrl(file, 500).then(async photo=>{
+      const res = await api('advance', 'POST', { id, photo });
+      if(res.error) toast(res.error);
+      refresh();
+    });
+  }
   function renderErranderRatePrompt(){
     if(!myProfile) return;
     const wrap = document.getElementById('errander-rate-prompt');
@@ -801,25 +880,24 @@
     histWrap.innerHTML = mine.length ? '' : '<p class="muted">Nothing here yet.</p>';
     mine.forEach(t=>{
       const el = document.createElement('div'); el.className = 'task';
-      el.innerHTML = `<div class="task-desc">${t.desc}</div><div class="task-meta">${t.clientName} · GHS ${t.budget}${t.ratingForErrander ? ' · they rated you ' + '★'.repeat(t.ratingForErrander) : ''}</div>`;
+      el.innerHTML = `<div class="task-desc">${t.desc}${t.sponsored ? ' <span class="sponsor-badge">🎓</span>' : ''}</div><div class="task-meta">${t.clientName} · GHS ${t.budget}${t.ratingForErrander ? ' · they rated you ' + '★'.repeat(t.ratingForErrander) : ''}</div>`;
       histWrap.appendChild(el);
     });
   }
 
-  /* ---------- report ---------- */
   function renderReport(){
     if(!myProfile) return;
     const posted = allTasks.filter(t => t.clientPhone === myPhone);
     const bossCompleted = posted.filter(t=>t.status==='completed');
     const bossActive = posted.filter(t=>t.status==='open' || t.status==='accepted');
-    const bossCancelled = posted.filter(t=>t.status==='cancelled');
+    const bossCancelled = posted.filter(t=>t.status==='cancelled' || t.status==='flagged');
+    const totalSpent = bossCompleted.reduce((s,t)=> s + (t.sponsored ? 0 : (Number(t.budget)||0)+fee(Number(t.budget)||0)), 0);
     document.getElementById('report-boss').innerHTML = `
       <div class="stat"><span>Total tasks requested</span><span>${posted.length}</span></div>
       <div class="stat"><span>Completed</span><span>${bossCompleted.length}</span></div>
       <div class="stat"><span>Active / open</span><span>${bossActive.length}</span></div>
-      <div class="stat"><span>Cancelled</span><span>${bossCancelled.length}</span></div>
-      <div class="stat"><span>Total spent (completed)</span><span>GHS ${bossCompleted.reduce((s,t)=>s+(Number(t.budget)||0),0)}</span></div>`;
-
+      <div class="stat"><span>Cancelled / flagged</span><span>${bossCancelled.length}</span></div>
+      <div class="stat"><span>Total spent incl. fees</span><span>GHS ${totalSpent}</span></div>`;
     if(myProfile.errander && myProfile.errander.status === 'approved'){
       const jobs = allTasks.filter(t => t.erranderPhone === myPhone);
       const completed = jobs.filter(t=>t.status==='completed');
@@ -834,11 +912,11 @@
       document.getElementById('report-errander').innerHTML = '<p class="muted">Not an approved Errander yet — apply from the "Find Jobs" tab.</p>';
     }
   }
-
   async function resetDemo(){
     if(!confirm('Reset all pilot task data for everyone?')) return;
     await api('reset', 'POST', {});
     prevSnapshot = null;
+    loadConfig();
     refresh();
   }
 
@@ -859,15 +937,32 @@
     const users = usersRes.users || [];
     const tasks = tasksRes.tasks || [];
 
+    const sponsorWrap = document.getElementById('admin-sponsor-review');
+    const pendingSponsored = tasks.filter(t => t.sponsored && t.reviewStatus === 'pending');
+    sponsorWrap.innerHTML = pendingSponsored.length ? '' : '<p class="muted">Nothing awaiting review.</p>';
+    pendingSponsored.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `
+        <div class="task-desc">${t.desc}</div>
+        <div class="task-meta">Boss: ${t.clientName} (${t.clientPhone}) · Errander: ${t.erranderName} (${t.erranderPhone}) · GHS ${t.budget}</div>
+        <div style="margin-top:8px;">
+          ${t.pickupPhoto ? `<img src="${t.pickupPhoto}" class="proof-photo" alt="Pickup"><span class="muted">pickup</span>` : '<span class="muted">No pickup photo</span>'}
+          ${t.deliveryPhoto ? `<img src="${t.deliveryPhoto}" class="proof-photo" alt="Delivery" style="margin-left:10px;"><span class="muted">delivery</span>` : '<span class="muted">No delivery photo</span>'}
+        </div>
+        <div class="task-actions">
+          <button class="btn btn-primary" onclick="adminReviewSponsored('${t.id}','approved')">Approve &amp; pay</button>
+          <button class="btn btn-danger" onclick="adminReviewSponsored('${t.id}','rejected')">Reject — flag both</button>
+        </div>`;
+      sponsorWrap.appendChild(el);
+    });
+
     const pending = users.filter(u => u.errander && u.errander.status === 'pending');
     const pendingWrap = document.getElementById('admin-pending');
     pendingWrap.innerHTML = pending.length ? '' : '<p class="muted">No pending applications.</p>';
     pending.forEach(u=>{
       const el = document.createElement('div'); el.className = 'task';
       el.innerHTML = `
-        <div class="task-top">
-          <div>${contactPhoto(u.photo)}<b>${u.name}</b> — ${u.phone}<div class="task-meta">${u.errander.idType === 'ghana_card' ? 'Ghana Card' : "Driver's License"}: ${u.errander.idNumber}</div></div>
-        </div>
+        <div class="task-top"><div>${contactPhoto(u.photo)}<b>${u.name}</b> — ${u.phone}<div class="task-meta">${u.errander.idType === 'ghana_card' ? 'Ghana Card' : "Driver's License"}: ${u.errander.idNumber}</div></div></div>
         <div class="task-actions">
           <button class="btn btn-primary" onclick="adminDecide('${u.phone}','approved',this)">Approve</button>
           <button class="btn btn-danger" onclick="adminDecide('${u.phone}','rejected',this)">Reject</button>
@@ -879,18 +974,22 @@
     usersWrap.innerHTML = '';
     users.forEach(u=>{
       const st = u.errander ? u.errander.status : 'none';
-      const row = document.createElement('div'); row.className = 'stat';
-      row.innerHTML = `<span>${contactPhoto(u.photo)}${u.name} (${u.phone})</span><span class="status-pill badge-${st}" style="margin:0;">${st}</span>`;
+      const row = document.createElement('div'); row.className = 'task';
+      const uniBtn = st === 'approved' ? `<button class="btn btn-ghost" onclick="adminToggleUni('${u.phone}')">${u.errander.universityCertified ? '🎓 Remove certification' : '🎓 Grant University certification'}</button>` : '';
+      row.innerHTML = `<div class="task-top"><div>${contactPhoto(u.photo)}${u.name} (${u.phone})${u.errander && u.errander.universityCertified ? '<span class="uni-badge">🎓</span>' : ''}${u.flagCount ? '<span class="flag-badge">⚠️ '+u.flagCount+'</span>' : ''}</div><span class="status-pill badge-${st}">${st}</span></div>${uniBtn ? '<div class="task-actions">'+uniBtn+'</div>' : ''}`;
       usersWrap.appendChild(row);
     });
 
-    const counts = { open:0, accepted:0, completed:0, cancelled:0 };
+    const counts = { open:0, accepted:0, completed:0, cancelled:0, flagged:0 };
     tasks.forEach(t=>{ if(counts[t.status] !== undefined) counts[t.status]++; });
+    const sponsoredCompleted = tasks.filter(t=>t.sponsored && t.status==='completed').length;
     document.getElementById('admin-task-stats').innerHTML = `
       <div class="stat"><span>Open</span><span>${counts.open}</span></div>
       <div class="stat"><span>In progress</span><span>${counts.accepted}</span></div>
       <div class="stat"><span>Completed</span><span>${counts.completed}</span></div>
+      <div class="stat"><span>Flagged</span><span>${counts.flagged}</span></div>
       <div class="stat"><span>Cancelled</span><span>${counts.cancelled}</span></div>
+      <div class="stat"><span>Sponsored slots used</span><span>${sponsoredCompleted} / ${sponsoredCap}</span></div>
       <div class="stat"><span>Total tasks ever posted</span><span>${tasks.length}</span></div>`;
   }
   async function adminDecide(phone, decision, btn){
@@ -898,10 +997,20 @@
     await api('admin-decide', 'POST', { phone, decision });
     refreshAdmin();
   }
+  async function adminToggleUni(phone){
+    await api('admin-toggle-university', 'POST', { phone });
+    refreshAdmin();
+  }
+  async function adminReviewSponsored(id, decision){
+    await api('admin-review-sponsored', 'POST', { id, decision });
+    refreshAdmin();
+  }
 
   /* ---------- init ---------- */
   buildCatChips();
   renderHeaderAuth();
+  loadConfig();
+  document.getElementById('c-budget').addEventListener('input', updateFeePreview);
   if(myPhone){
     api('get-user', 'GET', { phone: myPhone }).then(res=>{
       if(res.user){ myProfile = res.user; renderHeaderAuth(); renderProfileCard(); switchView('dashboard'); refresh(); }
@@ -909,7 +1018,7 @@
     });
   }
   if('Notification' in window && Notification.permission === 'granted') notifyEnabled = true;
-  setInterval(()=>{ refresh(); if(adminAuthed) refreshAdmin(); }, 4000);
+  setInterval(()=>{ refresh(); loadConfig(); if(adminAuthed) refreshAdmin(); }, 4000);
 </script>
 </body>
 </html>
