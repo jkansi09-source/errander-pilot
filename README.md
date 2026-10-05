@@ -1,4 +1,29 @@
-# Errander Pilot — shared task feed (v7.1)
+# Errander Pilot — shared task feed (v7.2)
+
+## Fixes from real-device testing feedback
+
+- **Slogan corrected** to "My Kpakpakpa money making place."
+- **Touch targets enlarged across the whole app.** Buttons, chips, star
+  ratings, and form fields were sized for a mouse pointer, not a thumb —
+  every interactive element is now at least ~42–44px tall, the accepted
+  minimum for reliable mobile tapping. The header specifically was prone to
+  cramming the Dashboard/Log out buttons into an overcrowded row on narrow
+  phones; it now wraps onto its own full-width row with proper spacing
+  instead of squeezing everything into one line. This was very likely the
+  actual cause of "buttons not responding" — the taps were landing just
+  outside tiny targets, not failing silently.
+- **Boss can now see pickup/delivery photos** on their own posted-task
+  card — previously only the Errander's own view showed proof photos, so a
+  Boss confirming a sponsored job couldn't actually see the evidence. Tap
+  any proof photo to open it full-size.
+- **Long lists scroll inside their own panel** ("Your posted tasks," open
+  jobs, completed history) rather than pushing the whole page down
+  indefinitely — a proper scrollable portal once there are more than a
+  few tasks.
+- **Editable profile.** Name and a personal quote/motto (140 characters,
+  shown on your profile card) can now be edited from the dashboard, not
+  just the photo. "✏️ Edit name & personal quote" on the profile card.
+
 
 ## Brand update: real logo + palette
 

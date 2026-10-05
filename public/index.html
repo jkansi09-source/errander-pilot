@@ -21,13 +21,14 @@
   body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
   h1,h2,.brand{font-family:'Space Grotesk',system-ui,sans-serif;}
   .wrap{max-width:640px; margin:0 auto; padding:0 18px;}
-  header{background:var(--navy); color:var(--white); padding:14px 0; position:sticky; top:0; z-index:6;}
-  header .wrap{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;}
+  header{background:var(--navy); color:var(--white); padding:12px 0; position:sticky; top:0; z-index:6;}
+  header .wrap{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; row-gap:10px;}
   .brand{font-size:1.1rem; font-weight:700; cursor:pointer;}
-  .hdr-actions{display:flex; gap:6px; align-items:center; flex-wrap:wrap;}
-  .bell-btn{background:none; border:1px solid rgba(255,255,255,0.3); border-radius:7px; padding:7px 9px; cursor:pointer; font-size:0.9rem; color:var(--white);}
-  .hdr-btn{background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.25); color:var(--white); border-radius:7px; padding:7px 11px; font-size:0.78rem; font-weight:600; cursor:pointer;}
-  .hdr-name{font-size:0.8rem; color:var(--amber); font-weight:600;}
+  .hdr-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap; width:100%; justify-content:flex-start;}
+  @media (min-width:560px){ .hdr-actions{width:auto; justify-content:flex-end;} }
+  .bell-btn{background:none; border:1px solid rgba(255,255,255,0.3); border-radius:9px; min-width:42px; min-height:42px; cursor:pointer; font-size:1rem; color:var(--white); touch-action:manipulation;}
+  .hdr-btn{background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.3); color:var(--white); border-radius:9px; padding:10px 14px; min-height:42px; font-size:0.82rem; font-weight:600; cursor:pointer; touch-action:manipulation;}
+  .hdr-name{font-size:0.82rem; color:var(--amber); font-weight:600; padding:10px 2px;}
   main{padding:18px 0 60px;}
   .view{display:none;} .view.show{display:block;}
   .panel{background:var(--white); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:14px;}
@@ -35,22 +36,22 @@
   .muted{color:var(--slate); font-size:0.82rem;}
   .field{margin-bottom:10px;}
   .field label{display:block; font-size:0.78rem; color:var(--slate); margin-bottom:4px; font-weight:500;}
-  .field input, .field select, .field textarea{width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.9rem; background:var(--paper); color:var(--ink);}
-  .field textarea{min-height:50px; resize:vertical;}
+  .field input, .field select, .field textarea{width:100%; padding:11px 12px; min-height:44px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.95rem; background:var(--paper); color:var(--ink); box-sizing:border-box;}
+  .field textarea{min-height:56px; resize:vertical;}
   .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
   @media (max-width:480px){.row2{grid-template-columns:1fr;}}
   .hidden{display:none !important;}
-  .chip-row{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;}
-  .chip{border:1px solid var(--line); background:var(--paper); border-radius:20px; padding:6px 11px; font-size:0.74rem; font-weight:600; color:var(--slate); cursor:pointer;}
+  .chip-row{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;}
+  .chip{border:1px solid var(--line); background:var(--paper); border-radius:20px; padding:9px 14px; min-height:40px; font-size:0.78rem; font-weight:600; color:var(--slate); cursor:pointer; touch-action:manipulation; box-sizing:border-box;}
   .chip.active{background:var(--navy); color:var(--white); border-color:var(--navy);}
-  .btn{appearance:none; border:none; border-radius:7px; padding:9px 14px; font-family:inherit; font-size:0.86rem; font-weight:600; cursor:pointer;}
+  .btn{appearance:none; border:none; border-radius:8px; padding:12px 18px; min-height:44px; font-family:inherit; font-size:0.9rem; font-weight:600; cursor:pointer; touch-action:manipulation; box-sizing:border-box;}
   .btn-primary{background:var(--navy); color:var(--white);}
   .btn-primary:hover{background:var(--navy-soft);}
   .btn-primary:disabled{opacity:0.45; cursor:not-allowed;}
-  .btn-ghost{background:transparent; color:var(--navy); border:1px solid var(--line); padding:7px 12px; font-size:0.8rem;}
-  .btn-danger{background:transparent; color:var(--red); border:1px solid var(--line); padding:6px 10px; font-size:0.76rem;}
+  .btn-ghost{background:transparent; color:var(--navy); border:1px solid var(--line); padding:10px 16px; min-height:44px; font-size:0.84rem;}
+  .btn-danger{background:transparent; color:var(--red); border:1px solid var(--line); padding:10px 14px; min-height:40px; font-size:0.8rem;}
   .btn-block{width:100%;}
-  .btn-loc{background:var(--paper-raise); border:1px solid var(--line); color:var(--teal); padding:8px 10px; font-size:0.78rem; border-radius:7px; cursor:pointer; margin-bottom:10px;}
+  .btn-loc{background:var(--paper-raise); border:1px solid var(--line); color:var(--teal); padding:11px 12px; min-height:44px; font-size:0.82rem; border-radius:7px; cursor:pointer; margin-bottom:10px; touch-action:manipulation; box-sizing:border-box;}
   .task{border:1px solid var(--line); border-radius:9px; padding:12px; margin-bottom:9px; background:var(--paper);}
   .task-top{display:flex; justify-content:space-between; gap:8px;}
   .task-cat{font-weight:600; font-size:0.76rem; color:var(--teal); margin-bottom:2px;}
@@ -64,7 +65,7 @@
   .status-completed{background:rgba(14,122,59,0.15); color:var(--green);}
   .status-flagged{background:rgba(177,75,62,0.12); color:var(--red);}
   .task-actions{display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; align-items:center;}
-  .amount-input{width:80px; padding:8px 9px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.83rem;}
+  .amount-input{width:90px; padding:10px; min-height:42px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.88rem; box-sizing:border-box;}
   .negotiation-box{border-top:1px solid var(--line); margin-top:9px; padding-top:9px;}
   .nego-item{border:1px solid var(--line); border-radius:8px; padding:9px; margin-bottom:7px; background:var(--white);}
   .nego-top{display:flex; justify-content:space-between; align-items:center; gap:8px;}
@@ -82,7 +83,7 @@
   .stat:last-child{border-bottom:none;}
   .contact-box{background:rgba(14,122,59,0.1); border:1px solid rgba(14,122,59,0.3); border-radius:7px; padding:8px 10px; font-size:0.82rem; margin:8px 0; color:var(--green); font-weight:600; display:flex; align-items:center;}
   .stars{display:flex; gap:4px; margin:6px 0;}
-  .star-pick{font-size:1.3rem; cursor:pointer; color:var(--line); background:none; border:none; padding:0;}
+  .star-pick{font-size:1.5rem; cursor:pointer; color:var(--line); background:none; border:none; padding:6px; min-width:40px; min-height:40px; touch-action:manipulation;}
   .star-pick.on{color:var(--amber-deep);}
   details.history summary{cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--teal); padding:4px 0;}
   .chat-box{margin-top:10px; border-top:1px dashed var(--line); padding-top:8px;}
@@ -94,7 +95,10 @@
   .chat-input-row input{flex:1; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.85rem;}
   .busy-note{background:rgba(224,149,0,0.15); border:1px solid rgba(224,149,0,0.4); color:var(--amber-deep); border-radius:7px; padding:8px 10px; font-size:0.8rem; margin-bottom:10px;}
   .photo-thumb{width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--line); vertical-align:middle; margin-right:8px;}
-  .proof-photo{width:64px; height:64px; border-radius:8px; object-fit:cover; border:1px solid var(--line); margin-right:6px;}
+  .proof-photo{width:64px; height:64px; border-radius:8px; object-fit:cover; border:1px solid var(--line); margin-right:6px; cursor:pointer;}
+  .scroll-portal{max-height:460px; overflow-y:auto; padding-right:4px; -webkit-overflow-scrolling:touch;}
+  .scroll-portal::-webkit-scrollbar{width:6px;}
+  .scroll-portal::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
   .id-type-row{display:flex; gap:8px; margin-bottom:10px;}
   .id-type-row .chip{flex:1; text-align:center;}
   .photo-preview{width:64px; height:64px; border-radius:50%; object-fit:cover; border:1px solid var(--line); margin-top:6px; display:block;}
@@ -142,7 +146,7 @@
     <div class="view show" id="view-home">
       <div class="panel" style="text-align:center;">
         <img src="/assets/logo-hero.png" alt="Errander — Anything Legal. Anywhere. Anytime." style="width:100%; max-width:320px; height:auto; margin:0 auto 8px;">
-        <p style="margin:0 0 12px;"><em>Your Kpakpa money making place</em></p>
+        <p style="margin:0 0 12px;"><em>My Kpakpakpa money making place</em></p>
         <p class="muted" style="margin:0 0 18px;">Post any legal task — deliveries, errands, home services and more. Negotiate a fair price with a nearby, ID-verified Errander. Or become an Errander yourself and start earning, one job at a time.</p>
         <button class="btn btn-primary btn-block" onclick="switchView('auth')">Get started — log in or sign up</button>
       </div>
@@ -188,8 +192,18 @@
           <img class="profile-photo" id="profile-photo" alt="">
           <div><div class="profile-name" id="profile-name"></div><div class="muted" id="profile-phone"></div></div>
         </div>
+        <p class="muted" id="profile-bio-display" style="font-style:italic; margin:0 0 8px;"></p>
         <span class="verify-badge" id="errander-badge"></span><span class="uni-badge hidden" id="profile-uni-badge">🎓 Errander University Certified</span><span class="flag-badge hidden" id="profile-flag-badge"></span>
-        <div><input type="file" id="edit-photo-input" accept="image/*" capture="user" class="hidden" onchange="handleProfilePhotoChange(this)"><button class="btn btn-ghost" onclick="document.getElementById('edit-photo-input').click()">Change photo</button></div>
+        <div style="margin-bottom:10px;"><input type="file" id="edit-photo-input" accept="image/*" capture="user" class="hidden" onchange="handleProfilePhotoChange(this)"><button class="btn btn-ghost" onclick="document.getElementById('edit-photo-input').click()">Change photo</button></div>
+
+        <details id="edit-profile-details">
+          <summary style="cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--teal);">✏️ Edit name &amp; personal quote</summary>
+          <div style="margin-top:10px;">
+            <div class="field"><label>Name</label><input id="edit-name" type="text"></div>
+            <div class="field"><label>A quote or motto you believe in <span class="muted">(shown on your profile)</span></label><textarea id="edit-bio" maxlength="140" placeholder="e.g. Reliable, on time, every time."></textarea></div>
+            <button class="btn btn-primary btn-block" onclick="saveProfileDetails()">Save</button>
+          </div>
+        </details>
       </div>
 
       <nav class="tabs">
@@ -226,9 +240,9 @@
         <div class="panel">
           <h2>Your posted tasks</h2>
           <div class="trust-note">🔒 An Errander can mark a job delivered, but only you can confirm it complete — that's what releases payment and unlocks ratings.</div>
-          <div id="client-active"></div>
+          <div id="client-active" class="scroll-portal"></div>
           <div id="client-rate-prompt"></div>
-          <details class="history"><summary id="client-history-count">Completed history</summary><div id="client-history"></div></details>
+          <details class="history"><summary id="client-history-count">Completed history</summary><div id="client-history" class="scroll-portal"></div></details>
         </div>
       </div>
 
@@ -250,7 +264,7 @@
         </div>
         <div class="hidden" id="errander-dashboard-inner">
           <button type="button" class="btn-loc" onclick="captureErranderLocation()" id="e-loc-btn">📍 Enable location (sorts tasks by distance)</button>
-          <div class="panel"><h2>Open tasks near you</h2><div id="open-tasks"></div></div>
+          <div class="panel"><h2>Open tasks near you</h2><div id="open-tasks" class="scroll-portal"></div></div>
           <div class="panel hidden" id="active-panel"><h2>Your active task</h2><div id="active-task"></div></div>
           <div id="errander-rate-prompt"></div>
           <div class="panel">
@@ -499,6 +513,22 @@
     else flagBadge.classList.add('hidden');
     document.getElementById('errander-apply-panel').classList.toggle('hidden', st === 'approved' || st === 'pending');
     document.getElementById('errander-dashboard-inner').classList.toggle('hidden', st !== 'approved');
+    const bioDisplay = document.getElementById('profile-bio-display');
+    bioDisplay.textContent = myProfile.bio ? '"' + myProfile.bio + '"' : '';
+    document.getElementById('edit-name').value = myProfile.name || '';
+    document.getElementById('edit-bio').value = myProfile.bio || '';
+  }
+  async function saveProfileDetails(){
+    const name = document.getElementById('edit-name').value.trim();
+    const bio = document.getElementById('edit-bio').value.trim();
+    if(!name){ toast('Name cannot be empty.'); return; }
+    const res = await api('update-profile', 'POST', { phone: myPhone, name, bio });
+    if(res.error){ toast(res.error); return; }
+    myProfile = res.user;
+    renderHeaderAuth();
+    renderProfileCard();
+    document.getElementById('edit-profile-details').removeAttribute('open');
+    toast('Profile updated.');
   }
   function handleProfilePhotoChange(input){
     const file = input.files && input.files[0];
@@ -663,6 +693,10 @@
       let confirmHtml = (t.stage === 'delivered' && !t.bossConfirmedAt) ? `<div class="task-actions"><button class="btn btn-primary" onclick="confirmTask('${t.id}')">Confirm job complete</button></div>` : '';
       let cancelHtml = t.status === 'open' ? `<div class="task-actions"><button class="btn btn-danger" onclick="cancelTask('${t.id}')">Cancel task</button></div>` : '';
       let chatBoxHtml = t.erranderName ? chatHtml(t, myProfile.name) : '';
+      let proofHtml = (t.pickupPhoto || t.deliveryPhoto) ? `<div style="margin-top:8px;">
+          ${t.pickupPhoto ? `<img src="${t.pickupPhoto}" class="proof-photo" alt="Pickup proof" onclick="window.open(this.src)">` : ''}
+          ${t.deliveryPhoto ? `<img src="${t.deliveryPhoto}" class="proof-photo" alt="Delivery proof" onclick="window.open(this.src)">` : ''}
+        </div>` : '';
       el.innerHTML = `
         <div class="task-top">
           <div>
@@ -673,7 +707,7 @@
           </div>
           ${priceBlock(t.budget, t.sponsored)}
         </div>
-        ${contactHtml}${negotiationHtmlForBoss(t)}${reviewStatusHtml(t)}${confirmHtml}${cancelHtml}${chatBoxHtml}`;
+        ${contactHtml}${proofHtml}${negotiationHtmlForBoss(t)}${reviewStatusHtml(t)}${confirmHtml}${cancelHtml}${chatBoxHtml}`;
       activeWrap.appendChild(el);
     });
 
@@ -825,8 +859,8 @@
     }
 
     const proofsHtml = (t.pickupPhoto || t.deliveryPhoto) ? `<div style="margin-top:8px;">
-        ${t.pickupPhoto ? `<img src="${t.pickupPhoto}" class="proof-photo" alt="Pickup proof">` : ''}
-        ${t.deliveryPhoto ? `<img src="${t.deliveryPhoto}" class="proof-photo" alt="Delivery proof">` : ''}
+        ${t.pickupPhoto ? `<img src="${t.pickupPhoto}" class="proof-photo" alt="Pickup proof" onclick="window.open(this.src)">` : ''}
+        ${t.deliveryPhoto ? `<img src="${t.deliveryPhoto}" class="proof-photo" alt="Delivery proof" onclick="window.open(this.src)">` : ''}
       </div>` : '';
 
     wrap.innerHTML = `

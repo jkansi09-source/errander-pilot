@@ -16,7 +16,7 @@ function hashPin(phone, pin) {
   return crypto.createHash('sha256').update(phone + ':' + pin + ':errander-pilot-salt').digest('hex');
 }
 function publicUser(u) {
-  return { phone: u.phone, name: u.name, photo: u.photo || null, createdAt: u.createdAt, errander: u.errander || null, flagCount: u.flagCount || 0 };
+  return { phone: u.phone, name: u.name, photo: u.photo || null, bio: u.bio || null, createdAt: u.createdAt, errander: u.errander || null, flagCount: u.flagCount || 0 };
 }
 function normalizePhone(v) { return String(v || '').replace(/\s+/g, ''); }
 function normalizeId(v) { return String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
@@ -154,6 +154,7 @@ exports.handler = async (event) => {
       if (!u) return json(404, { error: 'not found' });
       if (typeof body.name === 'string' && body.name.trim()) u.name = body.name.trim().slice(0, 60);
       if (typeof body.photo === 'string') u.photo = body.photo.slice(0, 200000);
+      if (typeof body.bio === 'string') u.bio = body.bio.trim().slice(0, 140);
       await saveUsers();
       return json(200, { user: publicUser(u) });
     }
