@@ -109,11 +109,16 @@
   .auth-tabs button{flex:1; background:none; border:none; border-radius:6px; padding:8px; font-size:0.85rem; font-weight:600; color:var(--slate); cursor:pointer;}
   .auth-tabs button.active{background:var(--navy); color:var(--white);}
   nav.tabs{display:flex; gap:4px; background:var(--white); border:1px solid var(--line); border-radius:9px; padding:4px; margin-bottom:14px;}
-  nav.tabs button{flex:1; background:none; border:none; border-radius:6px; padding:9px 6px; font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600; color:var(--slate); cursor:pointer;}
+  nav.tabs button{flex:1; background:none; border:none; border-radius:6px; padding:11px 6px; min-height:42px; font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600; color:var(--slate); cursor:pointer; touch-action:manipulation;}
   nav.tabs button.active{background:var(--navy); color:var(--white);}
+  nav.tabs button[data-mode="errander"].active{background:var(--green); color:var(--white);}
+  nav.tabs button[data-mode="report"].active{background:var(--amber-deep); color:var(--white);}
+  .mode-banner{display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:9px; font-weight:700; font-size:0.85rem; margin-bottom:14px; color:var(--white);}
+  .mode-banner.mode-boss{background:var(--navy);}
+  .mode-banner.mode-errander{background:var(--green);}
   .tab-panel{display:none;} .tab-panel.show{display:block;}
-  #toast-stack{position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; display:flex; flex-direction:column; gap:8px; width:min(92vw,420px);}
-  .toast{background:var(--navy); color:var(--white); padding:11px 14px; border-radius:8px; font-size:0.85rem; box-shadow:0 6px 18px rgba(0,0,0,0.25); animation:fadein .2s ease;}
+  #toast-stack{position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:999; display:flex; flex-direction:column; gap:8px; width:min(92vw,420px); pointer-events:none;}
+  .toast{background:var(--navy); color:var(--white); padding:11px 14px; border-radius:8px; font-size:0.85rem; box-shadow:0 6px 18px rgba(0,0,0,0.25); animation:fadein .2s ease; pointer-events:none;}
   @keyframes fadein{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
   footer{padding:16px 0 40px; text-align:center; color:var(--slate); font-size:0.74rem;}
   footer a{color:var(--slate);}
@@ -207,13 +212,14 @@
       </div>
 
       <nav class="tabs">
-        <button class="active" onclick="showDashTab('post', this)">Post a Task</button>
-        <button onclick="showDashTab('jobs', this)">Find Jobs</button>
-        <button onclick="showDashTab('report', this)">My Report</button>
+        <button class="active" data-mode="boss" onclick="showDashTab('post', this)">Post a Task</button>
+        <button data-mode="errander" onclick="showDashTab('jobs', this)">Find Jobs</button>
+        <button data-mode="report" onclick="showDashTab('report', this)">My Report</button>
       </nav>
 
       <!-- POST (Boss) -->
       <div class="tab-panel show" id="dash-post">
+        <div class="mode-banner mode-boss">👤 BOSS MODE — you're posting and paying for tasks</div>
         <div class="panel">
           <h2>Post a task</h2>
           <div class="chip-row" id="cat-chips"></div>
@@ -248,6 +254,7 @@
 
       <!-- JOBS (Errander) -->
       <div class="tab-panel" id="dash-jobs">
+        <div class="mode-banner mode-errander">🛵 ERRANDER MODE — you're finding and completing tasks to earn</div>
         <div class="panel hidden" id="errander-apply-panel">
           <h2>Become an Errander</h2>
           <p class="muted" style="margin:0 0 10px;">Real deployments verify a Ghana Card or license before you can accept tasks.</p>
@@ -304,7 +311,7 @@
 
   </div>
 </main>
-<footer>Errander pilot — shared data via Netlify Functions + Blobs. <a href="#" onclick="switchView('admin-login'); return false;">Admin</a></footer>
+<footer>Errander pilot — shared data via Netlify Functions + Blobs. <a href="#" onclick="switchView('admin-login'); return false;">Admin</a><span id="footer-build"></span></footer>
 
 <script>
   const API = '/.netlify/functions/api';
@@ -440,8 +447,11 @@
   /* ---------- view switching ---------- */
   function switchView(view){
     ['home','auth','dashboard','admin-login','admin'].forEach(v=>{
-      document.getElementById('view-'+v).classList.toggle('show', v===view);
+      const el = document.getElementById('view-'+v);
+      if(el) el.classList.toggle('show', v===view);
+      else console.error('switchView: missing element #view-'+v);
     });
+    window.scrollTo(0,0);
   }
   function goHome(){ switchView(myProfile ? 'dashboard' : 'home'); }
 
@@ -1041,18 +1051,35 @@
   }
 
   /* ---------- init ---------- */
-  buildCatChips();
-  renderHeaderAuth();
-  loadConfig();
-  document.getElementById('c-budget').addEventListener('input', updateFeePreview);
+  const BUILD_TAG = 'v7.3';
+  console.log('Errander pilot build:', BUILD_TAG);
+  const footerBuild = document.getElementById('footer-build');
+  if(footerBuild) footerBuild.textContent = ' · build ' + BUILD_TAG;
+
+  try{ buildCatChips(); }catch(e){ console.error('buildCatChips failed', e); }
+  try{ renderHeaderAuth(); }catch(e){ console.error('renderHeaderAuth failed', e); }
+  try{ loadConfig(); }catch(e){ console.error('loadConfig failed', e); }
+  try{ document.getElementById('c-budget').addEventListener('input', updateFeePreview); }catch(e){ console.error('fee preview wiring failed', e); }
+
   if(myPhone){
     api('get-user', 'GET', { phone: myPhone }).then(res=>{
-      if(res.user){ myProfile = res.user; renderHeaderAuth(); renderProfileCard(); switchView('dashboard'); refresh(); }
-      else { localStorage.removeItem('my_phone'); }
-    });
+      if(res.user){
+        myProfile = res.user;
+        try{ renderHeaderAuth(); renderProfileCard(); }catch(e){ console.error('profile render failed', e); }
+        switchView('dashboard');
+        refresh();
+      } else {
+        localStorage.removeItem('my_phone');
+      }
+    }).catch(e=> console.error('get-user on load failed — check your network tab for a failed request to /.netlify/functions/api', e));
   }
   if('Notification' in window && Notification.permission === 'granted') notifyEnabled = true;
-  setInterval(()=>{ refresh(); loadConfig(); if(adminAuthed) refreshAdmin(); }, 4000);
+
+  setInterval(()=>{
+    try{ refresh(); }catch(e){ console.error('refresh() failed', e); }
+    try{ loadConfig(); }catch(e){ console.error('loadConfig() failed', e); }
+    if(adminAuthed){ try{ refreshAdmin(); }catch(e){ console.error('refreshAdmin() failed', e); } }
+  }, 4000);
 </script>
 </body>
 </html>

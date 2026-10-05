@@ -1,4 +1,46 @@
-# Errander Pilot — shared task feed (v7.2)
+# Errander Pilot — shared task feed (v7.3)
+
+## Debugging "Dashboard not responding" and "others can't see jobs"
+
+**A real bug, found and fixed:** the notification toast container sat on
+top of the entire page (including the header) with no exemption for empty
+space — an invisible layer that could silently swallow taps near the top of
+the screen depending on exact browser rendering, even with no toast visibly
+showing. It's now set to ignore clicks everywhere except an actual visible
+toast bubble. Separately, tapping "Dashboard" in the header while you're
+already on the dashboard (just scrolled down on a different tab) does
+nothing visible by design — it's now made to also scroll back to the top,
+so it always has a visible effect.
+
+**How to tell, going forward, whether your live site actually has the
+latest code:** the footer now shows a build tag (e.g. "build v7.3"). After
+redeploying, hard-refresh the page and check that number — if it still
+shows an old version, the issue is the deploy, not the code; if it shows
+the new version and something's still wrong, it's a real bug worth
+reporting with specifics.
+
+**On "jobs posted cannot be seen by others":** there are two different
+possible causes, worth telling apart —
+1. **By design**, a Boss only ever sees tasks *they themselves* posted —
+   there's no public feed of everyone's tasks. The shared, cross-device
+   list only shows up under **Find Jobs**, and only once that account has
+   applied *and been approved* as an Errander via the Admin portal. If your
+   test accounts are Bosses, or Erranders still pending approval, "can't
+   see jobs" is expected, not a bug — go approve them in Admin first.
+2. If an account genuinely *is* an approved Errander and still sees nothing
+   that another device posted, that would be a real sync bug — open
+   browser dev tools (easiest on desktop Chrome: F12 → Console/Network tab)
+   and check for a red error or a failed request to
+   `/.netlify/functions/api` — that's the fastest way to tell me exactly
+   what's failing rather than me guessing again.
+
+**New: a Boss/Errander mode banner.** A colored bar now sits at the top of
+each dashboard tab — navy "👤 BOSS MODE" on Post a Task, green "🛵 ERRANDER
+MODE" on Find Jobs — so which hat you're wearing is never ambiguous, and
+the tab buttons themselves now highlight in that same color when active
+instead of all three looking identical.
+
+
 
 ## Fixes from real-device testing feedback
 
