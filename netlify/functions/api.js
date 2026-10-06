@@ -1,16 +1,89 @@
-// Errander pilot API — v7
-// Adds: KNUST-sponsored tasks (company pays instead of Boss), a cap on how
-// many sponsored slots exist, a one-sponsored-job-per-Boss/Errander-pair
-// limit, required pickup/delivery photo proof on sponsored jobs, and an
-// admin review queue that must approve a sponsored job before it pays out.
+// Errander pilot API — v8
+// Adds: admin-editable price bands (typical range per job), a sponsored-job
+// price cap enforced on the server, receipt-based reimbursement for purchase
+// errands, an agreed price the client can no longer tamper with, admin
+// endpoints that actually require the admin passcode, contact/photo
+// redaction for people who aren't party to a task, and a self-accept block.
 
 const { connectLambda, getStore } = require('@netlify/blobs');
 const crypto = require('crypto');
 
 // Change these before any real pilot use — see README.
 const ADMIN_PASSCODE = 'errander-admin-2026';
-const PLATFORM_FEE_RATE = 0.10;   // 10% added on top, paid by the Boss (non-sponsored tasks only)
+const PLATFORM_FEE_RATE = 0.10;   // added on top of the service price, paid by the Boss (non-sponsored only)
 const SPONSORED_CAP = 100;        // total KNUST-sponsored slots for this pilot
+
+// PLACEHOLDER price table (GHS). These are starting guesses, NOT market data.
+// Replace them from the Admin portal ("Price bands") using real Kumasi prices.
+// typical = base + perKm*km + perStop*(stops-1) + perHour*waitHours, then
+// x(1+urgentUplift) if urgent. Range = typical x lowFactor .. typical x highFactor.
+const DEFAULT_PRICE_CONFIG = {
+  lowFactor: 0.8,
+  highFactor: 1.3,
+  urgentUplift: 0.25,
+  updatedAt: null,
+  categories: {
+    'Delivery & Pickup':        { base: 15, perKm: 3, perStop: 5, perHour: 10 },
+    'Errands & Queuing':        { base: 15, perKm: 3, perStop: 5, perHour: 12 },
+    'Home Services · Plumbing': { base: 60, perKm: 4, perStop: 0, perHour: 40 },
+    'Home Services · Cleaning': { base: 50, perKm: 3, perStop: 0, perHour: 30 },
+    'Business & Field':         { base: 25, perKm: 3, perStop: 8, perHour: 15 }
+  }
+};
+
+function num(v, min, max, dflt) {
+  let n = Number(v);
+  if (!isFinite(n)) n = dflt;
+  return Math.min(max, Math.max(min, n));
+}
+function cleanMetrics(m) {
+  m = m || {};
+  return {
+    km: num(m.km, 0, 100, 3),
+    stops: Math.round(num(m.stops, 1, 20, 1)),
+    waitHours: num(m.waitHours, 0, 12, 0),
+    urgent: m.urgent === true || m.urgent === '1' || m.urgent === 'true'
+  };
+}
+function computeBand(cfg, category, metricsIn) {
+  const m = cleanMetrics(metricsIn);
+  const c = (cfg.categories && cfg.categories[category]) || cfg.categories['Delivery & Pickup'] || DEFAULT_PRICE_CONFIG.categories['Delivery & Pickup'];
+  let typical = c.base + c.perKm * m.km + c.perStop * Math.max(0, m.stops - 1) + c.perHour * m.waitHours;
+  if (m.urgent) typical *= (1 + cfg.urgentUplift);
+  return {
+    low: Math.round(typical * cfg.lowFactor),
+    typical: Math.round(typical),
+    high: Math.round(typical * cfg.highFactor),
+    metrics: m
+  };
+}
+function bandFlag(amount, band) {
+  if (!band) return null;
+  if (amount > band.high) return 'above';
+  if (amount < band.low) return 'below';
+  return null;
+}
+function sanitizeConfig(input, current) {
+  input = input || {};
+  const out = {
+    lowFactor: num(input.lowFactor, 0.3, 1, current.lowFactor),
+    highFactor: num(input.highFactor, 1, 3, current.highFactor),
+    urgentUplift: num(input.urgentUplift, 0, 2, current.urgentUplift),
+    updatedAt: Date.now(),
+    categories: {}
+  };
+  Object.keys(current.categories).forEach(cat => {
+    const src = (input.categories && input.categories[cat]) || {};
+    const cur = current.categories[cat];
+    out.categories[cat] = {
+      base: num(src.base, 0, 10000, cur.base),
+      perKm: num(src.perKm, 0, 1000, cur.perKm),
+      perStop: num(src.perStop, 0, 1000, cur.perStop),
+      perHour: num(src.perHour, 0, 1000, cur.perHour)
+    };
+  });
+  return out;
+}
 
 function hashPin(phone, pin) {
   return crypto.createHash('sha256').update(phone + ':' + pin + ':errander-pilot-salt').digest('hex');
@@ -21,33 +94,50 @@ function publicUser(u) {
 function normalizePhone(v) { return String(v || '').replace(/\s+/g, ''); }
 function normalizeId(v) { return String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
 
+// What a viewer is allowed to see of a task. Phone numbers, chat and proof
+// photos are only for the Boss and the matched Errander; everyone else gets
+// the public face of the task plus their own offer (if any).
+function redactTask(t, viewer) {
+  if (viewer && t.clientPhone === viewer) return t;
+  const c = Object.assign({}, t);
+  c.negotiations = (t.negotiations || []).filter(n => viewer && n.erranderPhone === viewer);
+  if (!(viewer && t.erranderPhone === viewer)) {
+    c.clientPhone = null; c.erranderPhone = null; c.messages = [];
+    c.pickupPhoto = null; c.deliveryPhoto = null; c.receiptPhoto = null;
+  }
+  return c;
+}
+
+function blankTaskFields() {
+  return {
+    status: 'open', stage: null, negotiations: [], messages: [],
+    erranderName: null, erranderPhone: null, erranderPhoto: null,
+    ratingForErrander: null, ratingForClient: null,
+    sponsored: false, pickupPhoto: null, deliveryPhoto: null, reviewStatus: null, bossConfirmedAt: null,
+    metrics: null, band: null, priceFlag: null,
+    itemsLimit: null, receiptAmount: null, receiptPhoto: null
+  };
+}
+
 function seedTasks() {
   const now = Date.now();
   return [
-    {
+    Object.assign(blankTaskFields(), {
       id: 'seed-1', category: 'Delivery & Pickup',
       desc: "Pick up a document from the Registrar's office and deliver to my office",
       loc: 'Adum, Kumasi', lat: 6.6926, lng: -1.6291,
       urgency: 'Today', budget: 40,
       clientName: 'Sam O.', clientPhone: '0240000001', clientPhoto: null,
-      status: 'open', stage: null, negotiations: [], messages: [],
-      erranderName: null, erranderPhone: null, erranderPhoto: null,
-      ratingForErrander: null, ratingForClient: null,
-      sponsored: false, pickupPhoto: null, deliveryPhoto: null, reviewStatus: null, bossConfirmedAt: null,
       createdAt: now
-    },
-    {
+    }),
+    Object.assign(blankTaskFields(), {
       id: 'seed-2', category: 'Home Services · Plumbing',
       desc: 'Fix a leaking kitchen tap',
       loc: 'Ahodwo, Kumasi', lat: 6.6581, lng: -1.6178,
       urgency: 'Tomorrow, 10:00 AM', budget: 60,
       clientName: 'Kojo B.', clientPhone: '0240000002', clientPhoto: null,
-      status: 'open', stage: null, negotiations: [], messages: [],
-      erranderName: null, erranderPhone: null, erranderPhoto: null,
-      ratingForErrander: null, ratingForClient: null,
-      sponsored: false, pickupPhoto: null, deliveryPhoto: null, reviewStatus: null, bossConfirmedAt: null,
       createdAt: now
-    }
+    })
   ];
 }
 
@@ -68,17 +158,31 @@ exports.handler = async (event) => {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
+        'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Passcode'
       },
       body: ''
     };
   }
 
   const store = getStore('errander-pilot');
-  const action = (event.queryStringParameters && event.queryStringParameters.action) || 'list';
+  const qs = event.queryStringParameters || {};
+  const action = qs.action || 'list';
+
+  // Every admin-* action (except logging in) now needs the passcode on the request.
+  if (action.startsWith('admin-') && action !== 'admin-login') {
+    const h = event.headers || {};
+    const given = h['x-admin-passcode'] || h['X-Admin-Passcode'] || '';
+    if (given !== ADMIN_PASSCODE) return json(401, { error: 'Admin passcode required.' });
+  }
 
   let body = {};
   if (event.body) { try { body = JSON.parse(event.body); } catch (e) { /* ignore */ } }
+
+  let priceConfig = await store.get('price-config', { type: 'json' });
+  if (!priceConfig) priceConfig = DEFAULT_PRICE_CONFIG;
+  priceConfig = Object.assign({}, DEFAULT_PRICE_CONFIG, priceConfig, {
+    categories: Object.assign({}, DEFAULT_PRICE_CONFIG.categories, priceConfig.categories || {})
+  });
 
   let tasks = await store.get('all-tasks', { type: 'json' });
   if (!tasks) { tasks = seedTasks(); await store.setJSON('all-tasks', tasks); }
@@ -89,13 +193,10 @@ exports.handler = async (event) => {
       amount: q.price, lastBy: 'errander', updatedAt: Date.now()
     })) : [];
     delete t.quotes; delete t.quoteRequest;
+    const blank = blankTaskFields();
+    Object.keys(blank).forEach(k => { if (t[k] === undefined) t[k] = blank[k]; });
     if (t.clientPhoto === undefined) t.clientPhoto = null;
-    if (t.erranderPhoto === undefined) t.erranderPhoto = null;
-    if (t.sponsored === undefined) t.sponsored = false;
-    if (t.pickupPhoto === undefined) t.pickupPhoto = null;
-    if (t.deliveryPhoto === undefined) t.deliveryPhoto = null;
-    if (t.reviewStatus === undefined) t.reviewStatus = null;
-    if (t.bossConfirmedAt === undefined) t.bossConfirmedAt = null;
+    if (!t.band) t.band = computeBand(priceConfig, t.category, t.metrics);
   });
 
   let users = await store.get('users', { type: 'json' });
@@ -111,11 +212,20 @@ exports.handler = async (event) => {
   const isBusy = (erranderPhone) => tasks.some(x => x.erranderPhone === erranderPhone && x.status === 'accepted');
   const isApprovedErrander = (u) => u && u.errander && u.errander.status === 'approved';
   const sponsoredUsedCount = () => tasks.filter(t => t.sponsored && t.status !== 'cancelled' && t.reviewStatus !== 'rejected').length;
+  const capMessage = (t) => `Sponsored jobs are capped at GHS ${t.band.high} (the top of the typical range for this job).`;
 
   switch (action) {
 
     case 'config':
       return json(200, { feeRate: PLATFORM_FEE_RATE, sponsoredCap: SPONSORED_CAP, sponsoredUsed: sponsoredUsedCount() });
+
+    case 'price-band': {
+      const category = qs.category || 'Delivery & Pickup';
+      const band = computeBand(priceConfig, category, {
+        km: qs.km, stops: qs.stops, waitHours: qs.waitHours, urgent: qs.urgent
+      });
+      return json(200, { band });
+    }
 
     /* ---------- accounts ---------- */
     case 'signup': {
@@ -143,7 +253,7 @@ exports.handler = async (event) => {
       return json(200, { user: publicUser(u) });
     }
     case 'get-user': {
-      const phone = normalizePhone((event.queryStringParameters && event.queryStringParameters.phone) || '');
+      const phone = normalizePhone(qs.phone || '');
       const u = findUser(phone);
       if (!u) return json(404, { error: 'not found' });
       return json(200, { user: publicUser(u) });
@@ -172,7 +282,7 @@ exports.handler = async (event) => {
       return json(200, { user: publicUser(u) });
     }
 
-    /* ---------- admin ---------- */
+    /* ---------- admin (all require the X-Admin-Passcode header) ---------- */
     case 'admin-login': {
       if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
       if (String(body.passcode || '') !== ADMIN_PASSCODE) return json(401, { error: 'Incorrect passcode.' });
@@ -200,7 +310,14 @@ exports.handler = async (event) => {
     }
     case 'admin-list-tasks':
       return json(200, { tasks });
-
+    case 'admin-get-price-config':
+      return json(200, { config: priceConfig });
+    case 'admin-set-price-config': {
+      if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
+      const next = sanitizeConfig(body.config, priceConfig);
+      await store.setJSON('price-config', next);
+      return json(200, { config: next });
+    }
     case 'admin-review-sponsored': {
       if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
       const t = tasks.find(x => x.id === body.id);
@@ -213,7 +330,7 @@ exports.handler = async (event) => {
         t.stage = 'completed';
       } else {
         t.reviewStatus = 'rejected';
-        t.status = 'flagged'; // terminal: not paid, not open, frees the Errander up
+        t.status = 'flagged';
         const boss = findUser(t.clientPhone);
         const errander = findUser(t.erranderPhone);
         if (boss) boss.flagCount = (boss.flagCount || 0) + 1;
@@ -225,8 +342,10 @@ exports.handler = async (event) => {
     }
 
     /* ---------- tasks ---------- */
-    case 'list':
-      return json(200, { tasks: tasks.filter(t => t.status !== 'cancelled') });
+    case 'list': {
+      const viewer = normalizePhone(qs.phone || '');
+      return json(200, { tasks: tasks.filter(t => t.status !== 'cancelled').map(t => redactTask(t, viewer)) });
+    }
 
     case 'create': {
       if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
@@ -236,22 +355,33 @@ exports.handler = async (event) => {
       if (sponsored && sponsoredUsedCount() >= SPONSORED_CAP) {
         return json(409, { error: `All ${SPONSORED_CAP} KNUST-sponsored slots have been used for this pilot.` });
       }
-      const task = {
+      const category = body.category || 'Delivery & Pickup';
+      const metrics = cleanMetrics(body.metrics);
+      const band = computeBand(priceConfig, category, metrics);
+      const budget = Number(body.budget) || 0;
+      if (budget <= 0) return json(400, { error: 'Enter your offer amount.' });
+      if (sponsored && budget > band.high) {
+        return json(400, { error: `Sponsored jobs are capped at GHS ${band.high} (the top of the typical range for this job). Lower your offer, or untick the sponsored option.` });
+      }
+      let itemsLimit = null;
+      if (body.itemsLimit !== undefined && body.itemsLimit !== null && body.itemsLimit !== '') {
+        const n = Number(body.itemsLimit);
+        if (n > 0 && isFinite(n)) itemsLimit = Math.round(n * 100) / 100;
+        else return json(400, { error: 'Enter the most you are willing to reimburse for items, or untick the purchase option.' });
+      }
+      const task = Object.assign(blankTaskFields(), {
         id: 't' + Date.now() + Math.floor(Math.random() * 1000),
-        category: body.category || 'Delivery & Pickup',
+        category,
         desc: String(body.desc || '').slice(0, 300),
         loc: String(body.loc || '').slice(0, 120),
         lat: typeof body.lat === 'number' ? body.lat : null,
         lng: typeof body.lng === 'number' ? body.lng : null,
         urgency: String(body.urgency || '').slice(0, 60),
-        budget: Number(body.budget) || 0,
+        budget,
         clientName: boss.name, clientPhone: boss.phone, clientPhoto: boss.photo || null,
-        status: 'open', stage: null, negotiations: [], messages: [],
-        erranderName: null, erranderPhone: null, erranderPhoto: null,
-        ratingForErrander: null, ratingForClient: null,
-        sponsored, pickupPhoto: null, deliveryPhoto: null, reviewStatus: null, bossConfirmedAt: null,
+        sponsored, metrics, band, itemsLimit,
         createdAt: Date.now()
-      };
+      });
       tasks.unshift(task);
       await saveTasks();
       return json(200, { task });
@@ -261,6 +391,7 @@ exports.handler = async (event) => {
       if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
       const t = tasks.find(x => x.id === body.id);
       if (!t) return json(404, { error: 'task not found' });
+      if (normalizePhone(body.phone) !== t.clientPhone) return json(403, { error: 'Only the Boss who posted this task can cancel it.' });
       if (t.status !== 'open') return json(409, { error: 'only open tasks can be cancelled' });
       t.status = 'cancelled';
       await saveTasks();
@@ -274,10 +405,12 @@ exports.handler = async (event) => {
       if (t.status !== 'open') return json(409, { error: 'task is no longer open' });
       const amount = Number(body.amount);
       if (!amount || amount <= 0) return json(400, { error: 'enter a valid amount' });
+      if (t.sponsored && t.band && amount > t.band.high) return json(409, { error: capMessage(t) });
 
       if (body.by === 'errander') {
         const errander = findUser(body.erranderPhone);
         if (!isApprovedErrander(errander)) return json(403, { error: 'You must be an approved Errander to make an offer.' });
+        if (errander.phone === t.clientPhone) return json(409, { error: "You can't make an offer on your own task." });
         if (isBusy(errander.phone)) return json(409, { error: 'Finish your active task before offering on another.' });
         let entry = t.negotiations.find(n => n.erranderPhone === errander.phone);
         if (!entry) { entry = { erranderPhone: errander.phone, erranderName: errander.name, erranderPhoto: errander.photo || null }; t.negotiations.push(entry); }
@@ -295,13 +428,32 @@ exports.handler = async (event) => {
     }
 
     case 'accept': {
+      // The agreed price is always taken from the negotiation record on the
+      // server — whatever price the caller sends is ignored.
       if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
+      const by = body.by === 'boss' ? 'boss' : 'errander';
       const errander = findUser(body.erranderPhone);
-      if (!isApprovedErrander(errander)) return json(403, { error: 'You must be an approved Errander to accept tasks.' });
-      if (isBusy(errander.phone)) return json(409, { error: 'Finish your active task before accepting another.' });
+      if (!isApprovedErrander(errander)) return json(403, { error: 'That account is not an approved Errander.' });
       const t = tasks.find(x => x.id === body.id);
       if (!t) return json(404, { error: 'task not found' });
       if (t.status !== 'open') return json(409, { error: 'task is no longer open' });
+      if (errander.phone === t.clientPhone) return json(409, { error: "You can't accept your own task." });
+      if (isBusy(errander.phone)) {
+        return json(409, { error: by === 'boss' ? 'That Errander just took another job — pick a different offer.' : 'Finish your active task before accepting another.' });
+      }
+      const entry = t.negotiations.find(n => n.erranderPhone === errander.phone);
+      let agreed;
+      if (by === 'boss') {
+        if (normalizePhone(body.bossPhone) !== t.clientPhone) return json(403, { error: 'Only the Boss who posted this task can accept an offer.' });
+        if (!entry || entry.lastBy !== 'errander') return json(409, { error: 'There is no pending offer from that Errander to accept.' });
+        agreed = entry.amount;
+      } else if (entry) {
+        if (entry.lastBy !== 'boss') return json(409, { error: 'You are waiting for the Boss to respond to your offer.' });
+        agreed = entry.amount;
+      } else {
+        agreed = t.budget;
+      }
+      if (t.sponsored && t.band && agreed > t.band.high) return json(409, { error: capMessage(t) });
       if (t.sponsored) {
         const pairDone = tasks.some(x => x.sponsored && x.id !== t.id && x.clientPhone === t.clientPhone &&
           x.erranderPhone === errander.phone && x.status !== 'cancelled' && x.reviewStatus !== 'rejected');
@@ -312,7 +464,22 @@ exports.handler = async (event) => {
       t.erranderName = errander.name;
       t.erranderPhone = errander.phone;
       t.erranderPhoto = errander.photo || null;
-      if (body.acceptedPrice) t.budget = Number(body.acceptedPrice);
+      t.budget = agreed;
+      t.priceFlag = bandFlag(agreed, t.band);
+      await saveTasks();
+      return json(200, { task: t });
+    }
+
+    case 'raise-item-limit': {
+      if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
+      const t = tasks.find(x => x.id === body.id);
+      if (!t) return json(404, { error: 'task not found' });
+      if (normalizePhone(body.bossPhone) !== t.clientPhone) return json(403, { error: 'Only the Boss can change the item limit.' });
+      if (t.itemsLimit == null) return json(409, { error: 'This task does not involve buying items.' });
+      if (t.status !== 'accepted' || t.stage !== 'accepted') return json(409, { error: 'The limit can only be raised before the purchase is confirmed.' });
+      const n = Math.round(Number(body.newLimit) * 100) / 100;
+      if (!n || n <= t.itemsLimit) return json(400, { error: `Enter an amount higher than the current limit (GHS ${t.itemsLimit}).` });
+      t.itemsLimit = n;
       await saveTasks();
       return json(200, { task: t });
     }
@@ -321,12 +488,26 @@ exports.handler = async (event) => {
       if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
       const t = tasks.find(x => x.id === body.id);
       if (!t) return json(404, { error: 'task not found' });
+      if (normalizePhone(body.phone) !== t.erranderPhone) return json(403, { error: 'Only the matched Errander can update this task.' });
       if (t.status !== 'accepted') return json(409, { error: 'task not in progress' });
       const order = ['accepted', 'picked_up', 'delivered'];
       const idx = order.indexOf(t.stage);
       if (idx >= order.length - 1) return json(409, { error: 'already delivered' });
-      if (t.sponsored) {
-        const photo = typeof body.photo === 'string' ? body.photo.slice(0, 200000) : null;
+      if (typeof body.photo === 'string' && body.photo.length > 250000) return json(413, { error: 'That photo is too large — please retake it.' });
+      const photo = (typeof body.photo === 'string' && body.photo) ? body.photo : null;
+
+      if (t.stage === 'accepted' && t.itemsLimit != null) {
+        // Purchase errand: receipt total + receipt photo are required to confirm the purchase.
+        const amt = Math.round(Number(body.receiptAmount) * 100) / 100;
+        if (!amt || amt <= 0) return json(400, { error: 'Enter the total on your receipt.' });
+        if (!photo) return json(400, { error: 'A photo of the receipt is required.' });
+        if (amt > t.itemsLimit) {
+          return json(409, { error: `The receipt (GHS ${amt}) is over the Boss's item limit (GHS ${t.itemsLimit}). Ask the Boss in chat to raise the limit first.` });
+        }
+        t.receiptAmount = amt;
+        t.receiptPhoto = photo;
+        if (t.sponsored) t.pickupPhoto = photo; // proof of purchase doubles as proof of pickup
+      } else if (t.sponsored) {
         if (!photo) return json(400, { error: 'A photo is required at each step for sponsored tasks.' });
         if (t.stage === 'accepted') t.pickupPhoto = photo;
         if (t.stage === 'picked_up') t.deliveryPhoto = photo;
@@ -340,10 +521,11 @@ exports.handler = async (event) => {
       if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
       const t = tasks.find(x => x.id === body.id);
       if (!t) return json(404, { error: 'task not found' });
-      if (t.stage !== 'delivered') return json(409, { error: 'not yet delivered' });
+      if (normalizePhone(body.phone) !== t.clientPhone) return json(403, { error: 'Only the Boss can confirm completion.' });
+      if (t.stage !== 'delivered' || t.bossConfirmedAt) return json(409, { error: 'not ready to confirm' });
       t.bossConfirmedAt = Date.now();
       if (t.sponsored) {
-        t.reviewStatus = 'pending'; // status stays 'accepted' — payout withheld until admin approves
+        t.reviewStatus = 'pending';
       } else {
         t.status = 'completed';
         t.stage = 'completed';
@@ -357,8 +539,11 @@ exports.handler = async (event) => {
       const t = tasks.find(x => x.id === body.id);
       if (!t) return json(404, { error: 'task not found' });
       if (t.status !== 'completed') return json(409, { error: 'task not completed yet' });
-      if (body.ratingForErrander) t.ratingForErrander = Number(body.ratingForErrander);
-      if (body.ratingForClient) t.ratingForClient = Number(body.ratingForClient);
+      const who = normalizePhone(body.phone);
+      const star = (v) => Math.min(5, Math.max(1, Math.round(Number(v)) || 0));
+      if (body.ratingForErrander && who === t.clientPhone) t.ratingForErrander = star(body.ratingForErrander);
+      else if (body.ratingForClient && who === t.erranderPhone) t.ratingForClient = star(body.ratingForClient);
+      else return json(403, { error: 'You can only rate the other person on your own task.' });
       await saveTasks();
       return json(200, { task: t });
     }
@@ -368,15 +553,17 @@ exports.handler = async (event) => {
       const t = tasks.find(x => x.id === body.id);
       if (!t) return json(404, { error: 'task not found' });
       if (!t.erranderName) return json(409, { error: 'chat opens once a task is matched' });
+      const me = normalizePhone(body.phone);
+      if (me !== t.clientPhone && me !== t.erranderPhone) return json(403, { error: 'Only the Boss and the matched Errander can chat.' });
       const text = String(body.text || '').trim().slice(0, 500);
       if (!text) return json(400, { error: 'empty message' });
-      t.messages.push({ sender: String(body.sender || 'User').slice(0, 60), text, ts: Date.now() });
+      t.messages.push({ sender: me === t.clientPhone ? t.clientName : t.erranderName, text, ts: Date.now() });
       if (t.messages.length > 200) t.messages = t.messages.slice(-200);
       await saveTasks();
       return json(200, { task: t });
     }
 
-    case 'reset': {
+    case 'admin-reset': {
       if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
       const fresh = seedTasks();
       await store.setJSON('all-tasks', fresh);

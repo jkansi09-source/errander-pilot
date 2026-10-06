@@ -1,4 +1,36 @@
-# Errander Pilot — shared task feed (v7.3)
+# Errander Pilot — shared task feed (v8.1)
+
+## New in v8: fair-price bands, receipts, and tighter security
+
+**Price bands.** Every job now shows a "typical" GHS range, computed from the
+category, distance, number of stops, waiting hours and urgency. Bosses see it
+live while posting; Erranders see it on every job. Outliers get a warning
+(they are never blocked, except sponsored jobs, below). Edit the numbers in
+**Admin → Price bands**. **The shipped numbers are placeholders, not market
+data** — replace them with real Kumasi prices before the pilot, and revisit weekly.
+
+**Sponsored cap.** A sponsored job cannot be posted, countered or accepted above
+the top of its typical range. This is enforced on the server.
+
+**Receipts for purchase errands.** Tick "The Errander must buy items" and set a
+reimbursement limit. The Errander enters the receipt total and photographs it to
+confirm the purchase; the Boss pays back exactly that amount, and can raise the
+limit via chat/button if needed. Item costs are never covered by sponsorship.
+
+**Fixes included.**
+- The 4-second refresh no longer wipes typed text, open chat/details, or scroll position.
+- Phone numbers, chat and proof photos are hidden from everyone except the Boss and the matched Errander (before: phone numbers were visible in the raw `list` response).
+- The agreed price comes from the server's negotiation record; a tampered client can't change it.
+- Admin endpoints now require the passcode on every request.
+- You can't accept your own task; only the right party can cancel, advance, confirm, rate or chat.
+- "Reset all task data" moved into the Admin portal and needs the passcode.
+
+**v8.1 chat fix:** the Send button broke whenever a user's name contained a quote or similar character (and sometimes after a refresh); chat now identifies you by phone, Enter sends, and a two-phone test confirms messages flow both ways.
+
+**Deploying v8:** replace `netlify/functions/api.js`, `public/index.html` and this README, redeploy, then check the footer shows **build v8.1**. Still change `ADMIN_PASSCODE` in `api.js` first.
+
+Known limit (unchanged): there are no session tokens, so a technically skilled user who knows another person's phone number could forge requests. Fine for a supervised KNUST pilot; fix before a public launch.
+
 
 ## Debugging "Dashboard not responding" and "others can't see jobs"
 

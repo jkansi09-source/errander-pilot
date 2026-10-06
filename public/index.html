@@ -122,6 +122,14 @@
   @keyframes fadein{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
   footer{padding:16px 0 40px; text-align:center; color:var(--slate); font-size:0.74rem;}
   footer a{color:var(--slate);}
+
+  .band-hint{font-size:0.82rem;margin:-4px 0 12px;padding:8px 10px;border-radius:8px;background:rgba(14,122,59,0.08);border:1px solid rgba(14,122,59,0.25);color:var(--ink);}
+  .band-hint.warn{background:rgba(224,149,0,0.12);border-color:rgba(224,149,0,0.5);}
+  .band-line{font-size:0.78rem;color:var(--muted);margin-top:4px;}
+  .band-line.warn{color:#9a6200;font-weight:600;}
+  .price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}
+  .price-grid input{min-width:0;}
+  .receipt-box{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(11,42,87,0.06);border:1px dashed var(--navy);font-size:0.85rem;}
 </style>
 </head>
 <body>
@@ -229,9 +237,28 @@
             <div class="field"><label>Location</label><input id="c-loc" type="text" placeholder="e.g. Adum, Kumasi"></div>
             <div class="field"><label>Urgency / timing</label><input id="c-urgency" type="text" placeholder="e.g. Today, or Sat 9am"></div>
           </div>
+          <div class="row2">
+            <div class="field"><label>Distance (km)</label><input id="c-km" type="number" min="0" step="0.5" value="3"></div>
+            <div class="field"><label>Number of stops</label><input id="c-stops" type="number" min="1" step="1" value="1"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Expected waiting / working hours</label><input id="c-wait" type="number" min="0" step="0.5" value="0"></div>
+            <div class="field"><label style="display:flex;align-items:center;gap:8px;margin-top:22px;cursor:pointer;"><input type="checkbox" id="c-urgent" style="width:auto;"> ⚡ Urgent</label></div>
+          </div>
+          <div class="band-hint" id="c-band-hint">Typical price for this job: …</div>
           <div class="field">
-            <label>Your offer (GHS) <span class="muted">— Erranders can accept or counter this</span></label>
+            <label>Your offer for the Errander's service (GHS) <span class="muted">— Erranders can accept or counter this</span></label>
             <input id="c-budget" type="number" value="40">
+          </div>
+          <div class="field">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="c-buy" style="width:auto;" onchange="document.getElementById('c-items-wrap').classList.toggle('hidden', !this.checked); updateFeePreview();">
+              🛒 The Errander must buy items for me
+            </label>
+            <div class="hidden" id="c-items-wrap" style="margin-top:6px;">
+              <input id="c-items-limit" type="number" min="1" placeholder="Most I'll reimburse for items (GHS)">
+              <div class="muted" style="margin-top:4px;">The Errander pays at the shop, uploads the receipt, and you pay back exactly the receipt total — no haggling over item prices. Item costs are never covered by sponsorship.</div>
+            </div>
           </div>
           <div class="field hidden" id="sponsor-field">
             <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
@@ -286,7 +313,6 @@
       <div class="tab-panel" id="dash-report">
         <div class="panel"><h2>As a Boss</h2><div id="report-boss"></div></div>
         <div class="panel"><h2>As an Errander</h2><div id="report-errander"></div></div>
-        <button class="btn btn-ghost" onclick="resetDemo()">Reset demo data</button>
       </div>
     </div>
 
@@ -306,7 +332,13 @@
       <div class="panel"><h2>Pending Errander applications</h2><div id="admin-pending"></div></div>
       <div class="panel"><h2>All users</h2><div id="admin-users"></div></div>
       <div class="panel"><h2>Task overview</h2><div id="admin-task-stats"></div></div>
-      <button class="btn btn-ghost" onclick="switchView('home'); adminAuthed=false;">Log out of admin</button>
+      <div class="panel"><h2>💰 Price bands (GHS)</h2>
+        <p class="muted" style="margin:0 0 8px;">Placeholder guesses until you replace them with real Kumasi prices. Typical = base + per-km × km + per-extra-stop × stops + per-hour × hours (×(1+urgent uplift) if urgent). Sponsored jobs are capped at the top of the range.</p>
+        <div id="admin-price-editor"></div>
+        <button class="btn btn-primary btn-block" onclick="savePriceConfig()">Save price bands</button>
+      </div>
+      <button class="btn btn-ghost" onclick="resetDemo()">Reset all task data</button>
+      <button class="btn btn-ghost" onclick="switchView('home'); adminAuthed=false; adminPass='';">Log out of admin</button>
     </div>
 
   </div>
@@ -346,6 +378,19 @@
     if(sponsored) return `<div><div class="task-price">GHS ${amount}</div><div class="fee-line">🎓 Sponsored — no charge to Boss</div></div>`;
     const f = fee(amount), total = amount + f;
     return `<div><div class="task-price">GHS ${amount}</div><div class="fee-line">+GHS ${f} fee = GHS ${total} Boss pays</div></div>`;
+  }
+  function bandLine(t){
+    if(!t.band) return '';
+    const warn = t.priceFlag === 'above' ? ' · ⚠️ agreed price is above the typical range' : (t.priceFlag === 'below' ? ' · ⚠️ agreed price is below the typical range' : '');
+    return `<div class="band-line${warn ? ' warn' : ''}">Typical for this job: GHS ${t.band.low}–${t.band.high}${warn}</div>`;
+  }
+  function itemsLine(t, role){
+    if(t.itemsLimit == null) return '';
+    if(t.receiptAmount != null){
+      return `<div class="receipt-box">🧾 Receipt: <b>GHS ${t.receiptAmount}</b> for items (limit GHS ${t.itemsLimit})${role==='boss' ? ` — you pay the Errander back GHS ${t.receiptAmount} for the items, on top of their service price.` : ' — the Boss pays this back to you directly.'}
+        ${t.receiptPhoto ? `<br><img src="${t.receiptPhoto}" class="proof-photo" alt="Receipt" onclick="window.open(this.src)">` : ''}</div>`;
+    }
+    return `<div class="receipt-box">🛒 Buys items — Boss reimburses the receipt, up to GHS ${t.itemsLimit}. Not covered by sponsorship.</div>`;
   }
   function toast(msg){
     const stack = document.getElementById('toast-stack');
@@ -407,23 +452,26 @@
       <summary>💬 Chat${t.messages && t.messages.length ? ' (' + t.messages.length + ')' : ''}</summary>
       <div class="chat-messages">${msgs || '<p class="muted">No messages yet — say hello.</p>'}</div>
       <div class="chat-input-row">
-        <input type="text" id="chat-input-${t.id}" placeholder="Message ${escapeHtml(myName===t.clientName? t.erranderName : t.clientName)}">
-        <button class="btn btn-ghost" onclick="sendChatMessage('${t.id}', ${JSON.stringify(myName)}, 'chat-input-${t.id}')">Send</button>
+        <input type="text" id="chat-input-${t.id}" onkeydown="if(event.key==='Enter'){sendChatMessage('${t.id}','chat-input-${t.id}')}" placeholder="Message ${escapeHtml(myName===t.clientName? t.erranderName : t.clientName)}">
+        <button class="btn btn-ghost" onclick="sendChatMessage('${t.id}', 'chat-input-${t.id}')">Send</button>
       </div>
     </details>`;
   }
-  async function sendChatMessage(id, sender, inputElId){
+  async function sendChatMessage(id, inputElId){
     const input = document.getElementById(inputElId);
     const text = input.value.trim();
     if(!text) return;
     input.value = '';
-    await api('message', 'POST', { id, sender, text });
+    const r = await api('message', 'POST', { id, phone: myPhone, text });
+    if(r.error) toast(r.error);
     refresh();
   }
   function contactPhoto(url){ return url ? `<img src="${url}" class="photo-thumb" alt="">` : ''; }
 
+  let adminPass = '';
   async function api(action, method, body){
     const opts = { method: method || 'GET', headers: {'Content-Type':'application/json'} };
+    if(action.indexOf('admin-') === 0 && adminPass) opts.headers['X-Admin-Passcode'] = adminPass;
     if(body) opts.body = JSON.stringify(body);
     const res = await fetch(API + '?action=' + action + (method==='GET' && body ? '&' + new URLSearchParams(body) : ''), opts);
     return res.json();
@@ -525,8 +573,10 @@
     document.getElementById('errander-dashboard-inner').classList.toggle('hidden', st !== 'approved');
     const bioDisplay = document.getElementById('profile-bio-display');
     bioDisplay.textContent = myProfile.bio ? '"' + myProfile.bio + '"' : '';
-    document.getElementById('edit-name').value = myProfile.name || '';
-    document.getElementById('edit-bio').value = myProfile.bio || '';
+    if(!document.getElementById('edit-profile-details').hasAttribute('open')){
+      document.getElementById('edit-name').value = myProfile.name || '';
+      document.getElementById('edit-bio').value = myProfile.bio || '';
+    }
   }
   async function saveProfileDetails(){
     const name = document.getElementById('edit-name').value.trim();
@@ -560,16 +610,46 @@
       const b = document.createElement('button');
       b.className = 'chip' + (i===0 ? ' active' : '');
       b.textContent = c;
-      b.onclick = ()=>{ activeCategory = c; document.querySelectorAll('#cat-chips .chip').forEach(x=>x.classList.remove('active')); b.classList.add('active'); };
+      b.onclick = ()=>{ activeCategory = c; document.querySelectorAll('#cat-chips .chip').forEach(x=>x.classList.remove('active')); b.classList.add('active'); scheduleBandFetch(); };
       wrap.appendChild(b);
     });
+  }
+  let currentBand = null, bandTimer = null;
+  function readMetrics(){
+    return {
+      km: Number(document.getElementById('c-km').value) || 0,
+      stops: Number(document.getElementById('c-stops').value) || 1,
+      waitHours: Number(document.getElementById('c-wait').value) || 0,
+      urgent: document.getElementById('c-urgent').checked
+    };
+  }
+  function scheduleBandFetch(){
+    clearTimeout(bandTimer);
+    bandTimer = setTimeout(async ()=>{
+      try{
+        const m = readMetrics();
+        const r = await api('price-band', 'GET', { category: activeCategory, km: m.km, stops: m.stops, waitHours: m.waitHours, urgent: m.urgent ? '1' : '0' });
+        if(r.band){ currentBand = r.band; updateFeePreview(); }
+      }catch(e){}
+    }, 250);
   }
   function updateFeePreview(){
     const amt = Number(document.getElementById('c-budget').value) || 0;
     const sponsored = document.getElementById('c-sponsored').checked;
-    document.getElementById('c-fee-preview').innerHTML = sponsored
-      ? `🎓 Sponsored slot — Errander receives GHS ${amt}, the company covers it. <b>You pay nothing.</b>`
-      : `Errander receives GHS ${amt} · platform fee (${Math.round(feeRate*100)}%) GHS ${fee(amt)} · <b>you pay GHS ${amt+fee(amt)}</b>`;
+    const hint = document.getElementById('c-band-hint');
+    let over = false;
+    if(currentBand){
+      let msg = `Typical price for this job: <b>GHS ${currentBand.low}–${currentBand.high}</b> (around GHS ${currentBand.typical}).`;
+      hint.classList.remove('warn');
+      if(amt > currentBand.high){ msg += ' Your offer is above the typical range.'; hint.classList.add('warn'); over = true; }
+      else if(amt > 0 && amt < currentBand.low){ msg += ' Your offer is below the typical range — Erranders may decline or counter.'; hint.classList.add('warn'); }
+      hint.innerHTML = msg;
+    }
+    const capNote = (sponsored && over) ? `<br>⚠️ Sponsored jobs are capped at GHS ${currentBand.high}. Lower your offer or untick the sponsored option.` : '';
+    const buy = document.getElementById('c-buy').checked ? '<br>🛒 Items are paid back by you at the receipt total — not part of the figure above.' : '';
+    document.getElementById('c-fee-preview').innerHTML = (sponsored
+      ? `🎓 Sponsored slot — Errander receives GHS ${amt}, the company covers it. <b>You pay nothing for the service.</b>`
+      : `Errander receives GHS ${amt} · platform fee (${Math.round(feeRate*100)}%) GHS ${fee(amt)} · <b>you pay GHS ${amt+fee(amt)}</b>`) + capNote + buy;
   }
   function captureClientLocation(){
     if(!navigator.geolocation){ toast('Location not supported.'); return; }
@@ -589,15 +669,51 @@
     }, ()=>{ document.getElementById('e-loc-btn').textContent = '📍 Enable location (permission denied)'; });
   }
 
-  async function refresh(){
+  const LIVE_IDS = ['client-active','client-rate-prompt','client-history','open-tasks','active-task','errander-rate-prompt','errander-history','earnings'];
+  function snapshotUi(){
+    const st = { vals:{}, open:{}, scroll:{}, focus:null };
+    LIVE_IDS.forEach(id=>{
+      const c = document.getElementById(id); if(!c) return;
+      c.querySelectorAll('input[id],textarea[id]').forEach(el=>{ if(el.type !== 'file' && el.value !== '') st.vals[el.id] = el.value; });
+      st.open[id] = Array.from(c.querySelectorAll('details')).map(d=>d.open);
+      st.scroll[id] = c.scrollTop;
+    });
+    const a = document.activeElement;
+    if(a && a.id && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) st.focus = { id:a.id, s:a.selectionStart, e:a.selectionEnd };
+    return st;
+  }
+  function restoreUi(st){
+    LIVE_IDS.forEach(id=>{
+      const c = document.getElementById(id); if(!c) return;
+      const ds = c.querySelectorAll('details');
+      (st.open[id]||[]).forEach((o,i)=>{ if(ds[i] && o) ds[i].open = true; });
+      c.scrollTop = st.scroll[id] || 0;
+    });
+    Object.keys(st.vals).forEach(id=>{ const el = document.getElementById(id); if(el && el.type !== 'file') el.value = st.vals[id]; });
+    if(st.focus){
+      const el = document.getElementById(st.focus.id);
+      if(el){ try{ el.focus(); if(st.focus.s != null) el.setSelectionRange(st.focus.s, st.focus.e); }catch(e){} }
+    }
+  }
+  let lastRenderKey = '';
+  function renderAll(){
+    renderClientTasks(); renderOpenTasks(); renderActiveTask();
+    renderErranderRatePrompt(); renderEarnings(); renderReport();
+  }
+  async function refresh(force){
     if(!myProfile) return;
     try{
-      const data = await api('list', 'GET');
+      const data = await api('list', 'GET', { phone: myPhone });
       const fresh = data.tasks || [];
       checkNotifications(fresh);
       allTasks = fresh;
-      renderClientTasks(); renderOpenTasks(); renderActiveTask();
-      renderErranderRatePrompt(); renderEarnings(); renderReport();
+      const key = JSON.stringify(fresh) + '|' + (erranderCoords ? erranderCoords.lat + ',' + erranderCoords.lng : '') + '|' + (myProfile.errander ? myProfile.errander.status : '');
+      if(key !== lastRenderKey){
+        lastRenderKey = key;
+        const ui = snapshotUi();
+        renderAll();
+        restoreUi(ui);
+      }
       // refresh own profile occasionally to pick up flagCount / review outcomes
       api('get-user','GET',{phone:myPhone}).then(r=>{ if(r.user){ myProfile = r.user; renderProfileCard(); } });
     }catch(e){ /* retried next poll */ }
@@ -642,19 +758,28 @@
       urgency: document.getElementById('c-urgency').value.trim(),
       budget: document.getElementById('c-budget').value,
       clientPhone: myPhone,
-      sponsored: document.getElementById('c-sponsored').checked
+      sponsored: document.getElementById('c-sponsored').checked,
+      metrics: readMetrics()
     };
+    if(document.getElementById('c-buy').checked){
+      task.itemsLimit = document.getElementById('c-items-limit').value;
+      if(!(Number(task.itemsLimit) > 0)){ toast('Enter the most you will reimburse for items.'); return; }
+    }
     if(!task.desc){ toast('Describe the task first.'); return; }
     const res = await api('create', 'POST', task);
     if(res.error){ toast(res.error); return; }
     document.getElementById('c-desc').value = '';
     document.getElementById('c-sponsored').checked = false;
+    document.getElementById('c-buy').checked = false;
+    document.getElementById('c-items-wrap').classList.add('hidden');
+    document.getElementById('c-items-limit').value = '';
+    updateFeePreview();
     loadConfig();
     refresh();
   }
   async function cancelTask(id){
     if(!confirm('Cancel this task?')) return;
-    await api('cancel', 'POST', { id });
+    const r = await api('cancel', 'POST', { id, phone: myPhone }); if(r.error) toast(r.error);
     refresh();
   }
   function negotiationHtmlForBoss(t){
@@ -676,6 +801,16 @@
       </div>`;
     }).join('');
     return `<div class="negotiation-box"><div class="muted" style="font-weight:600; margin-bottom:6px;">Offers from Erranders</div>${rows}</div>`;
+  }
+  function raiseLimitHtml(t){
+    if(t.itemsLimit == null || t.status !== 'accepted' || t.stage !== 'accepted') return '';
+    return `<div class="task-actions"><input type="number" class="amount-input" id="rl-${t.id}" placeholder="New item limit (GHS)"><button class="btn btn-ghost" onclick="raiseItemLimit('${t.id}')">Raise item limit</button></div>`;
+  }
+  async function raiseItemLimit(id){
+    const v = document.getElementById('rl-'+id).value;
+    const r = await api('raise-item-limit', 'POST', { id, bossPhone: myPhone, newLimit: v });
+    if(r.error) toast(r.error); else toast('Item limit raised.');
+    refresh();
   }
   function reviewStatusHtml(t){
     if(!t.sponsored || !t.bossConfirmedAt) return '';
@@ -717,7 +852,7 @@
           </div>
           ${priceBlock(t.budget, t.sponsored)}
         </div>
-        ${contactHtml}${proofHtml}${negotiationHtmlForBoss(t)}${reviewStatusHtml(t)}${confirmHtml}${cancelHtml}${chatBoxHtml}`;
+        ${bandLine(t)}${itemsLine(t,'boss')}${raiseLimitHtml(t)}${contactHtml}${proofHtml}${negotiationHtmlForBoss(t)}${reviewStatusHtml(t)}${confirmHtml}${cancelHtml}${chatBoxHtml}`;
       activeWrap.appendChild(el);
     });
 
@@ -740,8 +875,7 @@
     });
   }
   async function acceptOffer(id, erranderPhone){
-    const entry = allTasks.find(t=>t.id===id).negotiations.find(n=>n.erranderPhone===erranderPhone);
-    const res = await api('accept', 'POST', { id, erranderPhone, acceptedPrice: entry ? entry.amount : undefined });
+    const res = await api('accept', 'POST', { id, erranderPhone, by: 'boss', bossPhone: myPhone });
     if(res.error) toast(res.error);
     refresh();
   }
@@ -757,13 +891,13 @@
     refresh();
   }
   async function confirmTask(id){
-    const res = await api('confirm', 'POST', { id });
+    const res = await api('confirm', 'POST', { id, phone: myPhone });
     if(res.error) toast(res.error);
     refresh();
   }
   async function rateTask(id, payload){
-    payload.id = id;
-    await api('rate', 'POST', payload);
+    payload.id = id; payload.phone = myPhone;
+    const r = await api('rate', 'POST', payload); if(r.error) toast(r.error);
     refresh();
   }
 
@@ -836,13 +970,14 @@
           </div>
           ${priceBlock(t.budget, t.sponsored)}
         </div>
+        ${bandLine(t)}${itemsLine(t,'errander')}
         ${t.sponsored ? '<div class="sponsor-note">🎓 Pickup &amp; delivery photos required for this sponsored job.</div>' : ''}
         ${negotiationHtmlForErrander(t)}`;
       wrap.appendChild(el);
     });
   }
   async function acceptTask(id, acceptedPrice){
-    const res = await api('accept', 'POST', { id, erranderPhone: myPhone, acceptedPrice });
+    const res = await api('accept', 'POST', { id, erranderPhone: myPhone, by: 'errander' });
     if(res.error) toast(res.error);
     refresh();
   }
@@ -857,7 +992,13 @@
     const buttons = { accepted:'Confirm pickup', picked_up:'Confirm delivery' };
 
     let actionHtml;
-    if(t.stage === 'delivered'){
+    const buying = t.itemsLimit != null && t.stage === 'accepted';
+    if(buying){
+      actionHtml = `<div class="receipt-box">🛒 Buy the items, then enter the receipt total and take a photo of it. Limit: GHS ${t.itemsLimit}. Over the limit? Ask the Boss in chat to raise it first.</div>
+        <div class="task-actions"><input type="number" class="amount-input" id="rc-${t.id}" placeholder="Receipt total (GHS)" step="0.01">
+        <input type="file" accept="image/*" capture="environment" id="rcp-${t.id}" class="hidden" onchange="advanceWithReceipt('${t.id}', this)">
+        <button class="btn btn-primary" onclick="document.getElementById('rcp-${t.id}').click()">📷 Confirm purchase (receipt photo)</button></div>`;
+    } else if(t.stage === 'delivered'){
       actionHtml = t.sponsored && t.reviewStatus === 'pending'
         ? '<div class="sponsor-note">🎓 Boss confirmed — awaiting Errander review before payout.</div>'
         : '<p class="muted">Waiting for the Boss to confirm — payout releases automatically once they do.</p>';
@@ -878,17 +1019,30 @@
       <div class="task-meta">${t.loc} · ${t.urgency}</div>
       <div class="contact-box">${contactPhoto(t.clientPhoto)}📞 ${t.clientName} — ${t.clientPhone || 'no number given'}</div>
       <div class="task-price" style="margin:6px 0;">GHS ${t.budget}</div>
+      ${bandLine(t)}
       <p class="muted">${labels[t.stage]}</p>
+      ${t.stage !== 'accepted' ? itemsLine(t,'errander') : ''}
       ${proofsHtml}
       ${actionHtml}
       ${chatHtml(t, myProfile.name)}`;
   }
-  async function advanceTask(id){ await api('advance', 'POST', { id }); refresh(); }
+  async function advanceTask(id){ const r = await api('advance', 'POST', { id, phone: myPhone }); if(r.error) toast(r.error); refresh(); }
+  function advanceWithReceipt(id, input){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    const amt = document.getElementById('rc-'+id).value;
+    if(!(Number(amt) > 0)){ toast('Enter the receipt total first, then take the photo.'); input.value = ''; return; }
+    fileToResizedDataUrl(file, 700).then(async photo=>{
+      const res = await api('advance', 'POST', { id, phone: myPhone, photo, receiptAmount: amt });
+      if(res.error) toast(res.error);
+      refresh();
+    });
+  }
   function advanceWithPhoto(id, input){
     const file = input.files && input.files[0];
     if(!file) return;
     fileToResizedDataUrl(file, 500).then(async photo=>{
-      const res = await api('advance', 'POST', { id, photo });
+      const res = await api('advance', 'POST', { id, phone: myPhone, photo });
       if(res.error) toast(res.error);
       refresh();
     });
@@ -958,7 +1112,7 @@
   }
   async function resetDemo(){
     if(!confirm('Reset all pilot task data for everyone?')) return;
-    await api('reset', 'POST', {});
+    const r = await api('admin-reset', 'POST', {}); if(r.error) toast(r.error);
     prevSnapshot = null;
     loadConfig();
     refresh();
@@ -971,8 +1125,9 @@
     const errEl = document.getElementById('admin-login-error');
     if(res.error){ errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
-    adminAuthed = true;
+    adminAuthed = true; adminPass = pass;
     switchView('admin');
+    loadPriceEditor();
     refreshAdmin();
   }
   async function refreshAdmin(){
@@ -989,6 +1144,7 @@
       el.innerHTML = `
         <div class="task-desc">${t.desc}</div>
         <div class="task-meta">Boss: ${t.clientName} (${t.clientPhone}) · Errander: ${t.erranderName} (${t.erranderPhone}) · GHS ${t.budget}</div>
+        ${bandLine(t)}${t.receiptAmount != null ? `<div class="task-meta">🧾 Receipt GHS ${t.receiptAmount} (paid by Boss, not sponsored)</div>` : ''}
         <div style="margin-top:8px;">
           ${t.pickupPhoto ? `<img src="${t.pickupPhoto}" class="proof-photo" alt="Pickup"><span class="muted">pickup</span>` : '<span class="muted">No pickup photo</span>'}
           ${t.deliveryPhoto ? `<img src="${t.deliveryPhoto}" class="proof-photo" alt="Delivery" style="margin-left:10px;"><span class="muted">delivery</span>` : '<span class="muted">No delivery photo</span>'}
@@ -1036,6 +1192,31 @@
       <div class="stat"><span>Sponsored slots used</span><span>${sponsoredCompleted} / ${sponsoredCap}</span></div>
       <div class="stat"><span>Total tasks ever posted</span><span>${tasks.length}</span></div>`;
   }
+  let priceCfg = null;
+  async function loadPriceEditor(){
+    const r = await api('admin-get-price-config', 'GET');
+    if(!r.config) return;
+    priceCfg = r.config;
+    const c = priceCfg;
+    let html = `<div class="price-grid"><label class="muted">Low ×<input id="pc-low" type="number" step="0.05" value="${c.lowFactor}"></label><label class="muted">High ×<input id="pc-high" type="number" step="0.05" value="${c.highFactor}"></label><label class="muted">Urgent +<input id="pc-urg" type="number" step="0.05" value="${c.urgentUplift}"></label><span></span></div>`;
+    html += `<div class="price-grid muted"><span>Category</span><span>Base</span><span>Per km</span><span>Per extra stop</span></div>`;
+    Object.keys(c.categories).forEach((cat,i)=>{
+      const v = c.categories[cat];
+      html += `<div class="muted" style="margin-top:6px;font-weight:600;">${cat}</div><div class="price-grid"><input id="pc-${i}-base" type="number" value="${v.base}"><input id="pc-${i}-km" type="number" value="${v.perKm}"><input id="pc-${i}-stop" type="number" value="${v.perStop}"><input id="pc-${i}-hr" type="number" value="${v.perHour}" title="Per hour"></div>`;
+    });
+    html += `<p class="muted">Columns: base · per km · per extra stop · per hour (4th box).</p>`;
+    document.getElementById('admin-price-editor').innerHTML = html;
+  }
+  async function savePriceConfig(){
+    if(!priceCfg) return;
+    const cfg = { lowFactor: document.getElementById('pc-low').value, highFactor: document.getElementById('pc-high').value, urgentUplift: document.getElementById('pc-urg').value, categories:{} };
+    Object.keys(priceCfg.categories).forEach((cat,i)=>{
+      cfg.categories[cat] = { base: document.getElementById(`pc-${i}-base`).value, perKm: document.getElementById(`pc-${i}-km`).value, perStop: document.getElementById(`pc-${i}-stop`).value, perHour: document.getElementById(`pc-${i}-hr`).value };
+    });
+    const r = await api('admin-set-price-config', 'POST', { config: cfg });
+    if(r.error){ toast(r.error); return; }
+    toast('Price bands saved.'); loadPriceEditor();
+  }
   async function adminDecide(phone, decision, btn){
     btn.closest('.task').style.opacity = '0.5';
     await api('admin-decide', 'POST', { phone, decision });
@@ -1051,7 +1232,7 @@
   }
 
   /* ---------- init ---------- */
-  const BUILD_TAG = 'v7.3';
+  const BUILD_TAG = 'v8.1';
   console.log('Errander pilot build:', BUILD_TAG);
   const footerBuild = document.getElementById('footer-build');
   if(footerBuild) footerBuild.textContent = ' · build ' + BUILD_TAG;
@@ -1059,7 +1240,12 @@
   try{ buildCatChips(); }catch(e){ console.error('buildCatChips failed', e); }
   try{ renderHeaderAuth(); }catch(e){ console.error('renderHeaderAuth failed', e); }
   try{ loadConfig(); }catch(e){ console.error('loadConfig failed', e); }
-  try{ document.getElementById('c-budget').addEventListener('input', updateFeePreview); }catch(e){ console.error('fee preview wiring failed', e); }
+  try{
+    document.getElementById('c-budget').addEventListener('input', updateFeePreview);
+    ['c-km','c-stops','c-wait','c-urgent'].forEach(id=> document.getElementById(id).addEventListener('input', scheduleBandFetch));
+    document.getElementById('c-urgent').addEventListener('change', scheduleBandFetch);
+    scheduleBandFetch();
+  }catch(e){ console.error('fee preview wiring failed', e); }
 
   if(myPhone){
     api('get-user', 'GET', { phone: myPhone }).then(res=>{
