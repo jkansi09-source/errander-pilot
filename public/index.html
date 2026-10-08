@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Errander Pilot</title>
+<link rel="icon" type="image/png" href="/assets/logo-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Brand palette sampled directly from the Errander logo */
+    --navy:#0B2A57; --navy-soft:#163F7A;        /* trust & reliability */
+    --green:#0E7A3B; --teal:#0E7A3B;             /* safety, service, "done" — teal alias kept for existing class names */
+    --amber:#FDC902; --amber-deep:#E09500;       /* speed, value, energy */
+    --paper:#FFFFFF; --paper-raise:#F2F4F7;      /* transparency & simplicity */
+    --ink:#181B20; --slate:#5C6470; --red:#B14B3E; --line:#DDE2E8; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  h1,h2,.brand{font-family:'Space Grotesk',system-ui,sans-serif;}
+  .wrap{max-width:640px; margin:0 auto; padding:0 18px;}
+  header{background:var(--navy); color:var(--white); padding:12px 0; position:sticky; top:0; z-index:6;}
+  header .wrap{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; row-gap:10px;}
+  .brand{font-size:1.1rem; font-weight:700; cursor:pointer;}
+  .hdr-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap; width:100%; justify-content:flex-start;}
+  @media (min-width:560px){ .hdr-actions{width:auto; justify-content:flex-end;} }
+  .bell-btn{background:none; border:1px solid rgba(255,255,255,0.3); border-radius:9px; min-width:42px; min-height:42px; cursor:pointer; font-size:1rem; color:var(--white); touch-action:manipulation;}
+  .hdr-btn{background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.3); color:var(--white); border-radius:9px; padding:10px 14px; min-height:42px; font-size:0.82rem; font-weight:600; cursor:pointer; touch-action:manipulation;}
+  .hdr-name{font-size:0.82rem; color:var(--amber); font-weight:600; padding:10px 2px;}
+  main{padding:18px 0 60px;}
+  .view{display:none;} .view.show{display:block;}
+  .panel{background:var(--white); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:14px;}
+  .panel h2{font-size:0.95rem; margin:0 0 10px;}
+  .muted{color:var(--slate); font-size:0.82rem;}
+  .field{margin-bottom:10px;}
+  .field label{display:block; font-size:0.78rem; color:var(--slate); margin-bottom:4px; font-weight:500;}
+  .field input, .field select, .field textarea{width:100%; padding:11px 12px; min-height:44px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.95rem; background:var(--paper); color:var(--ink); box-sizing:border-box;}
+  .field textarea{min-height:56px; resize:vertical;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  @media (max-width:480px){.row2{grid-template-columns:1fr;}}
+  .hidden{display:none !important;}
+  .chip-row{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;}
+  .chip{border:1px solid var(--line); background:var(--paper); border-radius:20px; padding:9px 14px; min-height:40px; font-size:0.78rem; font-weight:600; color:var(--slate); cursor:pointer; touch-action:manipulation; box-sizing:border-box;}
+  .chip.active{background:var(--navy); color:var(--white); border-color:var(--navy);}
+  .btn{appearance:none; border:none; border-radius:8px; padding:12px 18px; min-height:44px; font-family:inherit; font-size:0.9rem; font-weight:600; cursor:pointer; touch-action:manipulation; box-sizing:border-box;}
+  .btn-primary{background:var(--navy); color:var(--white);}
+  .btn-primary:hover{background:var(--navy-soft);}
+  .btn-primary:disabled{opacity:0.45; cursor:not-allowed;}
+  .btn-ghost{background:transparent; color:var(--navy); border:1px solid var(--line); padding:10px 16px; min-height:44px; font-size:0.84rem;}
+  .btn-danger{background:transparent; color:var(--red); border:1px solid var(--line); padding:10px 14px; min-height:40px; font-size:0.8rem;}
+  .btn-block{width:100%;}
+  .btn-loc{background:var(--paper-raise); border:1px solid var(--line); color:var(--teal); padding:11px 12px; min-height:44px; font-size:0.82rem; border-radius:7px; cursor:pointer; margin-bottom:10px; touch-action:manipulation; box-sizing:border-box;}
+  .task{border:1px solid var(--line); border-radius:9px; padding:12px; margin-bottom:9px; background:var(--paper);}
+  .task-top{display:flex; justify-content:space-between; gap:8px;}
+  .task-cat{font-weight:600; font-size:0.76rem; color:var(--teal); margin-bottom:2px;}
+  .task-desc{font-weight:600; font-size:0.9rem; margin-bottom:3px;}
+  .task-meta{font-size:0.76rem; color:var(--slate);}
+  .task-price{font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--green); white-space:nowrap; text-align:right;}
+  .fee-line{font-size:0.68rem; color:var(--slate); white-space:nowrap; text-align:right; margin-top:1px;}
+  .status-pill{display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 9px; border-radius:20px; margin-top:6px; margin-right:4px;}
+  .status-open{background:rgba(224,149,0,0.2); color:var(--amber-deep);}
+  .status-accepted{background:rgba(14,122,59,0.15); color:var(--teal);}
+  .status-completed{background:rgba(14,122,59,0.15); color:var(--green);}
+  .status-flagged{background:rgba(177,75,62,0.12); color:var(--red);}
+  .task-actions{display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; align-items:center;}
+  .amount-input{width:90px; padding:10px; min-height:42px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.88rem; box-sizing:border-box;}
+  .negotiation-box{border-top:1px solid var(--line); margin-top:9px; padding-top:9px;}
+  .nego-item{border:1px solid var(--line); border-radius:8px; padding:9px; margin-bottom:7px; background:var(--white);}
+  .nego-top{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .trust-note{font-size:0.76rem; color:var(--slate); background:var(--paper); border:1px dashed var(--line); border-radius:7px; padding:7px 9px; margin-bottom:10px;}
+  .sponsor-note{font-size:0.78rem; color:var(--amber-deep); background:rgba(224,149,0,0.12); border:1px solid rgba(224,149,0,0.4); border-radius:7px; padding:8px 10px; margin-bottom:10px; font-weight:600;}
+  .verify-badge{display:inline-block; font-size:0.76rem; font-weight:600; padding:5px 12px; border-radius:20px; margin:6px 4px 6px 0;}
+  .badge-pending{background:rgba(224,149,0,0.2); color:var(--amber-deep);}
+  .badge-approved{background:rgba(14,122,59,0.15); color:var(--green);}
+  .badge-rejected{background:rgba(177,75,62,0.12); color:var(--red);}
+  .badge-none{background:var(--paper-raise); color:var(--slate);}
+  .uni-badge{display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(224,149,0,0.25); color:var(--amber-deep); margin-left:4px;}
+  .sponsor-badge{display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(224,149,0,0.25); color:var(--amber-deep); margin-left:4px;}
+  .flag-badge{display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(177,75,62,0.15); color:var(--red); margin-left:4px;}
+  .stat{display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--line); font-size:0.83rem;}
+  .stat:last-child{border-bottom:none;}
+  .contact-box{background:rgba(14,122,59,0.1); border:1px solid rgba(14,122,59,0.3); border-radius:7px; padding:8px 10px; font-size:0.82rem; margin:8px 0; color:var(--green); font-weight:600; display:flex; align-items:center;}
+  .stars{display:flex; gap:4px; margin:6px 0;}
+  .star-pick{font-size:1.5rem; cursor:pointer; color:var(--line); background:none; border:none; padding:6px; min-width:40px; min-height:40px; touch-action:manipulation;}
+  .star-pick.on{color:var(--amber-deep);}
+  details.history summary{cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--teal); padding:4px 0;}
+  .chat-box{margin-top:10px; border-top:1px dashed var(--line); padding-top:8px;}
+  .chat-box summary{cursor:pointer; font-size:0.82rem; font-weight:600; color:var(--teal);}
+  .chat-messages{max-height:200px; overflow-y:auto; margin:8px 0; padding-right:2px;}
+  .chat-bubble{display:inline-block; max-width:80%; padding:6px 10px; border-radius:10px; font-size:0.82rem; margin:3px 0;}
+  .chat-row{display:flex;}
+  .chat-input-row{display:flex; gap:6px; margin-top:4px;}
+  .chat-input-row input{flex:1; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.85rem;}
+  .busy-note{background:rgba(224,149,0,0.15); border:1px solid rgba(224,149,0,0.4); color:var(--amber-deep); border-radius:7px; padding:8px 10px; font-size:0.8rem; margin-bottom:10px;}
+  .photo-thumb{width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--line); vertical-align:middle; margin-right:8px;}
+  .proof-photo{width:64px; height:64px; border-radius:8px; object-fit:cover; border:1px solid var(--line); margin-right:6px; cursor:pointer;}
+  .scroll-portal{max-height:460px; overflow-y:auto; padding-right:4px; -webkit-overflow-scrolling:touch;}
+  .scroll-portal::-webkit-scrollbar{width:6px;}
+  .scroll-portal::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
+  .id-type-row{display:flex; gap:8px; margin-bottom:10px;}
+  .id-type-row .chip{flex:1; text-align:center;}
+  .photo-preview{width:64px; height:64px; border-radius:50%; object-fit:cover; border:1px solid var(--line); margin-top:6px; display:block;}
+  .profile-card{display:flex; align-items:center; gap:12px; margin-bottom:6px;}
+  .profile-photo{width:56px; height:56px; border-radius:50%; object-fit:cover; border:1px solid var(--line); background:var(--paper-raise); flex:none;}
+  .profile-name{font-weight:700; font-size:1rem;}
+  .auth-tabs{display:flex; gap:4px; background:var(--paper-raise); border-radius:9px; padding:4px; margin-bottom:14px;}
+  .auth-tabs button{flex:1; background:none; border:none; border-radius:6px; padding:8px; font-size:0.85rem; font-weight:600; color:var(--slate); cursor:pointer;}
+  .auth-tabs button.active{background:var(--navy); color:var(--white);}
+  nav.tabs{display:flex; gap:4px; background:var(--white); border:1px solid var(--line); border-radius:9px; padding:4px; margin-bottom:14px;}
+  nav.tabs button{flex:1; background:none; border:none; border-radius:6px; padding:11px 6px; min-height:42px; font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600; color:var(--slate); cursor:pointer; touch-action:manipulation;}
+  nav.tabs button.active{background:var(--navy); color:var(--white);}
+  nav.tabs button[data-mode="errander"].active{background:var(--green); color:var(--white);}
+  nav.tabs button[data-mode="report"].active{background:var(--amber-deep); color:var(--white);}
+  .mode-banner{display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:9px; font-weight:700; font-size:0.85rem; margin-bottom:14px; color:var(--white);}
+  .mode-banner.mode-boss{background:var(--navy);}
+  .mode-banner.mode-errander{background:var(--green);}
+  .tab-panel{display:none;} .tab-panel.show{display:block;}
+  #toast-stack{position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:999; display:flex; flex-direction:column; gap:8px; width:min(92vw,420px); pointer-events:none;}
+  .toast{background:var(--navy); color:var(--white); padding:11px 14px; border-radius:8px; font-size:0.85rem; box-shadow:0 6px 18px rgba(0,0,0,0.25); animation:fadein .2s ease; pointer-events:none;}
+  @keyframes fadein{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
+  footer{padding:16px 0 40px; text-align:center; color:var(--slate); font-size:0.74rem;}
+  footer a{color:var(--slate);}
+
+  .band-hint{font-size:0.82rem;margin:-4px 0 12px;padding:8px 10px;border-radius:8px;background:rgba(14,122,59,0.08);border:1px solid rgba(14,122,59,0.25);color:var(--ink);}
+  .band-hint.warn{background:rgba(224,149,0,0.12);border-color:rgba(224,149,0,0.5);}
+  .band-line{font-size:0.78rem;color:var(--muted);margin-top:4px;}
+  .band-line.warn{color:#9a6200;font-weight:600;}
+  .price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}
+  .price-grid input{min-width:0;}
+  .receipt-box{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(11,42,87,0.06);border:1px dashed var(--navy);font-size:0.85rem;}
+
+  .task-photo{width:100%;max-height:220px;object-fit:cover;border-radius:9px;margin:8px 0 4px;border:1px solid var(--line);cursor:pointer;}
+  .feed-by{display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--slate);margin-bottom:6px;}
+  .feed-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:var(--white);}
+  .feed-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;}
+  .feed-chips .chip{white-space:nowrap;flex:none;}
+</style>
+</head>
+<body>
+
+<div id="toast-stack"></div>
+
+<header>
+  <div class="wrap">
+    <div class="brand" onclick="goHome()" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+      <img src="/assets/logo-icon.png" alt="" style="height:30px; width:auto;">
+      Errander <span style="font-weight:400; font-size:0.68rem; color:var(--amber);">· pilot</span>
+    </div>
+    <div class="hdr-actions">
+      <button class="bell-btn" onclick="enableNotifications()" title="Enable notifications">🔔</button>
+      <span class="hdr-name hidden" id="hdr-name"></span>
+      <button class="hdr-btn hidden" id="hdr-dashboard-btn" onclick="switchView('dashboard')">Dashboard</button>
+      <button class="hdr-btn hidden" id="hdr-logout-btn" onclick="logout()">Log out</button>
+      <button class="hdr-btn" id="hdr-login-btn" onclick="switchView('auth')">Log in</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div id="net-status" class="hidden" style="margin:10px 0; padding:8px 12px; border-radius:9px; font-size:0.82rem;"></div>
+
+    <!-- HOME -->
+    <div class="view show" id="view-home">
+      <div class="panel" style="text-align:center;">
+        <img src="/assets/logo-hero.png" alt="Errander — Anything Legal. Anywhere. Anytime." style="width:100%; max-width:320px; height:auto; margin:0 auto 8px;">
+        <p style="margin:0 0 12px;"><em>My Kpakpakpa money making place</em></p>
+        <p class="muted" style="margin:0 0 18px;">Post any legal task — deliveries, errands, home services and more. Negotiate a fair price with a nearby, ID-verified Errander. Or become an Errander yourself and start earning, one job at a time.</p>
+        <button class="btn btn-primary btn-block" onclick="switchView('auth')">Get started — log in or sign up</button>
+      </div>
+      <div class="panel">
+        <h2>How it works</h2>
+        <div class="stat"><span>1. Create one profile</span><span class="muted">Use it as a Boss, or apply to be an Errander too</span></div>
+        <div class="stat"><span>2. Post &amp; negotiate</span><span class="muted">Boss sets an offer; Erranders can counter</span></div>
+        <div class="stat"><span>3. Match, chat &amp; confirm</span><span class="muted">Boss confirms it's done — both sides rate</span></div>
+      </div>
+    </div>
+
+    <!-- AUTH -->
+    <div class="view" id="view-auth">
+      <div class="panel">
+        <div class="auth-tabs">
+          <button class="active" id="auth-tab-login" onclick="setAuthMode('login')">Log in</button>
+          <button id="auth-tab-signup" onclick="setAuthMode('signup')">Create account</button>
+        </div>
+        <div id="auth-login-form">
+          <div class="field"><label>Phone number</label><input id="li-phone" type="tel" placeholder="024 000 0000"></div>
+          <div class="field"><label>PIN</label><input id="li-pin" type="password" inputmode="numeric" placeholder="4+ digit PIN"></div>
+          <button class="btn btn-primary btn-block" onclick="doLogin()">Log in</button>
+        </div>
+        <div id="auth-signup-form" class="hidden">
+          <div class="field"><label>Full name</label><input id="su-name" type="text" placeholder="Your name"></div>
+          <div class="field"><label>Phone number</label><input id="su-phone" type="tel" placeholder="024 000 0000"></div>
+          <div class="field"><label>Choose a PIN</label><input id="su-pin" type="password" inputmode="numeric" placeholder="4+ digits"></div>
+          <div class="field">
+            <label>Profile photo <span class="muted">(shown to whoever you're matched with)</span></label>
+            <input type="file" id="su-photo-input" accept="image/*" capture="user" onchange="handlePhotoUpload(this,'pending_signup_photo','su-photo-preview')">
+            <img id="su-photo-preview" class="photo-preview hidden" alt="Your photo">
+          </div>
+          <button class="btn btn-primary btn-block" onclick="doSignup()">Create account</button>
+        </div>
+        <p class="muted" id="auth-error" style="display:none; color:var(--red); margin:8px 0 0;"></p>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="view" id="view-dashboard">
+      <div class="panel">
+        <div class="profile-card">
+          <img class="profile-photo" id="profile-photo" alt="">
+          <div><div class="profile-name" id="profile-name"></div><div class="muted" id="profile-phone"></div></div>
+        </div>
+        <p class="muted" id="profile-bio-display" style="font-style:italic; margin:0 0 8px;"></p>
+        <span class="verify-badge" id="errander-badge"></span><span class="uni-badge hidden" id="profile-uni-badge">🎓 Errander University Certified</span><span class="flag-badge hidden" id="profile-flag-badge"></span>
+        <div style="margin-bottom:10px;"><input type="file" id="edit-photo-input" accept="image/*" capture="user" class="hidden" onchange="handleProfilePhotoChange(this)"><button class="btn btn-ghost" onclick="document.getElementById('edit-photo-input').click()">Change photo</button></div>
+
+        <details id="edit-profile-details">
+          <summary style="cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--teal);">✏️ Edit name &amp; personal quote</summary>
+          <div style="margin-top:10px;">
+            <div class="field"><label>Name</label><input id="edit-name" type="text"></div>
+            <div class="field"><label>A quote or motto you believe in <span class="muted">(shown on your profile)</span></label><textarea id="edit-bio" maxlength="140" placeholder="e.g. Reliable, on time, every time."></textarea></div>
+            <button class="btn btn-primary btn-block" onclick="saveProfileDetails()">Save</button>
+          </div>
+        </details>
+      </div>
+
+      <nav class="tabs">
+        <button class="active" data-mode="feed" onclick="showDashTab('feed', this)">📰 Feed</button>
+        <button data-mode="boss" onclick="showDashTab('post', this)">Post a Task</button>
+        <button data-mode="errander" onclick="showDashTab('jobs', this)">Find Jobs</button>
+        <button data-mode="report" onclick="showDashTab('report', this)">My Report</button>
+      </nav>
+
+      <!-- FEED (everyone) -->
+      <div class="tab-panel show" id="dash-feed">
+        <div class="panel">
+          <h2>📰 Jobs &amp; requests</h2>
+          <p class="muted" style="margin:0 0 10px;">Everything open right now, from every Boss. Approved Erranders can take or counter a job straight from here.</p>
+          <div class="feed-chips" id="feed-chips"></div>
+          <div id="feed-list"></div>
+        </div>
+      </div>
+
+      <!-- POST (Boss) -->
+      <div class="tab-panel" id="dash-post">
+        <div class="mode-banner mode-boss">👤 BOSS MODE — you're posting and paying for tasks</div>
+        <div class="panel">
+          <h2>Post a task</h2>
+          <div class="chip-row" id="cat-chips"></div>
+          <div class="field"><label>Describe the task</label><textarea id="c-desc" placeholder="e.g. Pick up a prescription from Ridge Pharmacy and drop it at my office"></textarea></div>
+          <button type="button" class="btn-loc" onclick="captureClientLocation()" id="c-loc-btn">📍 Use my current location</button>
+          <div class="row2">
+            <div class="field"><label>Location</label><input id="c-loc" type="text" placeholder="e.g. Adum, Kumasi"></div>
+            <div class="field"><label>Urgency / timing</label><input id="c-urgency" type="text" placeholder="e.g. Today, or Sat 9am"></div>
+          </div>
+          <div class="field">
+            <label>Photo of the task <span class="muted">(optional — e.g. the leaking tap, the parcel, the place)</span></label>
+            <input type="file" id="c-photo-input" accept="image/*" onchange="handleTaskPhoto(this)">
+            <img id="c-photo-preview" class="task-photo hidden" alt="Task photo">
+            <button type="button" class="btn btn-ghost hidden" id="c-photo-clear" onclick="clearTaskPhoto()">Remove photo</button>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Distance (km)</label><input id="c-km" type="number" min="0" step="0.5" value="3"></div>
+            <div class="field"><label>Number of stops</label><input id="c-stops" type="number" min="1" step="1" value="1"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Expected waiting / working hours</label><input id="c-wait" type="number" min="0" step="0.5" value="0"></div>
+            <div class="field"><label style="display:flex;align-items:center;gap:8px;margin-top:22px;cursor:pointer;"><input type="checkbox" id="c-urgent" style="width:auto;"> ⚡ Urgent</label></div>
+          </div>
+          <div class="band-hint" id="c-band-hint">Typical price for this job: …</div>
+          <div class="field">
+            <label>Your offer for the Errander's service (GHS) <span class="muted">— Erranders can accept or counter this</span></label>
+            <input id="c-budget" type="number" value="40">
+          </div>
+          <div class="field">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="c-buy" style="width:auto;" onchange="document.getElementById('c-items-wrap').classList.toggle('hidden', !this.checked); updateFeePreview();">
+              🛒 The Errander must buy items for me
+            </label>
+            <div class="hidden" id="c-items-wrap" style="margin-top:6px;">
+              <input id="c-items-limit" type="number" min="1" placeholder="Most I'll reimburse for items (GHS)">
+              <div class="muted" style="margin-top:4px;">The Errander pays at the shop, uploads the receipt, and you pay back exactly the receipt total — no haggling over item prices. Item costs are never covered by sponsorship.</div>
+            </div>
+          </div>
+          <div class="field hidden" id="sponsor-field">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="c-sponsored" style="width:auto;" onchange="updateFeePreview()">
+              🎓 KNUST-sponsored pilot slot — Errander (the company) pays, free for you
+            </label>
+            <div class="muted" id="sponsor-slots" style="margin-top:4px;"></div>
+          </div>
+          <div class="trust-note" id="c-fee-preview"></div>
+          <button class="btn btn-primary btn-block" onclick="postTask()">Post task</button>
+        </div>
+        <div class="panel">
+          <h2>Your posted tasks</h2>
+          <div class="trust-note">🔒 An Errander can mark a job delivered, but only you can confirm it complete — that's what releases payment and unlocks ratings.</div>
+          <div id="client-active" class="scroll-portal"></div>
+          <div id="client-rate-prompt"></div>
+          <details class="history"><summary id="client-history-count">Completed history</summary><div id="client-history" class="scroll-portal"></div></details>
+        </div>
+      </div>
+
+      <!-- JOBS (Errander) -->
+      <div class="tab-panel" id="dash-jobs">
+        <div class="mode-banner mode-errander">🛵 ERRANDER MODE — you're finding and completing tasks to earn</div>
+        <div class="panel hidden" id="errander-apply-panel">
+          <h2>Become an Errander</h2>
+          <p class="muted" style="margin:0 0 10px;">Real deployments verify a Ghana Card or license before you can accept tasks.</p>
+          <div class="field">
+            <label>ID type</label>
+            <div class="id-type-row" id="id-type-row">
+              <button type="button" class="chip active" data-type="ghana_card" onclick="selectIdType('ghana_card', this)">Ghana Card</button>
+              <button type="button" class="chip" data-type="license" onclick="selectIdType('license', this)">Driver's License</button>
+            </div>
+          </div>
+          <div class="field"><label id="apply-id-label">Ghana Card number</label><input id="apply-id" type="text" placeholder="GHA-000000000-0"></div>
+          <button class="btn btn-primary btn-block" onclick="applyErrander()">Submit for verification</button>
+          <p class="muted" id="apply-error" style="display:none; color:var(--red); margin:8px 0 0;"></p>
+        </div>
+        <div class="hidden" id="errander-dashboard-inner">
+          <button type="button" class="btn-loc" onclick="captureErranderLocation()" id="e-loc-btn">📍 Enable location (sorts tasks by distance)</button>
+          <div class="panel"><h2>Open tasks near you</h2><div id="open-tasks" class="scroll-portal"></div></div>
+          <div class="panel hidden" id="active-panel"><h2>Your active task</h2><div id="active-task"></div></div>
+          <div id="errander-rate-prompt"></div>
+          <div class="panel">
+            <h2>Earnings (this pilot)</h2>
+            <div id="earnings"></div>
+            <details class="history" style="margin-top:8px;"><summary id="errander-history-count">Completed history</summary><div id="errander-history"></div></details>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORT -->
+      <div class="tab-panel" id="dash-report">
+        <div class="panel"><h2>As a Boss</h2><div id="report-boss"></div></div>
+        <div class="panel"><h2>As an Errander</h2><div id="report-errander"></div></div>
+      </div>
+    </div>
+
+    <!-- ADMIN LOGIN -->
+    <div class="view" id="view-admin-login">
+      <div class="panel">
+        <h2>Admin login</h2>
+        <div class="field"><label>Passcode</label><input id="admin-pass" type="password"></div>
+        <button class="btn btn-primary btn-block" onclick="adminLogin()">Log in</button>
+        <p class="muted" id="admin-login-error" style="display:none; color:var(--red); margin:8px 0 0;">Incorrect passcode.</p>
+      </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div class="view" id="view-admin">
+      <div class="panel"><h2>🎓 Sponsored jobs awaiting review</h2><div id="admin-sponsor-review"></div></div>
+      <div class="panel"><h2>Pending Errander applications</h2><div id="admin-pending"></div></div>
+      <div class="panel"><h2>All users</h2><div id="admin-users"></div></div>
+      <div class="panel"><h2>Task overview</h2><div id="admin-task-stats"></div></div>
+      <div class="panel"><h2>💰 Price bands (GHS)</h2>
+        <p class="muted" style="margin:0 0 8px;">Placeholder guesses until you replace them with real Kumasi prices. Typical = base + per-km × km + per-extra-stop × stops + per-hour × hours (×(1+urgent uplift) if urgent). Sponsored jobs are capped at the top of the range.</p>
+        <div id="admin-price-editor"></div>
+        <button class="btn btn-primary btn-block" onclick="savePriceConfig()">Save price bands</button>
+      </div>
+      <button class="btn btn-ghost" onclick="resetDemo()">Reset all task data</button>
+      <button class="btn btn-ghost" onclick="switchView('home'); adminAuthed=false; adminPass='';">Log out of admin</button>
+    </div>
+
+  </div>
+</main>
+<footer>Errander pilot — shared data via Netlify Functions + Blobs. <a href="#" onclick="switchView('admin-login'); return false;">Admin</a><span id="footer-build"></span></footer>
+
+<script>
+  const API = '/.netlify/functions/api';
+  const CATEGORIES = ['Delivery & Pickup','Errands & Queuing','Home Services · Plumbing','Home Services · Cleaning','Business & Field'];
+
+  let activeCategory = CATEGORIES[0];
+  let allTasks = [];
+  let clientCoords = null, erranderCoords = null;
+  let prevSnapshot = null, notifyEnabled = false;
+  let myPhone = localStorage.getItem('my_phone') || null;
+  let myProfile = null;
+  let adminAuthed = false;
+  let signupIdType = 'ghana_card';
+  let authMode = 'login';
+  let feeRate = 0.10, sponsoredCap = 100, sponsoredUsed = 0;
+
+  /* ---------- helpers ---------- */
+  function timeAgo(ts){
+    const mins = Math.round((Date.now() - ts) / 60000);
+    if(mins < 1) return 'just now';
+    if(mins < 60) return mins + ' min ago';
+    const hrs = Math.round(mins/60);
+    return hrs + (hrs===1 ? ' hour ago' : ' hours ago');
+  }
+  function distKm(lat1,lng1,lat2,lng2){
+    const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+  function fee(amount){ return Math.round(amount * feeRate); }
+  function priceBlock(amount, sponsored){
+    if(sponsored) return `<div><div class="task-price">GHS ${amount}</div><div class="fee-line">🎓 Sponsored — no charge to Boss</div></div>`;
+    const f = fee(amount), total = amount + f;
+    return `<div><div class="task-price">GHS ${amount}</div><div class="fee-line">+GHS ${f} fee = GHS ${total} Boss pays</div></div>`;
+  }
+  function bandLine(t){
+    if(!t.band) return '';
+    const warn = t.priceFlag === 'above' ? ' · ⚠️ agreed price is above the typical range' : (t.priceFlag === 'below' ? ' · ⚠️ agreed price is below the typical range' : '');
+    return `<div class="band-line${warn ? ' warn' : ''}">Typical for this job: GHS ${t.band.low}–${t.band.high}${warn}</div>`;
+  }
+  function itemsLine(t, role){
+    if(t.itemsLimit == null) return '';
+    if(t.receiptAmount != null){
+      return `<div class="receipt-box">🧾 Receipt: <b>GHS ${t.receiptAmount}</b> for items (limit GHS ${t.itemsLimit})${role==='boss' ? ` — you pay the Errander back GHS ${t.receiptAmount} for the items, on top of their service price.` : ' — the Boss pays this back to you directly.'}
+        ${t.receiptPhoto ? `<br><img src="${photoSrc(t.receiptPhoto)}" class="proof-photo" alt="Receipt" onclick="window.open(this.src)">` : ''}</div>`;
+    }
+    return `<div class="receipt-box">🛒 Buys items — Boss reimburses the receipt, up to GHS ${t.itemsLimit}. Not covered by sponsorship.</div>`;
+  }
+  function toast(msg){
+    const stack = document.getElementById('toast-stack');
+    const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
+    stack.appendChild(el);
+    setTimeout(()=> el.remove(), 5000);
+    if(notifyEnabled && document.hidden){ try{ new Notification('Errander', { body: msg }); }catch(e){} }
+  }
+  function enableNotifications(){
+    if(!('Notification' in window)){ toast('Notifications not supported in this browser.'); return; }
+    Notification.requestPermission().then(p=>{ notifyEnabled = (p === 'granted'); toast(notifyEnabled ? 'Notifications enabled.' : 'Notifications not enabled.'); });
+  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function fileToResizedDataUrl(file, maxDim){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = e=>{
+        const img = new Image();
+        img.onload = ()=>{
+          let w=img.width, h=img.height;
+          if(w>h){ if(w>maxDim){h=Math.round(h*maxDim/w); w=maxDim;} } else { if(h>maxDim){w=Math.round(w*maxDim/h); h=maxDim;} }
+          const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+          canvas.getContext('2d').drawImage(img,0,0,w,h);
+          resolve(canvas.toDataURL('image/jpeg',0.7));
+        };
+        img.onerror=reject; img.src=e.target.result;
+      };
+      reader.onerror=reject; reader.readAsDataURL(file);
+    });
+  }
+  function handlePhotoUpload(input, storageKey, previewId){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    fileToResizedDataUrl(file, 200).then(dataUrl=>{
+      localStorage.setItem(storageKey, dataUrl);
+      const img = document.getElementById(previewId);
+      img.src = dataUrl; img.classList.remove('hidden');
+    }).catch(()=> toast('Could not read that photo — try a different file.'));
+  }
+  function starRow(taskId, onPick){
+    const wrap = document.createElement('div'); wrap.className = 'stars';
+    for(let i=1;i<=5;i++){
+      const b = document.createElement('button');
+      b.type='button'; b.className='star-pick'; b.textContent='★'; b.dataset.v=i;
+      b.onclick = ()=>{ wrap.querySelectorAll('.star-pick').forEach(s=> s.classList.toggle('on', Number(s.dataset.v) <= i)); onPick(i); };
+      wrap.appendChild(b);
+    }
+    return wrap;
+  }
+  // Messages you've sent but the server hasn't shown back yet. They are re-sent
+  // automatically (same id, so never duplicated) until they appear in the chat.
+  let pendingMsgs = {};   // taskId -> [{cid, text, ts, tries, lastTry, failed}]
+  function newCid(){ return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function allMsgs(t){
+    const seen = new Set(), out = [];
+    (t.messages||[]).concat(...(t.threads||[]).map(th=>th.messages||[])).forEach(m=>{ const k = m.cid || (m.ts+m.text); if(!seen.has(k)){ seen.add(k); out.push(m); } });
+    return out.sort((x,y)=>x.ts-y.ts);
+  }
+  // pre: unique id prefix per place on screen; to: Errander phone (Boss replying to a thread);
+  // msgs: the messages of this thread; title: summary line.
+  function chatHtml(t, myName, pre, to, msgs, title, ph){
+    pre = pre || ''; to = to || ''; msgs = msgs || t.messages || [];
+    const have = new Set(msgs.map(m=>m.cid).filter(Boolean));
+    const pend = (pendingMsgs[t.id]||[]).filter(p=> !have.has(p.cid) && (p.to||'') === to);
+    const rows = msgs.map(m=>({ mine: m.by ? m.by === myPhone : m.sender === myName, sender: m.sender, text: m.text, state: '' }))
+      .concat(pend.map(p=>({ mine: true, sender: myName, text: p.text, state: p.failed ? ' ⚠️ not sent — tap Send to retry' : ' ⏳' })));
+    const bubbles = rows.map(m=>{
+      return `<div class="chat-row" style="justify-content:${m.mine?'flex-end':'flex-start'};">
+        <div class="chat-bubble" style="background:${m.mine?'var(--navy)':'var(--paper-raise)'}; color:${m.mine?'var(--white)':'var(--ink)'}; ${m.state ? 'opacity:0.7;' : ''}">
+          <b>${m.mine?'You':escapeHtml(m.sender)}:</b> ${escapeHtml(m.text)}${m.state}
+        </div></div>`;
+    }).join('');
+    const last = msgs.length ? msgs[msgs.length-1] : null;
+    const waiting = last && (last.by ? last.by !== myPhone : last.sender !== myName);
+    const inId = `${pre}chat-input-${t.id}`;
+    const toArg = JSON.stringify(to).replace(/"/g, '&quot;');
+    return `<details class="chat-box"${waiting ? ' open' : ''}>
+      <summary>${title || '💬 Chat'}${rows.length ? ' (' + rows.length + ')' : ''}${waiting ? ' · <b style="color:var(--amber-deep)">new — reply</b>' : ''}</summary>
+      <div class="chat-messages">${bubbles || '<p class="muted">No messages yet — say hello.</p>'}</div>
+      <div class="chat-input-row">
+        <input type="text" id="${inId}" onkeydown="if(event.key==='Enter'){sendChatMessage('${t.id}','${inId}',${toArg})}" placeholder="${escapeHtml(ph || 'Type a message…')}">
+        <button class="btn btn-ghost" onclick="sendChatMessage('${t.id}','${inId}',${toArg})">Send</button>
+      </div>
+    </details>`;
+  }
+  // Boss: one chat per Errander who has written (before a match), or the matched chat.
+  function bossChatsHtml(t){
+    if(t.erranderName){
+      return chatHtml(t, myProfile.name, 'bm-', t.erranderPhone, t.messages, '💬 Chat with ' + escapeHtml(t.erranderName), 'Message ' + t.erranderName);
+    }
+    if(t.status !== 'open' || !(t.threads||[]).length) return '';
+    return '<div class="negotiation-box"><div class="muted" style="font-weight:600; margin-bottom:6px;">Questions from Erranders</div>' +
+      t.threads.map(th=> chatHtml(t, myProfile.name, 'bt-' + th.erranderPhone + '-', th.erranderPhone, th.messages, '💬 ' + escapeHtml(th.erranderName), 'Reply to ' + th.erranderName)).join('') + '</div>';
+  }
+  // Errander: ask the Boss about an open job.
+  function askBossHtml(t, pre){
+    return chatHtml(t, myProfile.name, pre, '', t.messages, '💬 Ask the Boss a question', 'Ask ' + t.clientName + ' about this job…');
+  }
+  async function postPending(taskId, p){
+    p.tries++; p.lastTry = Date.now();
+    const r = await api('message', 'POST', { id: taskId, phone: myPhone, text: p.text, cid: p.cid, to: p.to || undefined });
+    if(r.error && !r.netError){ p.failed = true; p.fatal = true; toast(r.error); }
+  }
+  async function sendChatMessage(id, inputElId, to){
+    const input = document.getElementById(inputElId);
+    const text = input.value.trim();
+    if(!text) return;
+    input.value = '';
+    // retry button on a failed message re-sends the oldest failed one
+    const p = { cid: newCid(), text, to: to || '', ts: Date.now(), tries: 0, lastTry: 0, failed: false };
+    (pendingMsgs[id] = pendingMsgs[id] || []).push(p);
+    lastRenderKey = '';
+    { const ui = snapshotUi(); renderAll(); restoreUi(ui); }
+    await postPending(id, p);
+    refresh();
+  }
+  // Called after every list refresh: confirm delivered messages, re-send missing ones.
+  function reconcilePending(){
+    Object.keys(pendingMsgs).forEach(id=>{
+      const t = allTasks.find(x=>x.id===id);
+      const have = new Set((t ? allMsgs(t) : []).map(m=>m.cid).filter(Boolean));
+      pendingMsgs[id] = pendingMsgs[id].filter(p=> !have.has(p.cid));
+      pendingMsgs[id].forEach(p=>{
+        if(p.fatal) return;
+        if(Date.now() - p.lastTry > 5000){
+          if(p.tries >= 12){ p.failed = true; return; }
+          postPending(id, p);
+        }
+      });
+      if(!pendingMsgs[id].length) delete pendingMsgs[id];
+    });
+  }
+  // Photos are stored server-side as short ids; older inline images (data: URLs) still display.
+  function photoSrc(v){ return !v ? '' : (String(v).indexOf('data:') === 0 ? v : API + '?action=photo&id=' + encodeURIComponent(v)); }
+  function contactPhoto(url){ return url ? `<img src="${photoSrc(url)}" class="photo-thumb" alt="" loading="lazy">` : ''; }
+
+  let adminPass = '';
+  let taskPhotoData = null, feedCategory = 'All';
+  function handleTaskPhoto(input){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    fileToResizedDataUrl(file, 600).then(d=>{
+      taskPhotoData = d;
+      const img = document.getElementById('c-photo-preview'); img.src = d; img.classList.remove('hidden');
+      document.getElementById('c-photo-clear').classList.remove('hidden');
+    }).catch(()=> toast('Could not read that photo — try another.'));
+  }
+  function clearTaskPhoto(){
+    taskPhotoData = null;
+    document.getElementById('c-photo-input').value = '';
+    document.getElementById('c-photo-preview').classList.add('hidden');
+    document.getElementById('c-photo-clear').classList.add('hidden');
+  }
+  function taskPhotoHtml(t){ return t.photo ? `<img src="${photoSrc(t.photo)}" class="task-photo" alt="Task photo" onclick="window.open(this.src)">` : ''; }
+  function setFeedCategory(c){ feedCategory = c; lastRenderKey = ''; refresh(); }
+  function goFindJobs(){
+    const btn = document.querySelector('nav.tabs button[data-mode="errander"]');
+    showDashTab('jobs', btn); window.scrollTo(0,0);
+  }
+  function renderFeed(){
+    if(!myProfile) return;
+    const chips = document.getElementById('feed-chips');
+    chips.innerHTML = '';
+    ['All'].concat(CATEGORIES).forEach(c=>{
+      const b = document.createElement('button'); b.type = 'button';
+      b.className = 'chip' + (feedCategory === c ? ' active' : ''); b.textContent = c;
+      b.onclick = ()=> setFeedCategory(c);
+      chips.appendChild(b);
+    });
+    const approved = myProfile.errander && myProfile.errander.status === 'approved';
+    const busy = allTasks.some(t => t.erranderPhone === myPhone && t.status === 'accepted');
+    const open = allTasks.filter(t => t.status === 'open' && (feedCategory === 'All' || t.category === feedCategory))
+                         .sort((a,b)=> b.createdAt - a.createdAt);
+    const wrap = document.getElementById('feed-list');
+    if(!open.length){ wrap.innerHTML = '<p class="muted">No open jobs in this category right now. Check back soon — or post one yourself.</p>'; return; }
+    wrap.innerHTML = '';
+    open.forEach(t=>{
+      const mine = t.clientPhone === myPhone;
+      let action;
+      if(mine) action = '<div class="muted" style="margin-top:8px;">This is your task — manage it under “Post a Task”.</div>';
+      else if(approved) action = busy ? '<div class="busy-note">🔒 Finish your active task before taking another.</div>' : negotiationHtmlForErrander(t, 'fd-');
+      else if(myProfile.errander && myProfile.errander.status === 'pending') action = '<div class="muted" style="margin-top:8px;">⏳ Your Errander application is pending — you can take jobs once approved.</div>';
+      else action = '<div class="task-actions"><button class="btn btn-primary" onclick="goFindJobs()">Become an Errander to take this job</button></div>';
+      const el = document.createElement('div'); el.className = 'feed-card';
+      el.innerHTML = `
+        <div class="feed-by">${contactPhoto(t.clientPhoto)}<span><b>${escapeHtml(t.clientName)}</b> · ${timeAgo(t.createdAt)}</span>${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}</div>
+        <div class="task-top"><div><div class="task-cat">${escapeHtml(t.category)}</div><div class="task-desc">${escapeHtml(t.desc)}</div>
+        <div class="task-meta">📍 ${escapeHtml(t.loc)} · ${escapeHtml(t.urgency)}</div></div>${priceBlock(t.budget, t.sponsored)}</div>
+        ${taskPhotoHtml(t)}${bandLine(t)}${itemsLine(t,'errander')}
+        ${action}${(!mine && approved) ? askBossHtml(t, 'fd-') : ''}`;
+      wrap.appendChild(el);
+    });
+  }
+  async function api(action, method, body){
+    const opts = { method: method || 'GET', headers: {'Content-Type':'application/json'} };
+    if(action.indexOf('admin-') === 0 && adminPass) opts.headers['X-Admin-Passcode'] = adminPass;
+    // Browsers refuse a body on GET requests (it throws before anything is sent); GET data goes in the URL.
+    if(body && opts.method !== 'GET') opts.body = JSON.stringify(body);
+    let res;
+    try{ res = await fetch(API + '?action=' + action + (method==='GET' && body ? '&' + new URLSearchParams(body) : ''), opts); }
+    catch(e){ return { error: 'No connection to the server.', netError: true }; }
+    try{ return await res.json(); }
+    catch(e){ return { error: 'Server problem (' + res.status + '). Retrying…', netError: true }; }
+  }
+  async function loadConfig(){
+    const res = await api('config','GET');
+    if(res.feeRate!=null) feeRate = res.feeRate;
+    if(res.sponsoredCap!=null) sponsoredCap = res.sponsoredCap;
+    if(res.sponsoredUsed!=null) sponsoredUsed = res.sponsoredUsed;
+    const field = document.getElementById('sponsor-field');
+    const slotsEl = document.getElementById('sponsor-slots');
+    if(sponsoredUsed < sponsoredCap){
+      field.classList.remove('hidden');
+      slotsEl.textContent = `${sponsoredCap - sponsoredUsed} of ${sponsoredCap} sponsored slots remaining`;
+    } else {
+      field.classList.add('hidden');
+    }
+    updateFeePreview();
+  }
+
+  /* ---------- view switching ---------- */
+  function switchView(view){
+    ['home','auth','dashboard','admin-login','admin'].forEach(v=>{
+      const el = document.getElementById('view-'+v);
+      if(el) el.classList.toggle('show', v===view);
+      else console.error('switchView: missing element #view-'+v);
+    });
+    window.scrollTo(0,0);
+  }
+  function goHome(){ switchView(myProfile ? 'dashboard' : 'home'); }
+
+  /* ---------- auth ---------- */
+  function setAuthMode(mode){
+    authMode = mode;
+    document.getElementById('auth-tab-login').classList.toggle('active', mode==='login');
+    document.getElementById('auth-tab-signup').classList.toggle('active', mode==='signup');
+    document.getElementById('auth-login-form').classList.toggle('hidden', mode!=='login');
+    document.getElementById('auth-signup-form').classList.toggle('hidden', mode!=='signup');
+    document.getElementById('auth-error').style.display = 'none';
+  }
+  async function doLogin(){
+    const phone = document.getElementById('li-phone').value.trim();
+    const pin = document.getElementById('li-pin').value.trim();
+    const errEl = document.getElementById('auth-error');
+    if(!phone || !pin){ errEl.textContent='Enter your phone and PIN.'; errEl.style.display='block'; return; }
+    const res = await api('login', 'POST', { phone, pin });
+    if(res.error){ errEl.textContent = res.error; errEl.style.display='block'; return; }
+    completeLogin(res.user);
+  }
+  async function doSignup(){
+    const name = document.getElementById('su-name').value.trim();
+    const phone = document.getElementById('su-phone').value.trim();
+    const pin = document.getElementById('su-pin').value.trim();
+    const errEl = document.getElementById('auth-error');
+    if(!name || !phone || pin.length < 4){ errEl.textContent='Fill in your name, phone, and a 4+ digit PIN.'; errEl.style.display='block'; return; }
+    const photo = localStorage.getItem('pending_signup_photo') || null;
+    const res = await api('signup', 'POST', { name, phone, pin, photo });
+    if(res.error){ errEl.textContent = res.error; errEl.style.display='block'; return; }
+    localStorage.removeItem('pending_signup_photo');
+    completeLogin(res.user);
+  }
+  function completeLogin(user){
+    myPhone = user.phone; myProfile = user;
+    localStorage.setItem('my_phone', myPhone);
+    document.getElementById('auth-error').style.display = 'none';
+    renderHeaderAuth(); renderProfileCard();
+    lastRenderKey = ''; prevSnapshot = null; allTasks = [];
+    switchView('dashboard'); refresh();
+  }
+  function logout(){
+    myPhone = null; myProfile = null; lastRenderKey = ''; allTasks = []; prevSnapshot = null;
+    document.getElementById('net-status').className = 'hidden';
+    localStorage.removeItem('my_phone');
+    renderHeaderAuth(); switchView('home');
+  }
+  function renderHeaderAuth(){
+    document.getElementById('hdr-name').classList.toggle('hidden', !myProfile);
+    document.getElementById('hdr-dashboard-btn').classList.toggle('hidden', !myProfile);
+    document.getElementById('hdr-logout-btn').classList.toggle('hidden', !myProfile);
+    document.getElementById('hdr-login-btn').classList.toggle('hidden', !!myProfile);
+    if(myProfile) document.getElementById('hdr-name').textContent = 'Hi, ' + myProfile.name;
+  }
+
+  /* ---------- profile / dashboard ---------- */
+  function renderProfileCard(){
+    if(!myProfile) return;
+    document.getElementById('profile-name').textContent = myProfile.name;
+    document.getElementById('profile-phone').textContent = myProfile.phone;
+    const img = document.getElementById('profile-photo');
+    img.src = photoSrc(myProfile.photo) || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="56" height="56"%3E%3Crect width="56" height="56" fill="%23EDE9DE"/%3E%3C/svg%3E';
+    const badge = document.getElementById('errander-badge');
+    const st = myProfile.errander ? myProfile.errander.status : 'none';
+    const labels = { none:'Not an Errander yet', pending:'⏳ Errander application pending review', approved:'✅ Approved Errander', rejected:'❌ Errander application rejected' };
+    badge.className = 'verify-badge badge-' + st;
+    badge.textContent = labels[st];
+    document.getElementById('profile-uni-badge').classList.toggle('hidden', !(myProfile.errander && myProfile.errander.universityCertified));
+    const flagBadge = document.getElementById('profile-flag-badge');
+    if(myProfile.flagCount > 0){ flagBadge.textContent = `⚠️ ${myProfile.flagCount} flagged job${myProfile.flagCount>1?'s':''}`; flagBadge.classList.remove('hidden'); }
+    else flagBadge.classList.add('hidden');
+    document.getElementById('errander-apply-panel').classList.toggle('hidden', st === 'approved' || st === 'pending');
+    document.getElementById('errander-dashboard-inner').classList.toggle('hidden', st !== 'approved');
+    const bioDisplay = document.getElementById('profile-bio-display');
+    bioDisplay.textContent = myProfile.bio ? '"' + myProfile.bio + '"' : '';
+    if(!document.getElementById('edit-profile-details').hasAttribute('open')){
+      document.getElementById('edit-name').value = myProfile.name || '';
+      document.getElementById('edit-bio').value = myProfile.bio || '';
+    }
+  }
+  async function saveProfileDetails(){
+    const name = document.getElementById('edit-name').value.trim();
+    const bio = document.getElementById('edit-bio').value.trim();
+    if(!name){ toast('Name cannot be empty.'); return; }
+    const res = await api('update-profile', 'POST', { phone: myPhone, name, bio });
+    if(res.error){ toast(res.error); return; }
+    myProfile = res.user;
+    renderHeaderAuth();
+    renderProfileCard();
+    document.getElementById('edit-profile-details').removeAttribute('open');
+    toast('Profile updated.');
+  }
+  function handleProfilePhotoChange(input){
+    const file = input.files && input.files[0];
+    if(!file || !myProfile) return;
+    fileToResizedDataUrl(file, 200).then(async dataUrl=>{
+      const res = await api('update-profile', 'POST', { phone: myPhone, photo: dataUrl });
+      if(res.user){ myProfile = res.user; renderProfileCard(); toast('Photo updated.'); }
+    });
+  }
+  function showDashTab(name, btn){
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('show'));
+    document.getElementById('dash-'+name).classList.add('show');
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  function buildCatChips(){
+    const wrap = document.getElementById('cat-chips');
+    CATEGORIES.forEach((c,i)=>{
+      const b = document.createElement('button');
+      b.className = 'chip' + (i===0 ? ' active' : '');
+      b.textContent = c;
+      b.onclick = ()=>{ activeCategory = c; document.querySelectorAll('#cat-chips .chip').forEach(x=>x.classList.remove('active')); b.classList.add('active'); scheduleBandFetch(); };
+      wrap.appendChild(b);
+    });
+  }
+  let currentBand = null, bandTimer = null;
+  function readMetrics(){
+    return {
+      km: Number(document.getElementById('c-km').value) || 0,
+      stops: Number(document.getElementById('c-stops').value) || 1,
+      waitHours: Number(document.getElementById('c-wait').value) || 0,
+      urgent: document.getElementById('c-urgent').checked
+    };
+  }
+  function scheduleBandFetch(){
+    clearTimeout(bandTimer);
+    bandTimer = setTimeout(async ()=>{
+      try{
+        const m = readMetrics();
+        const r = await api('price-band', 'GET', { category: activeCategory, km: m.km, stops: m.stops, waitHours: m.waitHours, urgent: m.urgent ? '1' : '0' });
+        if(r.band){ currentBand = r.band; updateFeePreview(); }
+      }catch(e){}
+    }, 250);
+  }
+  function updateFeePreview(){
+    const amt = Number(document.getElementById('c-budget').value) || 0;
+    const sponsored = document.getElementById('c-sponsored').checked;
+    const hint = document.getElementById('c-band-hint');
+    let over = false;
+    if(currentBand){
+      let msg = `Typical price for this job: <b>GHS ${currentBand.low}–${currentBand.high}</b> (around GHS ${currentBand.typical}).`;
+      hint.classList.remove('warn');
+      if(amt > currentBand.high){ msg += ' Your offer is above the typical range.'; hint.classList.add('warn'); over = true; }
+      else if(amt > 0 && amt < currentBand.low){ msg += ' Your offer is below the typical range — Erranders may decline or counter.'; hint.classList.add('warn'); }
+      hint.innerHTML = msg;
+    }
+    const capNote = (sponsored && over) ? `<br>⚠️ Sponsored jobs are capped at GHS ${currentBand.high}. Lower your offer or untick the sponsored option.` : '';
+    const buy = document.getElementById('c-buy').checked ? '<br>🛒 Items are paid back by you at the receipt total — not part of the figure above.' : '';
+    document.getElementById('c-fee-preview').innerHTML = (sponsored
+      ? `🎓 Sponsored slot — Errander receives GHS ${amt}, the company covers it. <b>You pay nothing for the service.</b>`
+      : `Errander receives GHS ${amt} · platform fee (${Math.round(feeRate*100)}%) GHS ${fee(amt)} · <b>you pay GHS ${amt+fee(amt)}</b>`) + capNote + buy;
+  }
+  function captureClientLocation(){
+    if(!navigator.geolocation){ toast('Location not supported.'); return; }
+    document.getElementById('c-loc-btn').textContent = 'Getting location…';
+    navigator.geolocation.getCurrentPosition(pos=>{
+      clientCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      document.getElementById('c-loc-btn').textContent = '📍 Location captured';
+    }, ()=>{ document.getElementById('c-loc-btn').textContent = '📍 Use my current location (permission denied)'; });
+  }
+  function captureErranderLocation(){
+    if(!navigator.geolocation){ toast('Location not supported.'); return; }
+    document.getElementById('e-loc-btn').textContent = 'Getting location…';
+    navigator.geolocation.getCurrentPosition(pos=>{
+      erranderCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      document.getElementById('e-loc-btn').textContent = '📍 Location enabled — sorting by distance';
+      refresh();
+    }, ()=>{ document.getElementById('e-loc-btn').textContent = '📍 Enable location (permission denied)'; });
+  }
+
+  const LIVE_IDS = ['feed-list','client-active','client-rate-prompt','client-history','open-tasks','active-task','errander-rate-prompt','errander-history','earnings'];
+  function snapshotUi(){
+    const st = { vals:{}, open:{}, scroll:{}, focus:null };
+    LIVE_IDS.forEach(id=>{
+      const c = document.getElementById(id); if(!c) return;
+      c.querySelectorAll('input[id],textarea[id]').forEach(el=>{ if(el.type !== 'file' && el.value !== '') st.vals[el.id] = el.value; });
+      st.open[id] = Array.from(c.querySelectorAll('details')).map(d=>d.open);
+      st.scroll[id] = c.scrollTop;
+    });
+    const a = document.activeElement;
+    if(a && a.id && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) st.focus = { id:a.id, s:a.selectionStart, e:a.selectionEnd };
+    return st;
+  }
+  function restoreUi(st){
+    LIVE_IDS.forEach(id=>{
+      const c = document.getElementById(id); if(!c) return;
+      const ds = c.querySelectorAll('details');
+      (st.open[id]||[]).forEach((o,i)=>{ if(ds[i] && o) ds[i].open = true; });
+      c.scrollTop = st.scroll[id] || 0;
+    });
+    Object.keys(st.vals).forEach(id=>{ const el = document.getElementById(id); if(el && el.type !== 'file') el.value = st.vals[id]; });
+    if(st.focus){
+      const el = document.getElementById(st.focus.id);
+      if(el){ try{ el.focus(); if(st.focus.s != null) el.setSelectionRange(st.focus.s, st.focus.e); }catch(e){} }
+    }
+  }
+  let lastRenderKey = '', lastOkAt = null;
+  function showNetStatus(ok, msg){
+    const el = document.getElementById('net-status');
+    if(!el) return;
+    if(ok){
+      lastOkAt = new Date();
+      el.className = ''; el.style.background = 'rgba(14,122,59,0.08)'; el.style.border = '1px solid rgba(14,122,59,0.25)';
+      el.innerHTML = '🟢 Live · updated ' + lastOkAt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'}) + ' · <a href="#" onclick="manualRefresh(); return false;">Refresh now</a>';
+    } else {
+      el.className = ''; el.style.background = 'rgba(177,75,62,0.10)'; el.style.border = '1px solid rgba(177,75,62,0.4)';
+      el.innerHTML = '⚠️ ' + escapeHtml(msg) + ' · <a href="#" onclick="manualRefresh(); return false;">Try again</a>';
+    }
+  }
+  function manualRefresh(){ lastRenderKey = ''; refresh(); }
+  function renderAll(){
+    // each section is guarded so one failing section can never blank out the others
+    [renderFeed, renderClientTasks, renderOpenTasks, renderActiveTask, renderErranderRatePrompt, renderEarnings, renderReport].forEach(fn=>{
+      try{ fn(); }catch(e){ console.error(fn.name + ' failed', e); }
+    });
+  }
+  async function refresh(force){
+    if(!myProfile) return;
+    try{
+      const data = await api('list', 'GET', { phone: myPhone });
+      if(data.error || !Array.isArray(data.tasks)){ showNetStatus(false, data.error || 'Could not load jobs.'); return; }
+      showNetStatus(true);
+      const fresh = data.tasks;
+      checkNotifications(fresh);
+      allTasks = fresh;
+      reconcilePending();
+      const key = JSON.stringify(pendingMsgs) + '|' + myPhone + '|' + feedCategory + '|' + JSON.stringify(fresh) + '|' + (erranderCoords ? erranderCoords.lat + ',' + erranderCoords.lng : '') + '|' + (myProfile.errander ? myProfile.errander.status : '') + '|' + (myProfile.flagCount||0) + '|' + (myProfile.photo||'');
+      if(key !== lastRenderKey){
+        lastRenderKey = key;
+        const ui = snapshotUi();
+        renderAll();
+        restoreUi(ui);
+      }
+      // refresh own profile occasionally to pick up flagCount / review outcomes
+      api('get-user','GET',{phone:myPhone}).then(r=>{ if(r.user){ myProfile = r.user; renderProfileCard(); } });
+    }catch(e){ console.error('refresh failed', e); showNetStatus(false, 'Display problem: ' + e.message); }
+  }
+  function checkNotifications(fresh){
+    if(prevSnapshot === null){
+      prevSnapshot = {};
+      fresh.forEach(t=> prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:allMsgs(t).length, reviewStatus:t.reviewStatus });
+      return;
+    }
+    fresh.forEach(t=>{
+      const prev = prevSnapshot[t.id];
+      const involvesMe = t.clientPhone === myPhone || t.erranderPhone === myPhone;
+      if(prev){
+        if(t.clientPhone === myPhone){
+          if(prev.status === 'open' && t.status === 'accepted') toast(`🎉 ${t.erranderName} accepted "${t.desc.slice(0,30)}…"`);
+          if(prev.stage !== 'delivered' && t.stage === 'delivered') toast(`📦 Delivered — please confirm "${t.desc.slice(0,30)}…"`);
+        }
+        if(t.erranderPhone === myPhone){
+          if(prev.status === 'accepted' && t.status === 'completed') toast(`✅ Boss confirmed — payout released for "${t.desc.slice(0,30)}…"`);
+        }
+        if(involvesMe && prev.reviewStatus === 'pending' && t.reviewStatus === 'approved') toast(`✅ Sponsored job approved — payout released.`);
+        if(involvesMe && prev.reviewStatus === 'pending' && t.reviewStatus === 'rejected') toast(`❌ Sponsored job flagged on review — not paid.`);
+        const msgsNow = allMsgs(t);
+        const newMsgCount = msgsNow.length;
+        const chatsWithMe = t.clientPhone === myPhone || t.erranderPhone === myPhone || (t.messages||[]).length > 0;
+        if(chatsWithMe && newMsgCount > prev.msgCount){
+          const last = msgsNow[msgsNow.length-1];
+          if(last && last.by !== myPhone) toast(`💬 ${last.sender}: ${last.text.slice(0,50)}`);
+        }
+      }
+      prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:allMsgs(t).length, reviewStatus:t.reviewStatus };
+    });
+  }
+
+  /* ---------- Boss side ---------- */
+  async function postTask(){
+    const task = {
+      category: activeCategory,
+      desc: document.getElementById('c-desc').value.trim(),
+      loc: document.getElementById('c-loc').value.trim(),
+      lat: clientCoords ? clientCoords.lat : null,
+      lng: clientCoords ? clientCoords.lng : null,
+      urgency: document.getElementById('c-urgency').value.trim(),
+      budget: document.getElementById('c-budget').value,
+      clientPhone: myPhone,
+      sponsored: document.getElementById('c-sponsored').checked,
+      metrics: readMetrics(),
+      photo: taskPhotoData
+    };
+    if(document.getElementById('c-buy').checked){
+      task.itemsLimit = document.getElementById('c-items-limit').value;
+      if(!(Number(task.itemsLimit) > 0)){ toast('Enter the most you will reimburse for items.'); return; }
+    }
+    if(!task.desc){ toast('Describe the task first.'); return; }
+    const res = await api('create', 'POST', task);
+    if(res.error){ toast(res.error); return; }
+    document.getElementById('c-desc').value = '';
+    clearTaskPhoto();
+    document.getElementById('c-sponsored').checked = false;
+    document.getElementById('c-buy').checked = false;
+    document.getElementById('c-items-wrap').classList.add('hidden');
+    document.getElementById('c-items-limit').value = '';
+    updateFeePreview();
+    loadConfig();
+    refresh();
+  }
+  async function cancelTask(id){
+    if(!confirm('Cancel this task?')) return;
+    const r = await api('cancel', 'POST', { id, phone: myPhone }); if(r.error) toast(r.error);
+    refresh();
+  }
+  function negotiationHtmlForBoss(t){
+    if(t.status !== 'open' || !t.negotiations.length) return '';
+    const rows = t.negotiations.map(n=>{
+      const waitingOnBoss = n.lastBy === 'errander';
+      return `<div class="nego-item">
+        <div class="nego-top">
+          <span>${contactPhoto(n.erranderPhoto)}${escapeHtml(n.erranderName)}</span>
+          ${priceBlock(n.amount, false)}
+        </div>
+        <div class="muted" style="margin:4px 0;">${waitingOnBoss ? 'Waiting for your response' : 'You countered — waiting for them'}</div>
+        ${waitingOnBoss ? `
+          <div class="task-actions">
+            <button class="btn btn-primary" onclick='acceptOffer(${JSON.stringify(t.id)},${JSON.stringify(n.erranderPhone)})'>Accept GHS ${n.amount}</button>
+            <input type="number" class="amount-input" id="bc-${t.id}-${n.erranderPhone}" placeholder="Counter GHS">
+            <button class="btn btn-ghost" onclick='sendCounter(${JSON.stringify(t.id)},${JSON.stringify(n.erranderPhone)},"boss")'>Counter</button>
+          </div>` : ''}
+      </div>`;
+    }).join('');
+    return `<div class="negotiation-box"><div class="muted" style="font-weight:600; margin-bottom:6px;">Offers from Erranders</div>${rows}</div>`;
+  }
+  function raiseLimitHtml(t){
+    if(t.itemsLimit == null || t.status !== 'accepted' || t.stage !== 'accepted') return '';
+    return `<div class="task-actions"><input type="number" class="amount-input" id="rl-${t.id}" placeholder="New item limit (GHS)"><button class="btn btn-ghost" onclick="raiseItemLimit('${t.id}')">Raise item limit</button></div>`;
+  }
+  async function raiseItemLimit(id){
+    const v = document.getElementById('rl-'+id).value;
+    const r = await api('raise-item-limit', 'POST', { id, bossPhone: myPhone, newLimit: v });
+    if(r.error) toast(r.error); else toast('Item limit raised.');
+    refresh();
+  }
+  function reviewStatusHtml(t){
+    if(!t.sponsored || !t.bossConfirmedAt) return '';
+    if(t.reviewStatus === 'pending') return `<div class="sponsor-note">🎓 Confirmed — awaiting Errander's review before this counts as complete.</div>`;
+    if(t.reviewStatus === 'rejected') return `<div class="trust-note" style="color:var(--red); border-color:var(--red);">❌ Flagged during review — not marked complete, no payout.</div>`;
+    return '';
+  }
+  function updateChatBadge(){
+    const btn = document.querySelector('nav.tabs button[data-mode="boss"]');
+    if(!btn || !myProfile) return;
+    let n = 0;
+    allTasks.filter(t=>t.clientPhone===myPhone && (t.status==='open' || t.status==='accepted')).forEach(t=>{
+      const ths = t.erranderName ? [{messages:t.messages}] : (t.threads||[]);
+      ths.forEach(th=>{ const l = (th.messages||[]).slice(-1)[0]; if(l && l.by !== myPhone) n++; });
+    });
+    btn.textContent = n ? `Post a Task 💬${n}` : 'Post a Task';
+  }
+  function renderClientTasks(){
+    if(!myProfile) return;
+    updateChatBadge();
+    const mine = allTasks.filter(t => t.clientPhone === myPhone);
+    const active = mine.filter(t => t.status !== 'completed');
+    const awaitingRating = mine.filter(t => t.status === 'completed' && !t.ratingForErrander);
+    const history = mine.filter(t => t.status === 'completed' && t.ratingForErrander);
+
+    const activeWrap = document.getElementById('client-active');
+    activeWrap.innerHTML = active.length ? '' : '<p class="muted">Nothing active right now.</p>';
+    active.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      const statusLabel = t.status === 'flagged' ? 'flagged' : (t.stage === 'delivered' ? 'delivered' : t.status);
+      const pill = `<span class="status-pill status-${t.status === 'flagged' ? 'flagged' : t.status}">${statusLabel}</span>${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}`;
+      let contactHtml = '';
+      if(t.status !== 'open' && t.erranderName){
+        contactHtml = `<div class="contact-box">${contactPhoto(t.erranderPhoto)}📞 ${escapeHtml(t.erranderName)} — ${t.erranderPhone || 'no number given'}</div>`;
+      }
+      let confirmHtml = (t.stage === 'delivered' && !t.bossConfirmedAt) ? `<div class="task-actions"><button class="btn btn-primary" onclick="confirmTask('${t.id}')">Confirm job complete</button></div>` : '';
+      let cancelHtml = t.status === 'open' ? `<div class="task-actions"><button class="btn btn-danger" onclick="cancelTask('${t.id}')">Cancel task</button></div>` : '';
+      let chatBoxHtml = bossChatsHtml(t);
+      let proofHtml = (t.pickupPhoto || t.deliveryPhoto) ? `<div style="margin-top:8px;">
+          ${t.pickupPhoto ? `<img src="${photoSrc(t.pickupPhoto)}" class="proof-photo" alt="Pickup proof" onclick="window.open(this.src)">` : ''}
+          ${t.deliveryPhoto ? `<img src="${photoSrc(t.deliveryPhoto)}" class="proof-photo" alt="Delivery proof" onclick="window.open(this.src)">` : ''}
+        </div>` : '';
+      el.innerHTML = `
+        <div class="task-top">
+          <div>
+            <div class="task-cat">${escapeHtml(t.category)}</div>
+            <div class="task-desc">${escapeHtml(t.desc)}</div>
+            <div class="task-meta">${escapeHtml(t.loc)} · ${escapeHtml(t.urgency)} · ${timeAgo(t.createdAt)}</div>
+            ${pill}
+          </div>
+          ${priceBlock(t.budget, t.sponsored)}
+        </div>
+        ${taskPhotoHtml(t)}${bandLine(t)}${itemsLine(t,'boss')}${raiseLimitHtml(t)}${contactHtml}${proofHtml}${negotiationHtmlForBoss(t)}${reviewStatusHtml(t)}${confirmHtml}${cancelHtml}${chatBoxHtml}`;
+      activeWrap.appendChild(el);
+    });
+
+    const rateWrap = document.getElementById('client-rate-prompt');
+    rateWrap.innerHTML = '';
+    awaitingRating.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `<div class="task-desc">Rate ${escapeHtml(t.erranderName)} for "${escapeHtml(t.desc.slice(0,40))}…"</div><p class="muted" style="margin:2px 0 0;">Were they prompt and reliable?</p>`;
+      el.appendChild(starRow(t.id, (n)=> rateTask(t.id, { ratingForErrander: n })));
+      rateWrap.appendChild(el);
+    });
+
+    document.getElementById('client-history-count').textContent = `Completed history (${history.length})`;
+    const histWrap = document.getElementById('client-history');
+    histWrap.innerHTML = history.length ? '' : '<p class="muted">Nothing here yet.</p>';
+    history.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `<div class="task-desc">${escapeHtml(t.desc)}</div><div class="task-meta">${escapeHtml(t.erranderName)} · GHS ${t.budget}${t.sponsored ? ' (sponsored)' : ' (+GHS ' + fee(t.budget) + ' fee)'} · you rated them ${'★'.repeat(t.ratingForErrander)}</div>`;
+      histWrap.appendChild(el);
+    });
+  }
+  async function acceptOffer(id, erranderPhone){
+    const res = await api('accept', 'POST', { id, erranderPhone, by: 'boss', bossPhone: myPhone });
+    if(res.error) toast(res.error);
+    refresh();
+  }
+  async function sendCounter(id, erranderPhone, by, pre){
+    const input = document.getElementById(by==='boss' ? `bc-${id}-${erranderPhone}` : `${pre||''}ec-${id}`);
+    const amount = parseInt(input.value, 10);
+    if(!amount || amount <= 0){ input.style.borderColor = 'var(--red)'; return; }
+    const payload = { id, erranderPhone, amount, by };
+    if(by==='boss') payload.bossPhone = myPhone;
+    const res = await api('counter', 'POST', payload);
+    if(res.error) toast(res.error);
+    input.value = '';
+    refresh();
+  }
+  async function confirmTask(id){
+    const res = await api('confirm', 'POST', { id, phone: myPhone });
+    if(res.error) toast(res.error);
+    refresh();
+  }
+  async function rateTask(id, payload){
+    payload.id = id; payload.phone = myPhone;
+    const r = await api('rate', 'POST', payload); if(r.error) toast(r.error);
+    refresh();
+  }
+
+  /* ---------- Errander side ---------- */
+  function selectIdType(type, btn){
+    signupIdType = type;
+    document.querySelectorAll('#id-type-row .chip').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    const label = document.getElementById('apply-id-label');
+    const input = document.getElementById('apply-id');
+    if(type === 'ghana_card'){ label.textContent = 'Ghana Card number'; input.placeholder = 'GHA-000000000-0'; }
+    else { label.textContent = "Driver's License number"; input.placeholder = 'e.g. DVLA-2201234'; }
+  }
+  async function applyErrander(){
+    const idRaw = document.getElementById('apply-id').value.trim().replace(/\s/g,'');
+    const errEl = document.getElementById('apply-error');
+    const formatValid = signupIdType === 'ghana_card' ? /^GHA-?\d{9}-?\d$/i.test(idRaw) : idRaw.replace(/[^A-Za-z0-9]/g,'').length >= 6;
+    if(!formatValid){
+      errEl.textContent = signupIdType === 'ghana_card' ? 'Enter a valid Ghana Card number (format GHA-000000000-0).' : "Enter a valid driver's license number.";
+      errEl.style.display = 'block'; return;
+    }
+    const res = await api('apply-errander', 'POST', { phone: myPhone, idType: signupIdType, idNumber: idRaw });
+    if(res.error){ errEl.textContent = res.error; errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    myProfile = res.user;
+    renderProfileCard();
+    toast('Application submitted — pending review.');
+  }
+  function negotiationHtmlForErrander(t, pre){
+    pre = pre || '';
+    const entry = t.negotiations.find(n => n.erranderPhone === myPhone);
+    if(!entry){
+      return `<div class="task-actions">
+        <button class="btn btn-primary" onclick="acceptTask('${t.id}')">Accept GHS ${t.budget}</button>
+        <input type="number" class="amount-input" id="${pre}ec-${t.id}" placeholder="Counter GHS">
+        <button class="btn btn-ghost" onclick='sendCounter(${JSON.stringify(t.id)},${JSON.stringify(myPhone)},"errander",${JSON.stringify(pre)})'>Counter</button>
+      </div>`;
+    }
+    if(entry.lastBy === 'errander'){
+      return `<p class="muted" style="margin-top:8px;">Your offer: GHS ${entry.amount} — waiting for the Boss.</p>`;
+    }
+    return `<div class="muted" style="margin-top:8px;">Boss countered: GHS ${entry.amount}</div>
+      <div class="task-actions">
+        <button class="btn btn-primary" onclick="acceptTask('${t.id}',${entry.amount})">Accept GHS ${entry.amount}</button>
+        <input type="number" class="amount-input" id="${pre}ec-${t.id}" placeholder="Counter GHS">
+        <button class="btn btn-ghost" onclick='sendCounter(${JSON.stringify(t.id)},${JSON.stringify(myPhone)},"errander",${JSON.stringify(pre)})'>Counter again</button>
+      </div>`;
+  }
+  function renderOpenTasks(){
+    if(!myProfile || !myProfile.errander || myProfile.errander.status !== 'approved') return;
+    const wrap = document.getElementById('open-tasks');
+    const busy = allTasks.some(t => t.erranderPhone === myPhone && t.status === 'accepted');
+    let open = allTasks.filter(t => t.status === 'open');
+    if(erranderCoords){
+      open = open.map(t=> ({ t, d: (t.lat!=null && t.lng!=null) ? distKm(erranderCoords.lat, erranderCoords.lng, t.lat, t.lng) : null }))
+                 .sort((a,b)=> (a.d ?? 9999) - (b.d ?? 9999)).map(x=>x.t);
+    }
+    if(busy){ wrap.innerHTML = '<div class="busy-note">🔒 You have an active task — finish it before accepting or offering on another.</div>'; return; }
+    if(open.length === 0){ wrap.innerHTML = '<p class="muted">No open tasks right now.</p>'; return; }
+    wrap.innerHTML = '';
+    open.forEach(t=>{
+      let distLabel = '';
+      if(erranderCoords && t.lat!=null && t.lng!=null) distLabel = ' · ' + distKm(erranderCoords.lat, erranderCoords.lng, t.lat, t.lng).toFixed(1) + ' km away';
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `
+        <div class="task-top">
+          <div>
+            <div class="task-cat">${escapeHtml(t.category)}${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}</div>
+            <div class="task-desc">${escapeHtml(t.desc)}</div>
+            <div class="task-meta">${contactPhoto(t.clientPhoto)}${escapeHtml(t.loc)}${distLabel} · ${escapeHtml(t.urgency)} · ${escapeHtml(t.clientName)} · ${timeAgo(t.createdAt)}</div>
+          </div>
+          ${priceBlock(t.budget, t.sponsored)}
+        </div>
+        ${taskPhotoHtml(t)}${bandLine(t)}${itemsLine(t,'errander')}
+        ${t.sponsored ? '<div class="sponsor-note">🎓 Pickup &amp; delivery photos required for this sponsored job.</div>' : ''}
+        ${negotiationHtmlForErrander(t)}${askBossHtml(t, 'ot-')}`;
+      wrap.appendChild(el);
+    });
+  }
+  async function acceptTask(id, acceptedPrice){
+    const res = await api('accept', 'POST', { id, erranderPhone: myPhone, by: 'errander' });
+    if(res.error) toast(res.error);
+    refresh();
+  }
+  function renderActiveTask(){
+    if(!myProfile) return;
+    const t = allTasks.find(x => x.erranderPhone === myPhone && x.status === 'accepted');
+    const panel = document.getElementById('active-panel');
+    const wrap = document.getElementById('active-task');
+    if(!t){ panel.classList.add('hidden'); return; }
+    panel.classList.remove('hidden');
+    const labels = { accepted:'Accepted — head to pickup.', picked_up:'Picked up — on the way.', delivered:'Delivered.' };
+    const buttons = { accepted:'Confirm pickup', picked_up:'Confirm delivery' };
+
+    let actionHtml;
+    const buying = t.itemsLimit != null && t.stage === 'accepted';
+    if(buying){
+      actionHtml = `<div class="receipt-box">🛒 Buy the items, then enter the receipt total and take a photo of it. Limit: GHS ${t.itemsLimit}. Over the limit? Ask the Boss in chat to raise it first.</div>
+        <div class="task-actions"><input type="number" class="amount-input" id="rc-${t.id}" placeholder="Receipt total (GHS)" step="0.01">
+        <input type="file" accept="image/*" capture="environment" id="rcp-${t.id}" class="hidden" onchange="advanceWithReceipt('${t.id}', this)">
+        <button class="btn btn-primary" onclick="document.getElementById('rcp-${t.id}').click()">📷 Confirm purchase (receipt photo)</button></div>`;
+    } else if(t.stage === 'delivered'){
+      actionHtml = t.sponsored && t.reviewStatus === 'pending'
+        ? '<div class="sponsor-note">🎓 Boss confirmed — awaiting Errander review before payout.</div>'
+        : '<p class="muted">Waiting for the Boss to confirm — payout releases automatically once they do.</p>';
+    } else if(t.sponsored){
+      actionHtml = `<input type="file" accept="image/*" capture="environment" id="proof-${t.id}" class="hidden" onchange="advanceWithPhoto('${t.id}', this)">
+        <button class="btn btn-primary" onclick="document.getElementById('proof-${t.id}').click()">📷 ${buttons[t.stage]} (photo required)</button>`;
+    } else {
+      actionHtml = `<button class="btn btn-primary" onclick="advanceTask('${t.id}')">${buttons[t.stage]}</button>`;
+    }
+
+    const proofsHtml = (t.pickupPhoto || t.deliveryPhoto) ? `<div style="margin-top:8px;">
+        ${t.pickupPhoto ? `<img src="${photoSrc(t.pickupPhoto)}" class="proof-photo" alt="Pickup proof" onclick="window.open(this.src)">` : ''}
+        ${t.deliveryPhoto ? `<img src="${photoSrc(t.deliveryPhoto)}" class="proof-photo" alt="Delivery proof" onclick="window.open(this.src)">` : ''}
+      </div>` : '';
+
+    wrap.innerHTML = `
+      <div class="task-desc">${escapeHtml(t.desc)}${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}</div>
+      <div class="task-meta">${escapeHtml(t.loc)} · ${escapeHtml(t.urgency)}</div>
+      <div class="contact-box">${contactPhoto(t.clientPhoto)}📞 ${escapeHtml(t.clientName)} — ${t.clientPhone || 'no number given'}</div>
+      <div class="task-price" style="margin:6px 0;">GHS ${t.budget}</div>
+      ${taskPhotoHtml(t)}${bandLine(t)}
+      <p class="muted">${labels[t.stage]}</p>
+      ${t.stage !== 'accepted' ? itemsLine(t,'errander') : ''}
+      ${proofsHtml}
+      ${actionHtml}
+      ${chatHtml(t, myProfile.name, 'ac-', '', t.messages, '💬 Chat with ' + escapeHtml(t.clientName), 'Message ' + t.clientName)}`;
+  }
+  async function advanceTask(id){ const r = await api('advance', 'POST', { id, phone: myPhone }); if(r.error) toast(r.error); refresh(); }
+  function advanceWithReceipt(id, input){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    const amt = document.getElementById('rc-'+id).value;
+    if(!(Number(amt) > 0)){ toast('Enter the receipt total first, then take the photo.'); input.value = ''; return; }
+    fileToResizedDataUrl(file, 700).then(async photo=>{
+      const res = await api('advance', 'POST', { id, phone: myPhone, photo, receiptAmount: amt });
+      if(res.error) toast(res.error);
+      refresh();
+    });
+  }
+  function advanceWithPhoto(id, input){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    fileToResizedDataUrl(file, 500).then(async photo=>{
+      const res = await api('advance', 'POST', { id, phone: myPhone, photo });
+      if(res.error) toast(res.error);
+      refresh();
+    });
+  }
+  function renderErranderRatePrompt(){
+    if(!myProfile) return;
+    const wrap = document.getElementById('errander-rate-prompt');
+    wrap.innerHTML = '';
+    const needsRating = allTasks.filter(t => t.erranderPhone === myPhone && t.status === 'completed' && !t.ratingForClient);
+    if(needsRating.length === 0) return;
+    const panel = document.createElement('div'); panel.className = 'panel';
+    panel.innerHTML = '<h2>Rate your Boss</h2>';
+    needsRating.forEach(t=>{
+      const row = document.createElement('div'); row.className = 'task';
+      row.innerHTML = `<div class="task-desc">${escapeHtml(t.clientName)} — "${escapeHtml(t.desc.slice(0,40))}…"</div><p class="muted" style="margin:2px 0 0;">Did they live up to their word?</p>`;
+      row.appendChild(starRow(t.id, (n)=> rateTask(t.id, { ratingForClient: n })));
+      panel.appendChild(row);
+    });
+    wrap.appendChild(panel);
+  }
+  function renderEarnings(){
+    if(!myProfile || !myProfile.errander || myProfile.errander.status !== 'approved') return;
+    const mine = allTasks.filter(x => x.erranderPhone === myPhone && x.status === 'completed');
+    const total = mine.reduce((sum,t)=> sum + (Number(t.budget)||0), 0);
+    const rated = mine.filter(t=>t.ratingForErrander);
+    const avg = rated.length ? (rated.reduce((s,t)=>s+t.ratingForErrander,0)/rated.length).toFixed(1) : '—';
+    document.getElementById('earnings').innerHTML = `
+      <div class="stat"><span>Completed jobs</span><span>${mine.length}</span></div>
+      <div class="stat"><span>Total earned</span><span>GHS ${total}</span></div>
+      <div class="stat"><span>Your average rating</span><span>${avg}${rated.length ? ' ★' : ''}</span></div>`;
+    document.getElementById('errander-history-count').textContent = `Completed history (${mine.length})`;
+    const histWrap = document.getElementById('errander-history');
+    histWrap.innerHTML = mine.length ? '' : '<p class="muted">Nothing here yet.</p>';
+    mine.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `<div class="task-desc">${escapeHtml(t.desc)}${t.sponsored ? ' <span class="sponsor-badge">🎓</span>' : ''}</div><div class="task-meta">${escapeHtml(t.clientName)} · GHS ${t.budget}${t.ratingForErrander ? ' · they rated you ' + '★'.repeat(t.ratingForErrander) : ''}</div>`;
+      histWrap.appendChild(el);
+    });
+  }
+
+  function renderReport(){
+    if(!myProfile) return;
+    const posted = allTasks.filter(t => t.clientPhone === myPhone);
+    const bossCompleted = posted.filter(t=>t.status==='completed');
+    const bossActive = posted.filter(t=>t.status==='open' || t.status==='accepted');
+    const bossCancelled = posted.filter(t=>t.status==='cancelled' || t.status==='flagged');
+    const totalSpent = bossCompleted.reduce((s,t)=> s + (t.sponsored ? 0 : (Number(t.budget)||0)+fee(Number(t.budget)||0)), 0);
+    document.getElementById('report-boss').innerHTML = `
+      <div class="stat"><span>Total tasks requested</span><span>${posted.length}</span></div>
+      <div class="stat"><span>Completed</span><span>${bossCompleted.length}</span></div>
+      <div class="stat"><span>Active / open</span><span>${bossActive.length}</span></div>
+      <div class="stat"><span>Cancelled / flagged</span><span>${bossCancelled.length}</span></div>
+      <div class="stat"><span>Total spent incl. fees</span><span>GHS ${totalSpent}</span></div>`;
+    if(myProfile.errander && myProfile.errander.status === 'approved'){
+      const jobs = allTasks.filter(t => t.erranderPhone === myPhone);
+      const completed = jobs.filter(t=>t.status==='completed');
+      const inProgress = jobs.filter(t=>t.status==='accepted');
+      const earned = completed.reduce((s,t)=>s+(Number(t.budget)||0),0);
+      const expected = inProgress.reduce((s,t)=>s+(Number(t.budget)||0),0);
+      document.getElementById('report-errander').innerHTML = `
+        <div class="stat"><span>Jobs completed</span><span>${completed.length}</span></div>
+        <div class="stat"><span>Total earned</span><span>GHS ${earned}</span></div>
+        <div class="stat"><span>Expected (in progress)</span><span>GHS ${expected}</span></div>`;
+    } else {
+      document.getElementById('report-errander').innerHTML = '<p class="muted">Not an approved Errander yet — apply from the "Find Jobs" tab.</p>';
+    }
+  }
+  async function resetDemo(){
+    if(!confirm('Reset all pilot task data for everyone?')) return;
+    const r = await api('admin-reset', 'POST', {}); if(r.error) toast(r.error);
+    prevSnapshot = null;
+    loadConfig();
+    refresh();
+  }
+
+  /* ---------- admin ---------- */
+  async function adminLogin(){
+    const pass = document.getElementById('admin-pass').value;
+    const res = await api('admin-login', 'POST', { passcode: pass });
+    const errEl = document.getElementById('admin-login-error');
+    if(res.error){ errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    adminAuthed = true; adminPass = pass;
+    switchView('admin');
+    loadPriceEditor();
+    refreshAdmin();
+  }
+  let lastAdminKey = '';
+  async function refreshAdmin(){
+    if(!adminAuthed) return;
+    const [usersRes, tasksRes] = await Promise.all([ api('admin-list-users','GET'), api('admin-list-tasks','GET') ]);
+    const users = usersRes.users || [];
+    const tasks = tasksRes.tasks || [];
+    const akey = JSON.stringify([users, tasks]);
+    if(akey === lastAdminKey) return;   // unchanged: don't rebuild the page under the admin's finger
+    lastAdminKey = akey;
+
+    const sponsorWrap = document.getElementById('admin-sponsor-review');
+    const pendingSponsored = tasks.filter(t => t.sponsored && t.reviewStatus === 'pending');
+    sponsorWrap.innerHTML = pendingSponsored.length ? '' : '<p class="muted">Nothing awaiting review.</p>';
+    pendingSponsored.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `
+        <div class="task-desc">${escapeHtml(t.desc)}</div>
+        <div class="task-meta">Boss: ${escapeHtml(t.clientName)} (${t.clientPhone}) · Errander: ${escapeHtml(t.erranderName)} (${t.erranderPhone}) · GHS ${t.budget}</div>
+        ${bandLine(t)}${t.receiptAmount != null ? `<div class="task-meta">🧾 Receipt GHS ${t.receiptAmount} (paid by Boss, not sponsored)</div>` : ''}
+        <div style="margin-top:8px;">
+          ${t.pickupPhoto ? `<img src="${photoSrc(t.pickupPhoto)}" class="proof-photo" alt="Pickup"><span class="muted">pickup</span>` : '<span class="muted">No pickup photo</span>'}
+          ${t.deliveryPhoto ? `<img src="${photoSrc(t.deliveryPhoto)}" class="proof-photo" alt="Delivery" style="margin-left:10px;"><span class="muted">delivery</span>` : '<span class="muted">No delivery photo</span>'}
+        </div>
+        <div class="task-actions">
+          <button class="btn btn-primary" onclick="adminReviewSponsored('${t.id}','approved')">Approve &amp; pay</button>
+          <button class="btn btn-danger" onclick="adminReviewSponsored('${t.id}','rejected')">Reject — flag both</button>
+        </div>`;
+      sponsorWrap.appendChild(el);
+    });
+
+    const pending = users.filter(u => u.errander && u.errander.status === 'pending');
+    const pendingWrap = document.getElementById('admin-pending');
+    pendingWrap.innerHTML = pending.length ? '' : '<p class="muted">No pending applications.</p>';
+    pending.forEach(u=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `
+        <div class="task-top"><div>${contactPhoto(u.photo)}<b>${escapeHtml(u.name)}</b> — ${u.phone}<div class="task-meta">${u.errander.idType === 'ghana_card' ? 'Ghana Card' : "Driver's License"}: ${u.errander.idNumber}</div></div></div>
+        <div class="task-actions">
+          <button class="btn btn-primary" onclick="adminDecide('${u.phone}','approved',this)">Approve</button>
+          <button class="btn btn-danger" onclick="adminDecide('${u.phone}','rejected',this)">Reject</button>
+        </div>`;
+      pendingWrap.appendChild(el);
+    });
+
+    const usersWrap = document.getElementById('admin-users');
+    usersWrap.innerHTML = '';
+    users.forEach(u=>{
+      const st = u.errander ? u.errander.status : 'none';
+      const row = document.createElement('div'); row.className = 'task';
+      const uniBtn = st === 'approved' ? `<button class="btn btn-ghost" onclick="adminToggleUni('${u.phone}')">${u.errander.universityCertified ? '🎓 Remove certification' : '🎓 Grant University certification'}</button>` : '';
+      row.innerHTML = `<div class="task-top"><div>${contactPhoto(u.photo)}${escapeHtml(u.name)} (${u.phone})${u.errander && u.errander.universityCertified ? '<span class="uni-badge">🎓</span>' : ''}${u.flagCount ? '<span class="flag-badge">⚠️ '+u.flagCount+'</span>' : ''}</div><span class="status-pill badge-${st}">${st}</span></div>${uniBtn ? '<div class="task-actions">'+uniBtn+'</div>' : ''}`;
+      usersWrap.appendChild(row);
+    });
+
+    const counts = { open:0, accepted:0, completed:0, cancelled:0, flagged:0 };
+    tasks.forEach(t=>{ if(counts[t.status] !== undefined) counts[t.status]++; });
+    const sponsoredCompleted = tasks.filter(t=>t.sponsored && t.status==='completed').length;
+    document.getElementById('admin-task-stats').innerHTML = `
+      <div class="stat"><span>Open</span><span>${counts.open}</span></div>
+      <div class="stat"><span>In progress</span><span>${counts.accepted}</span></div>
+      <div class="stat"><span>Completed</span><span>${counts.completed}</span></div>
+      <div class="stat"><span>Flagged</span><span>${counts.flagged}</span></div>
+      <div class="stat"><span>Cancelled</span><span>${counts.cancelled}</span></div>
+      <div class="stat"><span>Sponsored slots used</span><span>${sponsoredCompleted} / ${sponsoredCap}</span></div>
+      <div class="stat"><span>Total tasks ever posted</span><span>${tasks.length}</span></div>`;
+  }
+  let priceCfg = null;
+  async function loadPriceEditor(){
+    const r = await api('admin-get-price-config', 'GET');
+    if(!r.config) return;
+    priceCfg = r.config;
+    const c = priceCfg;
+    let html = `<div class="price-grid"><label class="muted">Low ×<input id="pc-low" type="number" step="0.05" value="${c.lowFactor}"></label><label class="muted">High ×<input id="pc-high" type="number" step="0.05" value="${c.highFactor}"></label><label class="muted">Urgent +<input id="pc-urg" type="number" step="0.05" value="${c.urgentUplift}"></label><span></span></div>`;
+    html += `<div class="price-grid muted"><span>Category</span><span>Base</span><span>Per km</span><span>Per extra stop</span></div>`;
+    Object.keys(c.categories).forEach((cat,i)=>{
+      const v = c.categories[cat];
+      html += `<div class="muted" style="margin-top:6px;font-weight:600;">${cat}</div><div class="price-grid"><input id="pc-${i}-base" type="number" value="${v.base}"><input id="pc-${i}-km" type="number" value="${v.perKm}"><input id="pc-${i}-stop" type="number" value="${v.perStop}"><input id="pc-${i}-hr" type="number" value="${v.perHour}" title="Per hour"></div>`;
+    });
+    html += `<p class="muted">Columns: base · per km · per extra stop · per hour (4th box).</p>`;
+    document.getElementById('admin-price-editor').innerHTML = html;
+  }
+  async function savePriceConfig(){
+    if(!priceCfg) return;
+    const cfg = { lowFactor: document.getElementById('pc-low').value, highFactor: document.getElementById('pc-high').value, urgentUplift: document.getElementById('pc-urg').value, categories:{} };
+    Object.keys(priceCfg.categories).forEach((cat,i)=>{
+      cfg.categories[cat] = { base: document.getElementById(`pc-${i}-base`).value, perKm: document.getElementById(`pc-${i}-km`).value, perStop: document.getElementById(`pc-${i}-stop`).value, perHour: document.getElementById(`pc-${i}-hr`).value };
+    });
+    const r = await api('admin-set-price-config', 'POST', { config: cfg });
+    if(r.error){ toast(r.error); return; }
+    toast('Price bands saved.'); loadPriceEditor();
+  }
+  async function adminDecide(phone, decision, btn){
+    btn.closest('.task').style.opacity = '0.5';
+    await api('admin-decide', 'POST', { phone, decision });
+    refreshAdmin();
+  }
+  async function adminToggleUni(phone){
+    await api('admin-toggle-university', 'POST', { phone });
+    refreshAdmin();
+  }
+  async function adminReviewSponsored(id, decision){
+    await api('admin-review-sponsored', 'POST', { id, decision });
+    refreshAdmin();
+  }
+
+  /* ---------- init ---------- */
+  const BUILD_TAG = 'v8.8';
+  console.log('Errander pilot build:', BUILD_TAG);
+  const footerBuild = document.getElementById('footer-build');
+  if(footerBuild) footerBuild.textContent = ' · build ' + BUILD_TAG;
+
+  try{ buildCatChips(); }catch(e){ console.error('buildCatChips failed', e); }
+  try{ renderHeaderAuth(); }catch(e){ console.error('renderHeaderAuth failed', e); }
+  try{ loadConfig(); }catch(e){ console.error('loadConfig failed', e); }
+  try{
+    document.getElementById('c-budget').addEventListener('input', updateFeePreview);
+    ['c-km','c-stops','c-wait','c-urgent'].forEach(id=> document.getElementById(id).addEventListener('input', scheduleBandFetch));
+    document.getElementById('c-urgent').addEventListener('change', scheduleBandFetch);
+    scheduleBandFetch();
+  }catch(e){ console.error('fee preview wiring failed', e); }
+
+  if(myPhone){
+    api('get-user', 'GET', { phone: myPhone }).then(res=>{
+      if(res.user){
+        myProfile = res.user;
+        try{ renderHeaderAuth(); renderProfileCard(); }catch(e){ console.error('profile render failed', e); }
+        switchView('dashboard');
+        refresh();
+      } else {
+        localStorage.removeItem('my_phone');
+      }
+    }).catch(e=> console.error('get-user on load failed — check your network tab for a failed request to /.netlify/functions/api', e));
+  }
+  if('Notification' in window && Notification.permission === 'granted') notifyEnabled = true;
+
+  setInterval(()=>{
+    try{ refresh(); }catch(e){ console.error('refresh() failed', e); }
+    try{ loadConfig(); }catch(e){ console.error('loadConfig() failed', e); }
+    if(adminAuthed){ try{ refreshAdmin(); }catch(e){ console.error('refreshAdmin() failed', e); } }
+  }, 4000);
+</script>
+</body>
+</html>
