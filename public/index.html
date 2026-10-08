@@ -130,6 +130,12 @@
   .price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}
   .price-grid input{min-width:0;}
   .receipt-box{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(11,42,87,0.06);border:1px dashed var(--navy);font-size:0.85rem;}
+
+  .task-photo{width:100%;max-height:220px;object-fit:cover;border-radius:9px;margin:8px 0 4px;border:1px solid var(--line);cursor:pointer;}
+  .feed-by{display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--slate);margin-bottom:6px;}
+  .feed-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:var(--white);}
+  .feed-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;}
+  .feed-chips .chip{white-space:nowrap;flex:none;}
 </style>
 </head>
 <body>
@@ -220,13 +226,24 @@
       </div>
 
       <nav class="tabs">
-        <button class="active" data-mode="boss" onclick="showDashTab('post', this)">Post a Task</button>
+        <button class="active" data-mode="feed" onclick="showDashTab('feed', this)">📰 Feed</button>
+        <button data-mode="boss" onclick="showDashTab('post', this)">Post a Task</button>
         <button data-mode="errander" onclick="showDashTab('jobs', this)">Find Jobs</button>
         <button data-mode="report" onclick="showDashTab('report', this)">My Report</button>
       </nav>
 
+      <!-- FEED (everyone) -->
+      <div class="tab-panel show" id="dash-feed">
+        <div class="panel">
+          <h2>📰 Jobs &amp; requests</h2>
+          <p class="muted" style="margin:0 0 10px;">Everything open right now, from every Boss. Approved Erranders can take or counter a job straight from here.</p>
+          <div class="feed-chips" id="feed-chips"></div>
+          <div id="feed-list"></div>
+        </div>
+      </div>
+
       <!-- POST (Boss) -->
-      <div class="tab-panel show" id="dash-post">
+      <div class="tab-panel" id="dash-post">
         <div class="mode-banner mode-boss">👤 BOSS MODE — you're posting and paying for tasks</div>
         <div class="panel">
           <h2>Post a task</h2>
@@ -236,6 +253,12 @@
           <div class="row2">
             <div class="field"><label>Location</label><input id="c-loc" type="text" placeholder="e.g. Adum, Kumasi"></div>
             <div class="field"><label>Urgency / timing</label><input id="c-urgency" type="text" placeholder="e.g. Today, or Sat 9am"></div>
+          </div>
+          <div class="field">
+            <label>Photo of the task <span class="muted">(optional — e.g. the leaking tap, the parcel, the place)</span></label>
+            <input type="file" id="c-photo-input" accept="image/*" onchange="handleTaskPhoto(this)">
+            <img id="c-photo-preview" class="task-photo hidden" alt="Task photo">
+            <button type="button" class="btn btn-ghost hidden" id="c-photo-clear" onclick="clearTaskPhoto()">Remove photo</button>
           </div>
           <div class="row2">
             <div class="field"><label>Distance (km)</label><input id="c-km" type="number" min="0" step="0.5" value="3"></div>
@@ -388,7 +411,7 @@
     if(t.itemsLimit == null) return '';
     if(t.receiptAmount != null){
       return `<div class="receipt-box">🧾 Receipt: <b>GHS ${t.receiptAmount}</b> for items (limit GHS ${t.itemsLimit})${role==='boss' ? ` — you pay the Errander back GHS ${t.receiptAmount} for the items, on top of their service price.` : ' — the Boss pays this back to you directly.'}
-        ${t.receiptPhoto ? `<br><img src="${t.receiptPhoto}" class="proof-photo" alt="Receipt" onclick="window.open(this.src)">` : ''}</div>`;
+        ${t.receiptPhoto ? `<br><img src="${photoSrc(t.receiptPhoto)}" class="proof-photo" alt="Receipt" onclick="window.open(this.src)">` : ''}</div>`;
     }
     return `<div class="receipt-box">🛒 Buys items — Boss reimburses the receipt, up to GHS ${t.itemsLimit}. Not covered by sponsorship.</div>`;
   }
@@ -466,9 +489,67 @@
     if(r.error) toast(r.error);
     refresh();
   }
-  function contactPhoto(url){ return url ? `<img src="${url}" class="photo-thumb" alt="">` : ''; }
+  // Photos are stored server-side as short ids; older inline images (data: URLs) still display.
+  function photoSrc(v){ return !v ? '' : (String(v).indexOf('data:') === 0 ? v : API + '?action=photo&id=' + encodeURIComponent(v)); }
+  function contactPhoto(url){ return url ? `<img src="${photoSrc(url)}" class="photo-thumb" alt="" loading="lazy">` : ''; }
 
   let adminPass = '';
+  let taskPhotoData = null, feedCategory = 'All';
+  function handleTaskPhoto(input){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    fileToResizedDataUrl(file, 600).then(d=>{
+      taskPhotoData = d;
+      const img = document.getElementById('c-photo-preview'); img.src = d; img.classList.remove('hidden');
+      document.getElementById('c-photo-clear').classList.remove('hidden');
+    }).catch(()=> toast('Could not read that photo — try another.'));
+  }
+  function clearTaskPhoto(){
+    taskPhotoData = null;
+    document.getElementById('c-photo-input').value = '';
+    document.getElementById('c-photo-preview').classList.add('hidden');
+    document.getElementById('c-photo-clear').classList.add('hidden');
+  }
+  function taskPhotoHtml(t){ return t.photo ? `<img src="${photoSrc(t.photo)}" class="task-photo" alt="Task photo" onclick="window.open(this.src)">` : ''; }
+  function setFeedCategory(c){ feedCategory = c; lastRenderKey = ''; refresh(); }
+  function goFindJobs(){
+    const btn = document.querySelector('nav.tabs button[data-mode="errander"]');
+    showDashTab('jobs', btn); window.scrollTo(0,0);
+  }
+  function renderFeed(){
+    if(!myProfile) return;
+    const chips = document.getElementById('feed-chips');
+    chips.innerHTML = '';
+    ['All'].concat(CATEGORIES).forEach(c=>{
+      const b = document.createElement('button'); b.type = 'button';
+      b.className = 'chip' + (feedCategory === c ? ' active' : ''); b.textContent = c;
+      b.onclick = ()=> setFeedCategory(c);
+      chips.appendChild(b);
+    });
+    const approved = myProfile.errander && myProfile.errander.status === 'approved';
+    const busy = allTasks.some(t => t.erranderPhone === myPhone && t.status === 'accepted');
+    const open = allTasks.filter(t => t.status === 'open' && (feedCategory === 'All' || t.category === feedCategory))
+                         .sort((a,b)=> b.createdAt - a.createdAt);
+    const wrap = document.getElementById('feed-list');
+    if(!open.length){ wrap.innerHTML = '<p class="muted">No open jobs in this category right now. Check back soon — or post one yourself.</p>'; return; }
+    wrap.innerHTML = '';
+    open.forEach(t=>{
+      const mine = t.clientPhone === myPhone;
+      let action;
+      if(mine) action = '<div class="muted" style="margin-top:8px;">This is your task — manage it under “Post a Task”.</div>';
+      else if(approved) action = busy ? '<div class="busy-note">🔒 Finish your active task before taking another.</div>' : negotiationHtmlForErrander(t, 'fd-');
+      else if(myProfile.errander && myProfile.errander.status === 'pending') action = '<div class="muted" style="margin-top:8px;">⏳ Your Errander application is pending — you can take jobs once approved.</div>';
+      else action = '<div class="task-actions"><button class="btn btn-primary" onclick="goFindJobs()">Become an Errander to take this job</button></div>';
+      const el = document.createElement('div'); el.className = 'feed-card';
+      el.innerHTML = `
+        <div class="feed-by">${contactPhoto(t.clientPhoto)}<span><b>${escapeHtml(t.clientName)}</b> · ${timeAgo(t.createdAt)}</span>${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}</div>
+        <div class="task-top"><div><div class="task-cat">${escapeHtml(t.category)}</div><div class="task-desc">${escapeHtml(t.desc)}</div>
+        <div class="task-meta">📍 ${escapeHtml(t.loc)} · ${escapeHtml(t.urgency)}</div></div>${priceBlock(t.budget, t.sponsored)}</div>
+        ${taskPhotoHtml(t)}${bandLine(t)}${itemsLine(t,'errander')}
+        ${(t.negotiations||[]).length && mine ? '' : ''}${action}`;
+      wrap.appendChild(el);
+    });
+  }
   async function api(action, method, body){
     const opts = { method: method || 'GET', headers: {'Content-Type':'application/json'} };
     if(action.indexOf('admin-') === 0 && adminPass) opts.headers['X-Admin-Passcode'] = adminPass;
@@ -559,7 +640,7 @@
     document.getElementById('profile-name').textContent = myProfile.name;
     document.getElementById('profile-phone').textContent = myProfile.phone;
     const img = document.getElementById('profile-photo');
-    img.src = myProfile.photo || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="56" height="56"%3E%3Crect width="56" height="56" fill="%23EDE9DE"/%3E%3C/svg%3E';
+    img.src = photoSrc(myProfile.photo) || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="56" height="56"%3E%3Crect width="56" height="56" fill="%23EDE9DE"/%3E%3C/svg%3E';
     const badge = document.getElementById('errander-badge');
     const st = myProfile.errander ? myProfile.errander.status : 'none';
     const labels = { none:'Not an Errander yet', pending:'⏳ Errander application pending review', approved:'✅ Approved Errander', rejected:'❌ Errander application rejected' };
@@ -669,7 +750,7 @@
     }, ()=>{ document.getElementById('e-loc-btn').textContent = '📍 Enable location (permission denied)'; });
   }
 
-  const LIVE_IDS = ['client-active','client-rate-prompt','client-history','open-tasks','active-task','errander-rate-prompt','errander-history','earnings'];
+  const LIVE_IDS = ['feed-list','client-active','client-rate-prompt','client-history','open-tasks','active-task','errander-rate-prompt','errander-history','earnings'];
   function snapshotUi(){
     const st = { vals:{}, open:{}, scroll:{}, focus:null };
     LIVE_IDS.forEach(id=>{
@@ -697,7 +778,7 @@
   }
   let lastRenderKey = '';
   function renderAll(){
-    renderClientTasks(); renderOpenTasks(); renderActiveTask();
+    renderFeed(); renderClientTasks(); renderOpenTasks(); renderActiveTask();
     renderErranderRatePrompt(); renderEarnings(); renderReport();
   }
   async function refresh(force){
@@ -759,7 +840,8 @@
       budget: document.getElementById('c-budget').value,
       clientPhone: myPhone,
       sponsored: document.getElementById('c-sponsored').checked,
-      metrics: readMetrics()
+      metrics: readMetrics(),
+      photo: taskPhotoData
     };
     if(document.getElementById('c-buy').checked){
       task.itemsLimit = document.getElementById('c-items-limit').value;
@@ -769,6 +851,7 @@
     const res = await api('create', 'POST', task);
     if(res.error){ toast(res.error); return; }
     document.getElementById('c-desc').value = '';
+    clearTaskPhoto();
     document.getElementById('c-sponsored').checked = false;
     document.getElementById('c-buy').checked = false;
     document.getElementById('c-items-wrap').classList.add('hidden');
@@ -788,7 +871,7 @@
       const waitingOnBoss = n.lastBy === 'errander';
       return `<div class="nego-item">
         <div class="nego-top">
-          <span>${contactPhoto(n.erranderPhoto)}${n.erranderName}</span>
+          <span>${contactPhoto(n.erranderPhoto)}${escapeHtml(n.erranderName)}</span>
           ${priceBlock(n.amount, false)}
         </div>
         <div class="muted" style="margin:4px 0;">${waitingOnBoss ? 'Waiting for your response' : 'You countered — waiting for them'}</div>
@@ -833,26 +916,26 @@
       const pill = `<span class="status-pill status-${t.status === 'flagged' ? 'flagged' : t.status}">${statusLabel}</span>${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}`;
       let contactHtml = '';
       if(t.status !== 'open' && t.erranderName){
-        contactHtml = `<div class="contact-box">${contactPhoto(t.erranderPhoto)}📞 ${t.erranderName} — ${t.erranderPhone || 'no number given'}</div>`;
+        contactHtml = `<div class="contact-box">${contactPhoto(t.erranderPhoto)}📞 ${escapeHtml(t.erranderName)} — ${t.erranderPhone || 'no number given'}</div>`;
       }
       let confirmHtml = (t.stage === 'delivered' && !t.bossConfirmedAt) ? `<div class="task-actions"><button class="btn btn-primary" onclick="confirmTask('${t.id}')">Confirm job complete</button></div>` : '';
       let cancelHtml = t.status === 'open' ? `<div class="task-actions"><button class="btn btn-danger" onclick="cancelTask('${t.id}')">Cancel task</button></div>` : '';
       let chatBoxHtml = t.erranderName ? chatHtml(t, myProfile.name) : '';
       let proofHtml = (t.pickupPhoto || t.deliveryPhoto) ? `<div style="margin-top:8px;">
-          ${t.pickupPhoto ? `<img src="${t.pickupPhoto}" class="proof-photo" alt="Pickup proof" onclick="window.open(this.src)">` : ''}
-          ${t.deliveryPhoto ? `<img src="${t.deliveryPhoto}" class="proof-photo" alt="Delivery proof" onclick="window.open(this.src)">` : ''}
+          ${t.pickupPhoto ? `<img src="${photoSrc(t.pickupPhoto)}" class="proof-photo" alt="Pickup proof" onclick="window.open(this.src)">` : ''}
+          ${t.deliveryPhoto ? `<img src="${photoSrc(t.deliveryPhoto)}" class="proof-photo" alt="Delivery proof" onclick="window.open(this.src)">` : ''}
         </div>` : '';
       el.innerHTML = `
         <div class="task-top">
           <div>
-            <div class="task-cat">${t.category}</div>
-            <div class="task-desc">${t.desc}</div>
-            <div class="task-meta">${t.loc} · ${t.urgency} · ${timeAgo(t.createdAt)}</div>
+            <div class="task-cat">${escapeHtml(t.category)}</div>
+            <div class="task-desc">${escapeHtml(t.desc)}</div>
+            <div class="task-meta">${escapeHtml(t.loc)} · ${escapeHtml(t.urgency)} · ${timeAgo(t.createdAt)}</div>
             ${pill}
           </div>
           ${priceBlock(t.budget, t.sponsored)}
         </div>
-        ${bandLine(t)}${itemsLine(t,'boss')}${raiseLimitHtml(t)}${contactHtml}${proofHtml}${negotiationHtmlForBoss(t)}${reviewStatusHtml(t)}${confirmHtml}${cancelHtml}${chatBoxHtml}`;
+        ${taskPhotoHtml(t)}${bandLine(t)}${itemsLine(t,'boss')}${raiseLimitHtml(t)}${contactHtml}${proofHtml}${negotiationHtmlForBoss(t)}${reviewStatusHtml(t)}${confirmHtml}${cancelHtml}${chatBoxHtml}`;
       activeWrap.appendChild(el);
     });
 
@@ -860,7 +943,7 @@
     rateWrap.innerHTML = '';
     awaitingRating.forEach(t=>{
       const el = document.createElement('div'); el.className = 'task';
-      el.innerHTML = `<div class="task-desc">Rate ${t.erranderName} for "${t.desc.slice(0,40)}…"</div><p class="muted" style="margin:2px 0 0;">Were they prompt and reliable?</p>`;
+      el.innerHTML = `<div class="task-desc">Rate ${escapeHtml(t.erranderName)} for "${escapeHtml(t.desc.slice(0,40))}…"</div><p class="muted" style="margin:2px 0 0;">Were they prompt and reliable?</p>`;
       el.appendChild(starRow(t.id, (n)=> rateTask(t.id, { ratingForErrander: n })));
       rateWrap.appendChild(el);
     });
@@ -870,7 +953,7 @@
     histWrap.innerHTML = history.length ? '' : '<p class="muted">Nothing here yet.</p>';
     history.forEach(t=>{
       const el = document.createElement('div'); el.className = 'task';
-      el.innerHTML = `<div class="task-desc">${t.desc}</div><div class="task-meta">${t.erranderName} · GHS ${t.budget}${t.sponsored ? ' (sponsored)' : ' (+GHS ' + fee(t.budget) + ' fee)'} · you rated them ${'★'.repeat(t.ratingForErrander)}</div>`;
+      el.innerHTML = `<div class="task-desc">${escapeHtml(t.desc)}</div><div class="task-meta">${escapeHtml(t.erranderName)} · GHS ${t.budget}${t.sponsored ? ' (sponsored)' : ' (+GHS ' + fee(t.budget) + ' fee)'} · you rated them ${'★'.repeat(t.ratingForErrander)}</div>`;
       histWrap.appendChild(el);
     });
   }
@@ -879,8 +962,8 @@
     if(res.error) toast(res.error);
     refresh();
   }
-  async function sendCounter(id, erranderPhone, by){
-    const input = document.getElementById(by==='boss' ? `bc-${id}-${erranderPhone}` : `ec-${id}`);
+  async function sendCounter(id, erranderPhone, by, pre){
+    const input = document.getElementById(by==='boss' ? `bc-${id}-${erranderPhone}` : `${pre||''}ec-${id}`);
     const amount = parseInt(input.value, 10);
     if(!amount || amount <= 0){ input.style.borderColor = 'var(--red)'; return; }
     const payload = { id, erranderPhone, amount, by };
@@ -926,13 +1009,14 @@
     renderProfileCard();
     toast('Application submitted — pending review.');
   }
-  function negotiationHtmlForErrander(t){
+  function negotiationHtmlForErrander(t, pre){
+    pre = pre || '';
     const entry = t.negotiations.find(n => n.erranderPhone === myPhone);
     if(!entry){
       return `<div class="task-actions">
         <button class="btn btn-primary" onclick="acceptTask('${t.id}')">Accept GHS ${t.budget}</button>
-        <input type="number" class="amount-input" id="ec-${t.id}" placeholder="Counter GHS">
-        <button class="btn btn-ghost" onclick='sendCounter(${JSON.stringify(t.id)},${JSON.stringify(myPhone)},"errander")'>Counter</button>
+        <input type="number" class="amount-input" id="${pre}ec-${t.id}" placeholder="Counter GHS">
+        <button class="btn btn-ghost" onclick='sendCounter(${JSON.stringify(t.id)},${JSON.stringify(myPhone)},"errander",${JSON.stringify(pre)})'>Counter</button>
       </div>`;
     }
     if(entry.lastBy === 'errander'){
@@ -941,8 +1025,8 @@
     return `<div class="muted" style="margin-top:8px;">Boss countered: GHS ${entry.amount}</div>
       <div class="task-actions">
         <button class="btn btn-primary" onclick="acceptTask('${t.id}',${entry.amount})">Accept GHS ${entry.amount}</button>
-        <input type="number" class="amount-input" id="ec-${t.id}" placeholder="Counter GHS">
-        <button class="btn btn-ghost" onclick='sendCounter(${JSON.stringify(t.id)},${JSON.stringify(myPhone)},"errander")'>Counter again</button>
+        <input type="number" class="amount-input" id="${pre}ec-${t.id}" placeholder="Counter GHS">
+        <button class="btn btn-ghost" onclick='sendCounter(${JSON.stringify(t.id)},${JSON.stringify(myPhone)},"errander",${JSON.stringify(pre)})'>Counter again</button>
       </div>`;
   }
   function renderOpenTasks(){
@@ -964,13 +1048,13 @@
       el.innerHTML = `
         <div class="task-top">
           <div>
-            <div class="task-cat">${t.category}${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}</div>
-            <div class="task-desc">${t.desc}</div>
-            <div class="task-meta">${contactPhoto(t.clientPhoto)}${t.loc}${distLabel} · ${t.urgency} · ${t.clientName} · ${timeAgo(t.createdAt)}</div>
+            <div class="task-cat">${escapeHtml(t.category)}${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}</div>
+            <div class="task-desc">${escapeHtml(t.desc)}</div>
+            <div class="task-meta">${contactPhoto(t.clientPhoto)}${escapeHtml(t.loc)}${distLabel} · ${escapeHtml(t.urgency)} · ${escapeHtml(t.clientName)} · ${timeAgo(t.createdAt)}</div>
           </div>
           ${priceBlock(t.budget, t.sponsored)}
         </div>
-        ${bandLine(t)}${itemsLine(t,'errander')}
+        ${taskPhotoHtml(t)}${bandLine(t)}${itemsLine(t,'errander')}
         ${t.sponsored ? '<div class="sponsor-note">🎓 Pickup &amp; delivery photos required for this sponsored job.</div>' : ''}
         ${negotiationHtmlForErrander(t)}`;
       wrap.appendChild(el);
@@ -1010,16 +1094,16 @@
     }
 
     const proofsHtml = (t.pickupPhoto || t.deliveryPhoto) ? `<div style="margin-top:8px;">
-        ${t.pickupPhoto ? `<img src="${t.pickupPhoto}" class="proof-photo" alt="Pickup proof" onclick="window.open(this.src)">` : ''}
-        ${t.deliveryPhoto ? `<img src="${t.deliveryPhoto}" class="proof-photo" alt="Delivery proof" onclick="window.open(this.src)">` : ''}
+        ${t.pickupPhoto ? `<img src="${photoSrc(t.pickupPhoto)}" class="proof-photo" alt="Pickup proof" onclick="window.open(this.src)">` : ''}
+        ${t.deliveryPhoto ? `<img src="${photoSrc(t.deliveryPhoto)}" class="proof-photo" alt="Delivery proof" onclick="window.open(this.src)">` : ''}
       </div>` : '';
 
     wrap.innerHTML = `
-      <div class="task-desc">${t.desc}${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}</div>
-      <div class="task-meta">${t.loc} · ${t.urgency}</div>
-      <div class="contact-box">${contactPhoto(t.clientPhoto)}📞 ${t.clientName} — ${t.clientPhone || 'no number given'}</div>
+      <div class="task-desc">${escapeHtml(t.desc)}${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}</div>
+      <div class="task-meta">${escapeHtml(t.loc)} · ${escapeHtml(t.urgency)}</div>
+      <div class="contact-box">${contactPhoto(t.clientPhoto)}📞 ${escapeHtml(t.clientName)} — ${t.clientPhone || 'no number given'}</div>
       <div class="task-price" style="margin:6px 0;">GHS ${t.budget}</div>
-      ${bandLine(t)}
+      ${taskPhotoHtml(t)}${bandLine(t)}
       <p class="muted">${labels[t.stage]}</p>
       ${t.stage !== 'accepted' ? itemsLine(t,'errander') : ''}
       ${proofsHtml}
@@ -1057,7 +1141,7 @@
     panel.innerHTML = '<h2>Rate your Boss</h2>';
     needsRating.forEach(t=>{
       const row = document.createElement('div'); row.className = 'task';
-      row.innerHTML = `<div class="task-desc">${t.clientName} — "${t.desc.slice(0,40)}…"</div><p class="muted" style="margin:2px 0 0;">Did they live up to their word?</p>`;
+      row.innerHTML = `<div class="task-desc">${escapeHtml(t.clientName)} — "${escapeHtml(t.desc.slice(0,40))}…"</div><p class="muted" style="margin:2px 0 0;">Did they live up to their word?</p>`;
       row.appendChild(starRow(t.id, (n)=> rateTask(t.id, { ratingForClient: n })));
       panel.appendChild(row);
     });
@@ -1078,7 +1162,7 @@
     histWrap.innerHTML = mine.length ? '' : '<p class="muted">Nothing here yet.</p>';
     mine.forEach(t=>{
       const el = document.createElement('div'); el.className = 'task';
-      el.innerHTML = `<div class="task-desc">${t.desc}${t.sponsored ? ' <span class="sponsor-badge">🎓</span>' : ''}</div><div class="task-meta">${t.clientName} · GHS ${t.budget}${t.ratingForErrander ? ' · they rated you ' + '★'.repeat(t.ratingForErrander) : ''}</div>`;
+      el.innerHTML = `<div class="task-desc">${escapeHtml(t.desc)}${t.sponsored ? ' <span class="sponsor-badge">🎓</span>' : ''}</div><div class="task-meta">${escapeHtml(t.clientName)} · GHS ${t.budget}${t.ratingForErrander ? ' · they rated you ' + '★'.repeat(t.ratingForErrander) : ''}</div>`;
       histWrap.appendChild(el);
     });
   }
@@ -1130,11 +1214,15 @@
     loadPriceEditor();
     refreshAdmin();
   }
+  let lastAdminKey = '';
   async function refreshAdmin(){
     if(!adminAuthed) return;
     const [usersRes, tasksRes] = await Promise.all([ api('admin-list-users','GET'), api('admin-list-tasks','GET') ]);
     const users = usersRes.users || [];
     const tasks = tasksRes.tasks || [];
+    const akey = JSON.stringify([users, tasks]);
+    if(akey === lastAdminKey) return;   // unchanged: don't rebuild the page under the admin's finger
+    lastAdminKey = akey;
 
     const sponsorWrap = document.getElementById('admin-sponsor-review');
     const pendingSponsored = tasks.filter(t => t.sponsored && t.reviewStatus === 'pending');
@@ -1142,12 +1230,12 @@
     pendingSponsored.forEach(t=>{
       const el = document.createElement('div'); el.className = 'task';
       el.innerHTML = `
-        <div class="task-desc">${t.desc}</div>
-        <div class="task-meta">Boss: ${t.clientName} (${t.clientPhone}) · Errander: ${t.erranderName} (${t.erranderPhone}) · GHS ${t.budget}</div>
+        <div class="task-desc">${escapeHtml(t.desc)}</div>
+        <div class="task-meta">Boss: ${escapeHtml(t.clientName)} (${t.clientPhone}) · Errander: ${escapeHtml(t.erranderName)} (${t.erranderPhone}) · GHS ${t.budget}</div>
         ${bandLine(t)}${t.receiptAmount != null ? `<div class="task-meta">🧾 Receipt GHS ${t.receiptAmount} (paid by Boss, not sponsored)</div>` : ''}
         <div style="margin-top:8px;">
-          ${t.pickupPhoto ? `<img src="${t.pickupPhoto}" class="proof-photo" alt="Pickup"><span class="muted">pickup</span>` : '<span class="muted">No pickup photo</span>'}
-          ${t.deliveryPhoto ? `<img src="${t.deliveryPhoto}" class="proof-photo" alt="Delivery" style="margin-left:10px;"><span class="muted">delivery</span>` : '<span class="muted">No delivery photo</span>'}
+          ${t.pickupPhoto ? `<img src="${photoSrc(t.pickupPhoto)}" class="proof-photo" alt="Pickup"><span class="muted">pickup</span>` : '<span class="muted">No pickup photo</span>'}
+          ${t.deliveryPhoto ? `<img src="${photoSrc(t.deliveryPhoto)}" class="proof-photo" alt="Delivery" style="margin-left:10px;"><span class="muted">delivery</span>` : '<span class="muted">No delivery photo</span>'}
         </div>
         <div class="task-actions">
           <button class="btn btn-primary" onclick="adminReviewSponsored('${t.id}','approved')">Approve &amp; pay</button>
@@ -1162,7 +1250,7 @@
     pending.forEach(u=>{
       const el = document.createElement('div'); el.className = 'task';
       el.innerHTML = `
-        <div class="task-top"><div>${contactPhoto(u.photo)}<b>${u.name}</b> — ${u.phone}<div class="task-meta">${u.errander.idType === 'ghana_card' ? 'Ghana Card' : "Driver's License"}: ${u.errander.idNumber}</div></div></div>
+        <div class="task-top"><div>${contactPhoto(u.photo)}<b>${escapeHtml(u.name)}</b> — ${u.phone}<div class="task-meta">${u.errander.idType === 'ghana_card' ? 'Ghana Card' : "Driver's License"}: ${u.errander.idNumber}</div></div></div>
         <div class="task-actions">
           <button class="btn btn-primary" onclick="adminDecide('${u.phone}','approved',this)">Approve</button>
           <button class="btn btn-danger" onclick="adminDecide('${u.phone}','rejected',this)">Reject</button>
@@ -1176,7 +1264,7 @@
       const st = u.errander ? u.errander.status : 'none';
       const row = document.createElement('div'); row.className = 'task';
       const uniBtn = st === 'approved' ? `<button class="btn btn-ghost" onclick="adminToggleUni('${u.phone}')">${u.errander.universityCertified ? '🎓 Remove certification' : '🎓 Grant University certification'}</button>` : '';
-      row.innerHTML = `<div class="task-top"><div>${contactPhoto(u.photo)}${u.name} (${u.phone})${u.errander && u.errander.universityCertified ? '<span class="uni-badge">🎓</span>' : ''}${u.flagCount ? '<span class="flag-badge">⚠️ '+u.flagCount+'</span>' : ''}</div><span class="status-pill badge-${st}">${st}</span></div>${uniBtn ? '<div class="task-actions">'+uniBtn+'</div>' : ''}`;
+      row.innerHTML = `<div class="task-top"><div>${contactPhoto(u.photo)}${escapeHtml(u.name)} (${u.phone})${u.errander && u.errander.universityCertified ? '<span class="uni-badge">🎓</span>' : ''}${u.flagCount ? '<span class="flag-badge">⚠️ '+u.flagCount+'</span>' : ''}</div><span class="status-pill badge-${st}">${st}</span></div>${uniBtn ? '<div class="task-actions">'+uniBtn+'</div>' : ''}`;
       usersWrap.appendChild(row);
     });
 
@@ -1232,7 +1320,7 @@
   }
 
   /* ---------- init ---------- */
-  const BUILD_TAG = 'v8.1';
+  const BUILD_TAG = 'v8.3';
   console.log('Errander pilot build:', BUILD_TAG);
   const footerBuild = document.getElementById('footer-build');
   if(footerBuild) footerBuild.textContent = ' · build ' + BUILD_TAG;

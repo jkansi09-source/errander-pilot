@@ -1,4 +1,4 @@
-# Errander Pilot — shared task feed (v8.1)
+# Errander Pilot — shared task feed (v8.3)
 
 ## New in v8: fair-price bands, receipts, and tighter security
 
@@ -25,9 +25,17 @@ limit via chat/button if needed. Item costs are never covered by sponsorship.
 - You can't accept your own task; only the right party can cancel, advance, confirm, rate or chat.
 - "Reset all task data" moved into the Admin portal and needs the passcode.
 
+**v8.3: separate photo storage.** Every photo (profile, task, pickup/delivery proof, receipt) is now stored as its own file in a second Netlify Blobs store (`errander-photos`); tasks and users keep only a short random id. Browsers download each image once (cached for a year), so the 4-second refresh is now tiny. Photos already in the database are moved automatically the first time v8.3 runs — no manual step. Photo links are unguessable but not login-protected; move to private storage before a public launch.
+
+**v8.2: Feed, task photos, button reliability.**
+- New **📰 Feed** tab (the first tab): every open job from every Boss, newest first, filterable by category. Approved Erranders can accept or counter right there; others are pointed to "Become an Errander".
+- Bosses can attach a **photo** to a task. It shows in the Feed, the job list and the active task.
+- **Why buttons felt dead:** the page rebuilt its lists every 4 seconds (and the admin lists too), so a tap could land on a button that had just been replaced. Lists now only rebuild when the data actually changes. Every button was also click-tested in a simulated browser for all three roles.
+- Names and task text are now escaped, so typing `<b>` or quotes can't break the layout.
+
 **v8.1 chat fix:** the Send button broke whenever a user's name contained a quote or similar character (and sometimes after a refresh); chat now identifies you by phone, Enter sends, and a two-phone test confirms messages flow both ways.
 
-**Deploying v8:** replace `netlify/functions/api.js`, `public/index.html` and this README, redeploy, then check the footer shows **build v8.1**. Still change `ADMIN_PASSCODE` in `api.js` first.
+**Deploying v8:** replace `netlify/functions/api.js`, `public/index.html` and this README, redeploy, then check the footer shows **build v8.3**. Still change `ADMIN_PASSCODE` in `api.js` first.
 
 Known limit (unchanged): there are no session tokens, so a technically skilled user who knows another person's phone number could forge requests. Fine for a supervised KNUST pilot; fix before a public launch.
 

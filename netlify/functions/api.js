@@ -85,6 +85,23 @@ function sanitizeConfig(input, current) {
   return out;
 }
 
+// ---------- photo storage ----------
+// Photos live in their own blob store, one file each. Tasks and users keep
+// only a short random id ("p_...") instead of the image itself, and the
+// browser downloads each image once (it is served with long-lived caching).
+const isInline = (v) => typeof v === 'string' && v.startsWith('data:image/');
+const isPhotoId = (v) => typeof v === 'string' && /^p_[a-f0-9]{24}$/.test(v);
+async function storePhoto(photoStore, dataUrl) {
+  const id = 'p_' + crypto.randomBytes(12).toString('hex');
+  await photoStore.set(id, dataUrl);
+  return id;
+}
+// Turn any inline photo into a stored id. Returns the id, or the value unchanged.
+async function toPhotoId(photoStore, v) {
+  return isInline(v) ? storePhoto(photoStore, v) : v;
+}
+const TASK_PHOTO_FIELDS = ['photo', 'pickupPhoto', 'deliveryPhoto', 'receiptPhoto', 'clientPhoto', 'erranderPhoto'];
+
 function hashPin(phone, pin) {
   return crypto.createHash('sha256').update(phone + ':' + pin + ':errander-pilot-salt').digest('hex');
 }
@@ -114,7 +131,7 @@ function blankTaskFields() {
     erranderName: null, erranderPhone: null, erranderPhoto: null,
     ratingForErrander: null, ratingForClient: null,
     sponsored: false, pickupPhoto: null, deliveryPhoto: null, reviewStatus: null, bossConfirmedAt: null,
-    metrics: null, band: null, priceFlag: null,
+    metrics: null, band: null, priceFlag: null, photo: null,
     itemsLimit: null, receiptAmount: null, receiptPhoto: null
   };
 }
@@ -165,8 +182,25 @@ exports.handler = async (event) => {
   }
 
   const store = getStore('errander-pilot');
+  const photoStore = getStore('errander-photos');
   const qs = event.queryStringParameters || {};
   const action = qs.action || 'list';
+
+  // Serve one photo. Ids are 96-bit random, so they can't be guessed; the
+  // browser caches each image for a year so it is only downloaded once.
+  if (action === 'photo') {
+    const id = String(qs.id || '');
+    if (!isPhotoId(id)) return { statusCode: 404, body: 'not found' };
+    const data = await photoStore.get(id, { type: 'text' });
+    const m = data && /^data:(image\/[a-z+.-]+);base64,(.*)$/s.exec(data);
+    if (!m) return { statusCode: 404, body: 'not found' };
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': m[1], 'Cache-Control': 'public, max-age=31536000, immutable' },
+      body: m[2],
+      isBase64Encoded: true
+    };
+  }
 
   // Every admin-* action (except logging in) now needs the passcode on the request.
   if (action.startsWith('admin-') && action !== 'admin-login') {
@@ -206,6 +240,20 @@ exports.handler = async (event) => {
     if (u.flagCount === undefined) u.flagCount = 0;
   });
 
+  // One-time migration: move any inline photos (from older versions) into the photo store.
+  {
+    let tasksChanged = false, usersChanged = false;
+    for (const t of tasks) for (const f of TASK_PHOTO_FIELDS) {
+      if (isInline(t[f])) { t[f] = await storePhoto(photoStore, t[f]); tasksChanged = true; }
+    }
+    for (const t of tasks) for (const n of (t.negotiations || [])) {
+      if (isInline(n.erranderPhoto)) { n.erranderPhoto = await storePhoto(photoStore, n.erranderPhoto); tasksChanged = true; }
+    }
+    for (const u of users) if (isInline(u.photo)) { u.photo = await storePhoto(photoStore, u.photo); usersChanged = true; }
+    if (tasksChanged) await store.setJSON('all-tasks', tasks);
+    if (usersChanged) await store.setJSON('users', users);
+  }
+
   const saveTasks = () => store.setJSON('all-tasks', tasks);
   const saveUsers = () => store.setJSON('users', users);
   const findUser = (phone) => users.find(u => u.phone === normalizePhone(phone));
@@ -237,7 +285,7 @@ exports.handler = async (event) => {
       if (findUser(phone)) return json(409, { error: 'An account with that phone number already exists — log in instead.' });
       const user = {
         phone, pinHash: hashPin(phone, pin), name,
-        photo: typeof body.photo === 'string' ? body.photo.slice(0, 200000) : null,
+        photo: (isInline(body.photo) && body.photo.length <= 250000) ? await storePhoto(photoStore, body.photo) : null,
         createdAt: Date.now(), errander: null, flagCount: 0
       };
       users.push(user);
@@ -263,7 +311,7 @@ exports.handler = async (event) => {
       const u = findUser(body.phone);
       if (!u) return json(404, { error: 'not found' });
       if (typeof body.name === 'string' && body.name.trim()) u.name = body.name.trim().slice(0, 60);
-      if (typeof body.photo === 'string') u.photo = body.photo.slice(0, 200000);
+      if (isInline(body.photo) && body.photo.length <= 250000) u.photo = await storePhoto(photoStore, body.photo);
       if (typeof body.bio === 'string') u.bio = body.bio.trim().slice(0, 140);
       await saveUsers();
       return json(200, { user: publicUser(u) });
@@ -369,7 +417,14 @@ exports.handler = async (event) => {
         if (n > 0 && isFinite(n)) itemsLimit = Math.round(n * 100) / 100;
         else return json(400, { error: 'Enter the most you are willing to reimburse for items, or untick the purchase option.' });
       }
+      let photo = null;
+      if (typeof body.photo === 'string' && body.photo) {
+        if (!isInline(body.photo)) return json(400, { error: 'That file is not a photo.' });
+        if (body.photo.length > 250000) return json(413, { error: 'That photo is too large — please pick a smaller one.' });
+        photo = await storePhoto(photoStore, body.photo);
+      }
       const task = Object.assign(blankTaskFields(), {
+        photo,
         id: 't' + Date.now() + Math.floor(Math.random() * 1000),
         category,
         desc: String(body.desc || '').slice(0, 300),
@@ -494,7 +549,8 @@ exports.handler = async (event) => {
       const idx = order.indexOf(t.stage);
       if (idx >= order.length - 1) return json(409, { error: 'already delivered' });
       if (typeof body.photo === 'string' && body.photo.length > 250000) return json(413, { error: 'That photo is too large — please retake it.' });
-      const photo = (typeof body.photo === 'string' && body.photo) ? body.photo : null;
+      if (typeof body.photo === 'string' && body.photo && !isInline(body.photo)) return json(400, { error: 'That file is not a photo.' });
+      const photo = isInline(body.photo) ? await storePhoto(photoStore, body.photo) : null;
 
       if (t.stage === 'accepted' && t.itemsLimit != null) {
         // Purchase errand: receipt total + receipt photo are required to confirm the purchase.
