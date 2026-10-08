@@ -1,4 +1,4 @@
-# Errander Pilot — shared task feed (v8.3)
+# Errander Pilot — shared task feed (v8.4)
 
 ## New in v8: fair-price bands, receipts, and tighter security
 
@@ -25,6 +25,12 @@ limit via chat/button if needed. Item costs are never covered by sponsorship.
 - You can't accept your own task; only the right party can cancel, advance, confirm, rate or chat.
 - "Reset all task data" moved into the Admin portal and needs the passcode.
 
+**v8.4: jobs not showing between logins.**
+- **Stale data fix:** Netlify Blobs can serve a copy of the data up to 60 seconds old unless "strong consistency" is on. A job posted by one person could therefore be invisible to another for a minute or more, and updates looked missing. Both stores now read with strong consistency.
+- **Same-browser fix:** logging out and into a different account on the same device could leave the Feed blank, because the page thought nothing had changed. The page now fully resets on login/logout.
+- **No more silent failures:** a status bar shows "🟢 Live · updated hh:mm:ss" or "⚠️ problem — Try again". If the server errors, the last good list stays on screen.
+- **Health check:** open `/.netlify/functions/api?action=health` in a browser. It shows version v8.4 and how many tasks, open tasks and users the server actually holds — the quickest way to tell a data problem from a display problem.
+
 **v8.3: separate photo storage.** Every photo (profile, task, pickup/delivery proof, receipt) is now stored as its own file in a second Netlify Blobs store (`errander-photos`); tasks and users keep only a short random id. Browsers download each image once (cached for a year), so the 4-second refresh is now tiny. Photos already in the database are moved automatically the first time v8.3 runs — no manual step. Photo links are unguessable but not login-protected; move to private storage before a public launch.
 
 **v8.2: Feed, task photos, button reliability.**
@@ -35,7 +41,7 @@ limit via chat/button if needed. Item costs are never covered by sponsorship.
 
 **v8.1 chat fix:** the Send button broke whenever a user's name contained a quote or similar character (and sometimes after a refresh); chat now identifies you by phone, Enter sends, and a two-phone test confirms messages flow both ways.
 
-**Deploying v8:** replace `netlify/functions/api.js`, `public/index.html` and this README, redeploy, then check the footer shows **build v8.3**. Still change `ADMIN_PASSCODE` in `api.js` first.
+**Deploying v8:** replace `netlify/functions/api.js`, `public/index.html` and this README, redeploy, then check the footer shows **build v8.4**. Still change `ADMIN_PASSCODE` in `api.js` first.
 
 Known limit (unchanged): there are no session tokens, so a technically skilled user who knows another person's phone number could forge requests. Fine for a supervised KNUST pilot; fix before a public launch.
 

@@ -181,10 +181,25 @@ exports.handler = async (event) => {
     };
   }
 
-  const store = getStore('errander-pilot');
-  const photoStore = getStore('errander-photos');
+  // Strong consistency: without it Netlify can serve a copy of the task list that
+  // is up to 60 seconds old, so a freshly posted job would not show for the other
+  // person and updates would appear to be missing.
+  const store = getStore({ name: 'errander-pilot', consistency: 'strong' });
+  const photoStore = getStore({ name: 'errander-photos', consistency: 'strong' });
   const qs = event.queryStringParameters || {};
   const action = qs.action || 'list';
+
+  // Quick health check you can open in a browser: /.netlify/functions/api?action=health
+  if (action === 'health') {
+    const ts = await store.get('all-tasks', { type: 'json' });
+    const us = await store.get('users', { type: 'json' });
+    return json(200, {
+      ok: true, version: 'v8.4', time: Date.now(),
+      tasks: ts ? ts.length : 0,
+      openTasks: ts ? ts.filter(t => t.status === 'open').length : 0,
+      users: us ? us.length : 0
+    });
+  }
 
   // Serve one photo. Ids are 96-bit random, so they can't be guessed; the
   // browser caches each image for a year so it is only downloaded once.

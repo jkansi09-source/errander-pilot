@@ -160,6 +160,7 @@
 
 <main>
   <div class="wrap">
+    <div id="net-status" class="hidden" style="margin:10px 0; padding:8px 12px; border-radius:9px; font-size:0.82rem;"></div>
 
     <!-- HOME -->
     <div class="view show" id="view-home">
@@ -554,8 +555,11 @@
     const opts = { method: method || 'GET', headers: {'Content-Type':'application/json'} };
     if(action.indexOf('admin-') === 0 && adminPass) opts.headers['X-Admin-Passcode'] = adminPass;
     if(body) opts.body = JSON.stringify(body);
-    const res = await fetch(API + '?action=' + action + (method==='GET' && body ? '&' + new URLSearchParams(body) : ''), opts);
-    return res.json();
+    let res;
+    try{ res = await fetch(API + '?action=' + action + (method==='GET' && body ? '&' + new URLSearchParams(body) : ''), opts); }
+    catch(e){ return { error: 'No connection to the server.', netError: true }; }
+    try{ return await res.json(); }
+    catch(e){ return { error: 'Server problem (' + res.status + '). Retrying…', netError: true }; }
   }
   async function loadConfig(){
     const res = await api('config','GET');
@@ -619,10 +623,12 @@
     localStorage.setItem('my_phone', myPhone);
     document.getElementById('auth-error').style.display = 'none';
     renderHeaderAuth(); renderProfileCard();
+    lastRenderKey = ''; prevSnapshot = null; allTasks = [];
     switchView('dashboard'); refresh();
   }
   function logout(){
-    myPhone = null; myProfile = null;
+    myPhone = null; myProfile = null; lastRenderKey = ''; allTasks = []; prevSnapshot = null;
+    document.getElementById('net-status').className = 'hidden';
     localStorage.removeItem('my_phone');
     renderHeaderAuth(); switchView('home');
   }
@@ -776,19 +782,36 @@
       if(el){ try{ el.focus(); if(st.focus.s != null) el.setSelectionRange(st.focus.s, st.focus.e); }catch(e){} }
     }
   }
-  let lastRenderKey = '';
+  let lastRenderKey = '', lastOkAt = null;
+  function showNetStatus(ok, msg){
+    const el = document.getElementById('net-status');
+    if(!el) return;
+    if(ok){
+      lastOkAt = new Date();
+      el.className = ''; el.style.background = 'rgba(14,122,59,0.08)'; el.style.border = '1px solid rgba(14,122,59,0.25)';
+      el.innerHTML = '🟢 Live · updated ' + lastOkAt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'}) + ' · <a href="#" onclick="manualRefresh(); return false;">Refresh now</a>';
+    } else {
+      el.className = ''; el.style.background = 'rgba(177,75,62,0.10)'; el.style.border = '1px solid rgba(177,75,62,0.4)';
+      el.innerHTML = '⚠️ ' + escapeHtml(msg) + ' · <a href="#" onclick="manualRefresh(); return false;">Try again</a>';
+    }
+  }
+  function manualRefresh(){ lastRenderKey = ''; refresh(); }
   function renderAll(){
-    renderFeed(); renderClientTasks(); renderOpenTasks(); renderActiveTask();
-    renderErranderRatePrompt(); renderEarnings(); renderReport();
+    // each section is guarded so one failing section can never blank out the others
+    [renderFeed, renderClientTasks, renderOpenTasks, renderActiveTask, renderErranderRatePrompt, renderEarnings, renderReport].forEach(fn=>{
+      try{ fn(); }catch(e){ console.error(fn.name + ' failed', e); }
+    });
   }
   async function refresh(force){
     if(!myProfile) return;
     try{
       const data = await api('list', 'GET', { phone: myPhone });
-      const fresh = data.tasks || [];
+      if(data.error || !Array.isArray(data.tasks)){ showNetStatus(false, data.error || 'Could not load jobs.'); return; }
+      showNetStatus(true);
+      const fresh = data.tasks;
       checkNotifications(fresh);
       allTasks = fresh;
-      const key = JSON.stringify(fresh) + '|' + (erranderCoords ? erranderCoords.lat + ',' + erranderCoords.lng : '') + '|' + (myProfile.errander ? myProfile.errander.status : '');
+      const key = myPhone + '|' + feedCategory + '|' + JSON.stringify(fresh) + '|' + (erranderCoords ? erranderCoords.lat + ',' + erranderCoords.lng : '') + '|' + (myProfile.errander ? myProfile.errander.status : '') + '|' + (myProfile.flagCount||0) + '|' + (myProfile.photo||'');
       if(key !== lastRenderKey){
         lastRenderKey = key;
         const ui = snapshotUi();
@@ -797,7 +820,7 @@
       }
       // refresh own profile occasionally to pick up flagCount / review outcomes
       api('get-user','GET',{phone:myPhone}).then(r=>{ if(r.user){ myProfile = r.user; renderProfileCard(); } });
-    }catch(e){ /* retried next poll */ }
+    }catch(e){ console.error('refresh failed', e); showNetStatus(false, 'Display problem: ' + e.message); }
   }
   function checkNotifications(fresh){
     if(prevSnapshot === null){
@@ -1320,7 +1343,7 @@
   }
 
   /* ---------- init ---------- */
-  const BUILD_TAG = 'v8.3';
+  const BUILD_TAG = 'v8.4';
   console.log('Errander pilot build:', BUILD_TAG);
   const footerBuild = document.getElementById('footer-build');
   if(footerBuild) footerBuild.textContent = ' · build ' + BUILD_TAG;
