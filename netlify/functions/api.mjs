@@ -9,7 +9,14 @@ import { getStore } from '@netlify/blobs';
 import crypto from 'node:crypto';
 
 // Change these before any real pilot use — see README.
-const ADMIN_PASSCODE = 'errander-admin-2026';
+// Set ADMIN_PASSCODE in Netlify -> Site configuration -> Environment variables. The built-in default is public knowledge.
+const DEFAULT_ADMIN_PASSCODE = 'errander-admin-2026';
+const ADMIN_PASSCODE = process.env.ADMIN_PASSCODE || DEFAULT_ADMIN_PASSCODE;
+const SESSION_MS = 30 * 24 * 3600 * 1000;
+const MAX_TRIES = 5, LOCK_MS = 15 * 60 * 1000;
+const PAYOUT_HOLD_MS = Number(process.env.PAYOUT_HOLD_HOURS || 48) * 3600 * 1000;   // weekly-payout jobs wait at least this long (dispute window)
+const VERIFY_CALL_AT = 150;    // jobs at/above this price get a verification call before payout
+const VERIFY_VISIT_AT = 400;   // jobs at/above this price get a site visit / in-person check
 const PLATFORM_FEE_RATE = 0.10;   // added on top of the service price, paid by the Boss (non-sponsored only)
 const SPONSORED_CAP = 100;        // total KNUST-sponsored slots for this pilot
 
@@ -167,8 +174,52 @@ async function loadThreads(store, t) {
   return out;
 }
 
-function hashPin(phone, pin) {
+function legacyHashPin(phone, pin) {
   return crypto.createHash('sha256').update(phone + ':' + pin + ':errander-pilot-salt').digest('hex');
+}
+// New PINs use scrypt with a random salt (slow on purpose, so a leaked user list can't be cracked quickly).
+function hashPin(phone, pin) {
+  const salt = crypto.randomBytes(12).toString('hex');
+  return 's2$' + salt + '$' + crypto.scryptSync(phone + ':' + pin, salt, 32).toString('hex');
+}
+function safeEq(a, b) {
+  const x = crypto.createHash('sha256').update(String(a)).digest(), y = crypto.createHash('sha256').update(String(b)).digest();
+  return crypto.timingSafeEqual(x, y);
+}
+function checkPin(u, phone, pin) {
+  if (typeof u.pinHash === 'string' && u.pinHash.startsWith('s2$')) {
+    const [, salt, hash] = u.pinHash.split('$');
+    return safeEq(crypto.scryptSync(phone + ':' + pin, salt, 32).toString('hex'), hash);
+  }
+  return safeEq(u.pinHash, legacyHashPin(phone, pin));
+}
+
+// Signed session tokens. Nothing is stored for them, so they work even while Netlify Blobs is serving stale reads.
+// A token carries the phone, an expiry and the user's "epoch" (bumped when the PIN changes, which logs every device out).
+let cachedSecret = null;
+async function getSecret(store) {
+  if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
+  if (cachedSecret) return cachedSecret;
+  let sec = await store.get('session-secret', { type: 'text' });
+  if (!sec) { sec = crypto.randomBytes(32).toString('hex'); await store.set('session-secret', sec); }
+  cachedSecret = sec;
+  return sec;
+}
+const b64u = (b) => Buffer.from(b).toString('base64url');
+function signToken(secret, user) {
+  const payload = b64u(JSON.stringify({ p: user.phone, e: user.epoch || 0, x: Date.now() + SESSION_MS }));
+  return payload + '.' + crypto.createHmac('sha256', secret).update(payload).digest('base64url');
+}
+function readToken(secret, tok, usersList) {
+  if (typeof tok !== 'string' || tok.length > 400) return null;
+  const [payload, sig] = tok.split('.');
+  if (!payload || !sig) return null;
+  if (!safeEq(crypto.createHmac('sha256', secret).update(payload).digest('base64url'), sig)) return null;
+  let d; try { d = JSON.parse(Buffer.from(payload, 'base64url').toString()); } catch (e) { return null; }
+  if (!d || d.x < Date.now()) return null;
+  const u = usersList.find(x => x.phone === d.p);
+  if (!u || (u.epoch || 0) !== d.e) return null;
+  return d.p;
 }
 function publicUser(u) {
   return { phone: u.phone, name: u.name, photo: u.photo || null, bio: u.bio || null, createdAt: u.createdAt, errander: u.errander || null, flagCount: u.flagCount || 0 };
@@ -179,6 +230,22 @@ function normalizeId(v) { return String(v || '').toUpperCase().replace(/[^A-Z0-9
 // What a viewer is allowed to see of a task. Phone numbers, chat and proof
 // photos are only for the Boss and the matched Errander; everyone else gets
 // the public face of the task plus their own offer (if any).
+// Which completed jobs need a human check before the Errander is paid.
+// Bigger jobs get a bigger check; new or previously flagged people and a random 1-in-10 sample are also checked.
+function verifyNeeds(t, tasks, boss, errander) {
+  const reasons = [];
+  let level = null;
+  const amt = Number(t.budget) || 0;
+  if (amt >= VERIFY_VISIT_AT) { level = 'visit'; reasons.push('High-value job (GHS ' + amt + ')'); }
+  else if (amt >= VERIFY_CALL_AT) { level = 'call'; reasons.push('Mid-value job (GHS ' + amt + ')'); }
+  if ((boss && boss.flagCount > 0) || (errander && errander.flagCount > 0)) { level = level || 'call'; reasons.push('A party has been flagged before'); }
+  const done = tasks.filter(x => x.erranderPhone === t.erranderPhone && x.status === 'completed').length;
+  if (done < 1) { level = level || 'call'; reasons.push("Errander's first job"); }
+  let h = 0; for (const ch of String(t.id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  if (h % 10 === 0) { level = level || 'call'; reasons.push('Random spot check'); }
+  return level ? { level, reasons, status: 'pending', createdAt: Date.now(), note: '', agent: '' } : null;
+}
+
 function redactTask(t, viewer) {
   if (viewer && t.clientPhone === viewer) return t;
   const c = Object.assign({}, t);
@@ -197,7 +264,7 @@ function blankTaskFields() {
     ratingForErrander: null, ratingForClient: null,
     sponsored: false, pickupPhoto: null, deliveryPhoto: null, reviewStatus: null, bossConfirmedAt: null,
     metrics: null, band: null, priceFlag: null, photo: null,
-    itemsLimit: null, receiptAmount: null, receiptPhoto: null
+    itemsLimit: null, receiptAmount: null, receiptPhoto: null, verify: null, payout: null
   };
 }
 
@@ -239,7 +306,7 @@ async function core(event) {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Passcode'
+        'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Passcode, X-Session'
       },
       body: ''
     };
@@ -258,8 +325,10 @@ async function core(event) {
     const ts = await store.get('all-tasks', { type: 'json' });
     const us = await store.get('users', { type: 'json' });
     return json(200, {
-      ok: true, version: 'v9.0', time: Date.now(),
+      ok: true, version: 'v10.0', time: Date.now(),
       readMode: blobsMode,
+      adminPasscodeIsDefault: ADMIN_PASSCODE === DEFAULT_ADMIN_PASSCODE,
+      sessionSecretFromEnv: !!process.env.SESSION_SECRET,
       readModeNote: blobsMode === 'eventual' ? 'WARNING: reads may be up to 60s old. Set BLOBS_TOKEN (see README) for instant, reliable updates.' : 'ok',
       tasks: ts ? ts.length : 0,
       openTasks: ts ? ts.filter(t => t.status === 'open').length : 0,
@@ -283,11 +352,24 @@ async function core(event) {
     };
   }
 
-  // Every admin-* action (except logging in) now needs the passcode on the request.
+  const hdrs = event.headers || {};
+  const ip = String(hdrs['x-nf-client-connection-ip'] || (hdrs['x-forwarded-for'] || '').split(',')[0] || 'unknown').trim().slice(0, 60);
+  // Counts wrong guesses per key (a phone number or an IP) and locks that key for a while after too many.
+  const lockLeft = async (key) => { const a = await store.get('att/' + key, { type: 'json' }); return (a && a.until > Date.now()) ? Math.ceil((a.until - Date.now()) / 60000) : 0; };
+  const noteFail = async (key) => {
+    const a = (await store.get('att/' + key, { type: 'json' })) || { n: 0 };
+    const stale = a.last && Date.now() - a.last > LOCK_MS;
+    const n = (stale ? 0 : (a.n || 0)) + 1;
+    await store.setJSON('att/' + key, { n: n >= MAX_TRIES ? 0 : n, last: Date.now(), until: n >= MAX_TRIES ? Date.now() + LOCK_MS : 0 });
+  };
+  const clearFails = async (key) => { const a = await store.get('att/' + key, { type: 'json' }); if (a && (a.n || a.until)) await store.setJSON('att/' + key, { n: 0, until: 0 }); };
+
+  // Every admin-* action needs the passcode on the request; wrong guesses are limited per IP.
   if (action.startsWith('admin-') && action !== 'admin-login') {
-    const h = event.headers || {};
-    const given = h['x-admin-passcode'] || h['X-Admin-Passcode'] || '';
-    if (given !== ADMIN_PASSCODE) return json(401, { error: 'Admin passcode required.' });
+    const given = hdrs['x-admin-passcode'] || hdrs['X-Admin-Passcode'] || '';
+    const left = await lockLeft('admin-' + ip);
+    if (left) return json(429, { error: 'Too many wrong attempts. Try again in ' + left + ' minute(s).' });
+    if (!safeEq(given, ADMIN_PASSCODE)) { await noteFail('admin-' + ip); return json(401, { error: 'Admin passcode required.' }); }
   }
 
   let body = {};
@@ -338,15 +420,39 @@ async function core(event) {
   const saveTasks = () => store.setJSON('all-tasks', tasks);
   const saveUsers = () => store.setJSON('users', users);
   const findUser = (phone) => users.find(u => u.phone === normalizePhone(phone));
+  // Called whenever a job becomes completed. "instant" Erranders are paid now; "weekly" Erranders' money is held for the next payout window.
+  const completePayout = (t) => {
+    const e = findUser(t.erranderPhone);
+    const mode = e && e.errander && e.errander.payoutMode === 'weekly' ? 'weekly' : 'instant';
+    t.payout = { mode, status: mode === 'instant' ? 'paid' : 'held', completedAt: Date.now(), paidAt: mode === 'instant' ? Date.now() : null };
+  };
   const isBusy = (erranderPhone) => tasks.some(x => x.erranderPhone === erranderPhone && x.status === 'accepted');
   const isApprovedErrander = (u) => u && u.errander && u.errander.status === 'approved';
   const sponsoredUsedCount = () => tasks.filter(t => t.sponsored && t.status !== 'cancelled' && t.reviewStatus !== 'rejected').length;
   const capMessage = (t) => `Sponsored jobs are capped at GHS ${t.band.high} (the top of the typical range for this job).`;
 
+  // ---- who is calling? Every account action needs a valid signed session for the phone it acts as. ----
+  const secret = await getSecret(store);
+  const PUBLIC_ACTIONS = ['config', 'price-band', 'signup', 'login'];
+  if (!PUBLIC_ACTIONS.includes(action) && !action.startsWith('admin-')) {
+    let actor = '';
+    if (action === 'list') actor = qs.phone || '';
+    else if (action === 'accept') actor = body.by === 'boss' ? body.bossPhone : body.erranderPhone;
+    else if (action === 'raise-item-limit') actor = body.bossPhone;
+    else if (action === 'create') actor = body.clientPhone;
+    else actor = body.phone || qs.phone || '';
+    actor = normalizePhone(actor);
+    if (actor || action !== 'list') {
+      const who = readToken(secret, hdrs['x-session'], users);
+      if (!actor || who !== actor) return json(401, { error: 'Please log in again.', auth: true });
+    }
+  }
+  const sessionFor = (u) => signToken(secret, u);
+
   switch (action) {
 
     case 'config':
-      return json(200, { feeRate: PLATFORM_FEE_RATE, sponsoredCap: SPONSORED_CAP, sponsoredUsed: sponsoredUsedCount() });
+      return json(200, { feeRate: PLATFORM_FEE_RATE, sponsoredCap: SPONSORED_CAP, sponsoredUsed: sponsoredUsedCount(), supportPhone: process.env.SUPPORT_PHONE || '', payoutHoldHours: PAYOUT_HOLD_MS / 3600000 });
 
     case 'price-band': {
       const category = qs.category || 'Delivery & Pickup';
@@ -362,7 +468,8 @@ async function core(event) {
       const phone = normalizePhone(body.phone);
       const pin = String(body.pin || '');
       const name = String(body.name || '').trim().slice(0, 60);
-      if (!phone || pin.length < 4 || !name) return json(400, { error: 'Name, phone, and a 4+ digit PIN are required.' });
+      if (!phone || !name) return json(400, { error: 'Name, phone, and a PIN are required.' });
+      if (!/^\d{4,12}$/.test(pin)) return json(400, { error: 'Your PIN must be 4 to 12 digits.' });
       if (findUser(phone)) return json(409, { error: 'An account with that phone number already exists — log in instead.' });
       const user = {
         phone, pinHash: hashPin(phone, pin), name,
@@ -371,15 +478,33 @@ async function core(event) {
       };
       users.push(user);
       await saveUsers();
-      return json(200, { user: publicUser(user) });
+      return json(200, { user: publicUser(user), token: sessionFor(user) });
     }
     case 'login': {
       if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
       const phone = normalizePhone(body.phone);
       const u = findUser(phone);
       if (!u) return json(404, { error: 'No account with that phone number — sign up first.' });
-      if (u.pinHash !== hashPin(phone, String(body.pin || ''))) return json(401, { error: 'Incorrect PIN.' });
-      return json(200, { user: publicUser(u) });
+      const left = await lockLeft('pin-' + phone);
+      if (left) return json(429, { error: 'Too many wrong PINs. Try again in ' + left + ' minute(s).' });
+      if (!checkPin(u, phone, String(body.pin || ''))) { await noteFail('pin-' + phone); return json(401, { error: 'Incorrect PIN.' }); }
+      await clearFails('pin-' + phone);
+      if (!String(u.pinHash).startsWith('s2$')) { u.pinHash = hashPin(phone, String(body.pin)); await saveUsers(); }   // upgrade old hashes quietly
+      return json(200, { user: publicUser(u), token: sessionFor(u) });
+    }
+    case 'change-pin': {
+      if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
+      const u = findUser(body.phone);
+      if (!u) return json(404, { error: 'not found' });
+      const left = await lockLeft('pin-' + u.phone);
+      if (left) return json(429, { error: 'Too many wrong PINs. Try again in ' + left + ' minute(s).' });
+      if (!checkPin(u, u.phone, String(body.oldPin || ''))) { await noteFail('pin-' + u.phone); return json(401, { error: 'Your current PIN is wrong.' }); }
+      const np = String(body.newPin || '');
+      if (!/^\d{4,12}$/.test(np)) return json(400, { error: 'New PIN must be 4 to 12 digits.' });
+      u.pinHash = hashPin(u.phone, np);
+      u.epoch = (u.epoch || 0) + 1;   // signs out every other device
+      await saveUsers();
+      return json(200, { ok: true, token: sessionFor(u) });
     }
     case 'get-user': {
       const phone = normalizePhone(qs.phone || '');
@@ -414,7 +539,10 @@ async function core(event) {
     /* ---------- admin (all require the X-Admin-Passcode header) ---------- */
     case 'admin-login': {
       if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
-      if (String(body.passcode || '') !== ADMIN_PASSCODE) return json(401, { error: 'Incorrect passcode.' });
+      const left = await lockLeft('admin-' + ip);
+      if (left) return json(429, { error: 'Too many wrong attempts. Try again in ' + left + ' minute(s).' });
+      if (!safeEq(String(body.passcode || ''), ADMIN_PASSCODE)) { await noteFail('admin-' + ip); return json(401, { error: 'Incorrect passcode.' }); }
+      await clearFails('admin-' + ip);
       return json(200, { ok: true });
     }
     case 'admin-list-users':
@@ -447,6 +575,26 @@ async function core(event) {
       await store.setJSON('price-config', next);
       return json(200, { config: next });
     }
+    case 'admin-verify-decide': {
+      if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
+      const t = tasks.find(x => x.id === body.id);
+      if (!t || !t.verify) return json(404, { error: 'task not found' });
+      if (t.verify.status !== 'pending') return json(409, { error: 'Already decided.' });
+      const d = body.decision;
+      if (!['verified', 'flag-errander', 'flag-boss'].includes(d)) return json(400, { error: 'invalid decision' });
+      t.verify.note = String(body.note || '').slice(0, 300);
+      t.verify.agent = String(body.agent || '').slice(0, 60);
+      t.verify.decidedAt = Date.now();
+      if (d === 'verified') {
+        t.verify.status = 'verified'; t.status = 'completed'; t.stage = 'completed'; completePayout(t);
+      } else {
+        t.verify.status = 'problem'; t.status = 'flagged';
+        const who = findUser(d === 'flag-errander' ? t.erranderPhone : t.clientPhone);
+        if (who) { who.flagCount = (who.flagCount || 0) + 1; await saveUsers(); }
+      }
+      await saveTasks();
+      return json(200, { task: t });
+    }
     case 'admin-review-sponsored': {
       if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
       const t = tasks.find(x => x.id === body.id);
@@ -456,6 +604,7 @@ async function core(event) {
       if (body.decision === 'approved') {
         t.reviewStatus = 'approved';
         t.status = 'completed';
+        completePayout(t);
         t.stage = 'completed';
       } else {
         t.reviewStatus = 'rejected';
@@ -673,8 +822,9 @@ async function core(event) {
       if (t.sponsored) {
         t.reviewStatus = 'pending';
       } else {
-        t.status = 'completed';
-        t.stage = 'completed';
+        const need = verifyNeeds(t, tasks, findUser(t.clientPhone), findUser(t.erranderPhone));
+        if (need) { t.verify = need; }   // stays "delivered" until our team has checked it
+        else { t.status = 'completed'; t.stage = 'completed'; completePayout(t); }
       }
       await saveTasks();
       return json(200, { task: t });
@@ -743,6 +893,104 @@ async function core(event) {
         await store.setJSON('thr-index', idx);
       }
       return json(200, { ok: true, cid });
+    }
+
+    case 'set-payout-mode': {
+      if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
+      const u = findUser(body.phone);
+      if (!isApprovedErrander(u)) return json(403, { error: 'Only approved Erranders choose a payout option.' });
+      if (!['instant', 'weekly'].includes(body.mode)) return json(400, { error: 'invalid mode' });
+      u.errander.payoutMode = body.mode;
+      await saveUsers();
+      return json(200, { user: publicUser(u) });
+    }
+    case 'admin-release-payouts': {
+      if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
+      const now = Date.now();
+      let count = 0, total = 0;
+      tasks.forEach(t => {
+        if (t.payout && t.payout.status === 'held' && t.status === 'completed' && now - t.payout.completedAt >= PAYOUT_HOLD_MS) {
+          t.payout.status = 'paid'; t.payout.paidAt = now; count++; total += Number(t.budget) || 0;
+        }
+      });
+      if (count) await saveTasks();
+      return json(200, { count, total });
+    }
+
+    /* ---------- support: help chat + "report a problem" tickets ---------- */
+    case 'support-list': {
+      const me = normalizePhone(qs.phone || '');
+      if (!findUser(me)) return json(401, { error: 'Log in first.' });
+      const all = (await store.get('support', { type: 'json' })) || [];
+      return json(200, { tickets: all.filter(x => x.phone === me) });
+    }
+    case 'support-send': {
+      if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
+      const me = normalizePhone(body.phone);
+      const u = findUser(me);
+      if (!u) return json(401, { error: 'Log in first.' });
+      const text = String(body.text || '').trim().slice(0, 1000);
+      if (!text) return json(400, { error: 'empty message' });
+      const cid = String(body.cid || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40) || ('s' + Date.now() + Math.floor(Math.random() * 1e6));
+      const kind = body.kind === 'report' ? 'report' : 'chat';
+      const all = (await store.get('support', { type: 'json' })) || [];
+      let tk;
+      if (kind === 'report') {
+        const t = tasks.find(x => x.id === body.taskId);
+        if (!t) return json(404, { error: 'task not found' });
+        if (me !== t.clientPhone && me !== t.erranderPhone) return json(403, { error: 'You can only report a problem on your own job.' });
+        tk = all.find(x => x.kind === 'report' && x.phone === me && x.taskId === t.id && x.status === 'open');
+        if (!tk) {
+          tk = {
+            id: 'sp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), kind, phone: me, name: u.name,
+            role: me === t.clientPhone ? 'Boss' : 'Errander', taskId: t.id,
+            subject: 'Problem with: ' + String(t.desc).slice(0, 60),
+            context: { desc: t.desc, category: t.category, status: t.status, stage: t.stage, budget: t.budget, sponsored: !!t.sponsored,
+              boss: t.clientName, bossPhone: t.clientPhone, errander: t.erranderName || null, erranderPhone: t.erranderPhone || null,
+              pickupPhoto: t.pickupPhoto || null, deliveryPhoto: t.deliveryPhoto || null, receiptPhoto: t.receiptPhoto || null },
+            status: 'open', human: true, createdAt: Date.now(), updatedAt: Date.now(), messages: []
+          };
+          all.push(tk);
+        }
+      } else {
+        tk = all.find(x => x.kind === 'chat' && x.phone === me);
+        if (!tk) {
+          tk = { id: 'sp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), kind, phone: me, name: u.name,
+            role: 'User', subject: 'Help chat', status: 'open', human: false, createdAt: Date.now(), updatedAt: Date.now(), messages: [] };
+          all.push(tk);
+        }
+        if (tk.status === 'resolved') tk.status = 'open';
+        if (body.human) tk.human = true;
+      }
+      if (!tk.messages.some(m => m.cid === cid)) {
+        tk.messages.push({ from: 'user', sender: u.name, text, ts: Date.now(), cid });
+        if (tk.messages.length > 300) tk.messages = tk.messages.slice(-300);
+        tk.updatedAt = Date.now();
+        tk.awaiting = 'admin';
+        await store.setJSON('support', all);
+      }
+      return json(200, { ok: true, ticket: tk });
+    }
+    case 'admin-support-list': {
+      const all = (await store.get('support', { type: 'json' })) || [];
+      return json(200, { tickets: all.sort((a, b) => b.updatedAt - a.updatedAt) });
+    }
+    case 'admin-support-reply': {
+      if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
+      const all = (await store.get('support', { type: 'json' })) || [];
+      const tk = all.find(x => x.id === body.id);
+      if (!tk) return json(404, { error: 'ticket not found' });
+      const text = String(body.text || '').trim().slice(0, 1000);
+      const cid = String(body.cid || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40) || ('a' + Date.now());
+      if (text && !tk.messages.some(m => m.cid === cid)) {
+        tk.messages.push({ from: 'admin', sender: 'Errander Support', text, ts: Date.now(), cid });
+        tk.awaiting = 'user';
+      }
+      if (body.resolved === true) { tk.status = 'resolved'; tk.awaiting = null; }
+      if (body.resolved === false) tk.status = 'open';
+      tk.updatedAt = Date.now();
+      await store.setJSON('support', all);
+      return json(200, { ok: true, ticket: tk });
     }
 
     case 'admin-reset': {

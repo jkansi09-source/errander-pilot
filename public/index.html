@@ -224,6 +224,15 @@
             <button class="btn btn-primary btn-block" onclick="saveProfileDetails()">Save</button>
           </div>
         </details>
+        <details id="change-pin-details">
+          <summary style="cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--teal); margin-top:6px;">🔐 Change my PIN</summary>
+          <div style="margin-top:10px;">
+            <div class="field"><label>Current PIN</label><input id="cp-old" type="password" inputmode="numeric" autocomplete="current-password"></div>
+            <div class="field"><label>New PIN (4 to 12 digits)</label><input id="cp-new" type="password" inputmode="numeric" autocomplete="new-password"></div>
+            <button class="btn btn-primary btn-block" onclick="changePin()">Change PIN</button>
+            <p class="muted" style="font-size:0.8rem;">Changing your PIN signs you out on every other device.</p>
+          </div>
+        </details>
       </div>
 
       <nav class="tabs">
@@ -231,6 +240,7 @@
         <button data-mode="boss" onclick="showDashTab('post', this)">Post a Task</button>
         <button data-mode="errander" onclick="showDashTab('jobs', this)">Find Jobs</button>
         <button data-mode="report" onclick="showDashTab('report', this)">My Report</button>
+        <button data-mode="help" id="help-tab-btn" onclick="showDashTab('help', this)">❓ Help</button>
       </nav>
 
       <!-- FEED (everyone) -->
@@ -338,6 +348,21 @@
         </div>
       </div>
 
+      <!-- HELP -->
+      <div class="tab-panel" id="dash-help">
+        <div class="panel">
+          <h2>❓ Help &amp; FAQ</h2>
+          <input type="text" id="faq-search" placeholder="Search: payment, price, safety, ID…" oninput="renderFaq()" style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; font-family:inherit;">
+          <div class="feed-chips" id="faq-chips" style="margin-top:8px;"></div>
+          <div id="faq-list"></div>
+        </div>
+        <div class="panel">
+          <h2>💬 Still stuck? Message our team</h2>
+          <p class="muted" id="help-note" style="margin:0 0 8px;"></p>
+          <div id="help-chat"></div>
+        </div>
+      </div>
+
       <!-- REPORT -->
       <div class="tab-panel" id="dash-report">
         <div class="panel"><h2>As a Boss</h2><div id="report-boss"></div></div>
@@ -358,6 +383,9 @@
     <!-- ADMIN DASHBOARD -->
     <div class="view" id="view-admin">
       <div class="panel"><h2>🎓 Sponsored jobs awaiting review</h2><div id="admin-sponsor-review"></div></div>
+      <div class="panel"><h2>💸 Weekly payouts</h2><p class="muted" style="margin:0 0 8px;">Erranders who chose weekly payout. Money becomes ready after the safety window. In this pilot "release" only marks the jobs paid; send the actual Mobile Money yourself.</p><div id="admin-payouts"></div></div>
+      <div class="panel"><h2>🔎 Verification queue</h2><p class="muted" style="margin:0 0 8px;">Jobs are held here until you have checked them. Bigger jobs get a bigger check; new or flagged people and a random 1-in-10 sample are also checked.</p><div id="admin-verify"></div></div>
+      <div class="panel"><h2>🛟 Support inbox</h2><div id="admin-support"></div></div>
       <div class="panel"><h2>Pending Errander applications</h2><div id="admin-pending"></div></div>
       <div class="panel"><h2>All users</h2><div id="admin-users"></div></div>
       <div class="panel"><h2>Task overview</h2><div id="admin-task-stats"></div></div>
@@ -667,20 +695,27 @@
   }
   async function api(action, method, body){
     const opts = { method: method || 'GET', headers: {'Content-Type':'application/json'} };
+    try{ const tk = localStorage.getItem('my_token'); if(tk) opts.headers['X-Session'] = tk; }catch(e){}
     if(action.indexOf('admin-') === 0 && adminPass) opts.headers['X-Admin-Passcode'] = adminPass;
     // Browsers refuse a body on GET requests (it throws before anything is sent); GET data goes in the URL.
     if(body && opts.method !== 'GET') opts.body = JSON.stringify(body);
     let res;
     try{ res = await fetch(API + '?action=' + action + (method==='GET' && body ? '&' + new URLSearchParams(body) : ''), opts); }
     catch(e){ return { error: 'No connection to the server.', netError: true }; }
-    try{ return await res.json(); }
+    let out;
+    try{ out = await res.json(); }
     catch(e){ return { error: 'Server problem (' + res.status + '). Retrying…', netError: true }; }
+    if(out && out.token){ try{ localStorage.setItem('my_token', out.token); }catch(e){} }
+    if(out && out.auth && myPhone){ sessionExpired(); }
+    return out;
   }
   async function loadConfig(){
     const res = await api('config','GET');
     if(res.feeRate!=null) feeRate = res.feeRate;
     if(res.sponsoredCap!=null) sponsoredCap = res.sponsoredCap;
     if(res.sponsoredUsed!=null) sponsoredUsed = res.sponsoredUsed;
+    if(res.supportPhone!=null) supportPhone = res.supportPhone;
+    if(res.payoutHoldHours!=null) payoutHoldHours = res.payoutHoldHours;
     const field = document.getElementById('sponsor-field');
     const slotsEl = document.getElementById('sponsor-slots');
     if(sponsoredUsed < sponsoredCap){
@@ -741,7 +776,14 @@
     lastRenderKey = ''; prevSnapshot = null; allTasks = [];
     switchView('dashboard'); refresh();
   }
+  function sessionExpired(){
+    if(!myPhone) return;
+    logout();
+    toast('Please log in again.');
+    switchView('auth');
+  }
   function logout(){
+    try{ localStorage.removeItem('my_token'); }catch(e){}
     myPhone = null; myProfile = null; lastRenderKey = ''; allTasks = []; prevSnapshot = null;
     document.getElementById('net-status').className = 'hidden';
     localStorage.removeItem('my_phone');
@@ -871,7 +913,7 @@
     }, ()=>{ document.getElementById('e-loc-btn').textContent = '📍 Enable location (permission denied)'; });
   }
 
-  const LIVE_IDS = ['inbox-list','feed-list','client-active','client-rate-prompt','client-history','open-tasks','active-task','errander-rate-prompt','errander-history','earnings'];
+  const LIVE_IDS = ['help-chat','inbox-list','feed-list','client-active','client-rate-prompt','client-history','open-tasks','active-task','errander-rate-prompt','errander-history','earnings'];
   function snapshotUi(){
     const st = { vals:{}, open:{}, scroll:{}, focus:null };
     LIVE_IDS.forEach(id=>{
@@ -913,7 +955,7 @@
   function manualRefresh(){ lastRenderKey = ''; refresh(); }
   function renderAll(){
     // each section is guarded so one failing section can never blank out the others
-    [renderInbox, renderFeed, renderClientTasks, renderOpenTasks, renderActiveTask, renderErranderRatePrompt, renderEarnings, renderReport].forEach(fn=>{
+    [renderInbox, renderHelp, renderFeed, renderClientTasks, renderOpenTasks, renderActiveTask, renderErranderRatePrompt, renderEarnings, renderReport].forEach(fn=>{
       try{ fn(); }catch(e){ console.error(fn.name + ' failed', e); }
     });
   }
@@ -923,11 +965,12 @@
       const data = await api('list', 'GET', { phone: myPhone, ask: askedList().join(',') });
       if(data.error || !Array.isArray(data.tasks)){ showNetStatus(false, data.error || 'Could not load jobs.'); return; }
       showNetStatus(true);
+      try{ const tr = await api('support-list','GET',{phone:myPhone}); if(Array.isArray(tr.tickets)) myTickets = tr.tickets; }catch(e){}
       const fresh = data.tasks;
       checkNotifications(fresh);
       allTasks = fresh;
       reconcilePending();
-      const key = JSON.stringify(pendingMsgs) + '|' + myPhone + '|' + feedCategory + '|' + JSON.stringify(fresh) + '|' + (erranderCoords ? erranderCoords.lat + ',' + erranderCoords.lng : '') + '|' + (myProfile.errander ? myProfile.errander.status : '') + '|' + (myProfile.flagCount||0) + '|' + (myProfile.photo||'');
+      const key = JSON.stringify(myTickets) + JSON.stringify(pendingMsgs) + '|' + myPhone + '|' + feedCategory + '|' + JSON.stringify(fresh) + '|' + (erranderCoords ? erranderCoords.lat + ',' + erranderCoords.lng : '') + '|' + (myProfile.errander ? myProfile.errander.status : '') + '|' + (myProfile.flagCount||0) + '|' + (myProfile.photo||'');
       if(key !== lastRenderKey){
         lastRenderKey = key;
         const ui = snapshotUi();
@@ -941,7 +984,7 @@
   function checkNotifications(fresh){
     if(prevSnapshot === null){
       prevSnapshot = {};
-      fresh.forEach(t=> prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:allMsgs(t).length, reviewStatus:t.reviewStatus });
+      fresh.forEach(t=> prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:allMsgs(t).length, reviewStatus:t.reviewStatus, vs:t.verify&&t.verify.status });
       return;
     }
     fresh.forEach(t=>{
@@ -955,6 +998,8 @@
         if(t.erranderPhone === myPhone){
           if(prev.status === 'accepted' && t.status === 'completed') toast(`✅ Boss confirmed — payout released for "${t.desc.slice(0,30)}…"`);
         }
+        if(involvesMe && prev.vs === 'pending' && t.verify && t.verify.status === 'verified') toast('✅ Job verified — payout released.');
+        if(involvesMe && prev.vs === 'pending' && t.verify && t.verify.status === 'problem') toast('⚠️ Our team found a problem with a job. Check Report a problem for details.');
         if(involvesMe && prev.reviewStatus === 'pending' && t.reviewStatus === 'approved') toast(`✅ Sponsored job approved — payout released.`);
         if(involvesMe && prev.reviewStatus === 'pending' && t.reviewStatus === 'rejected') toast(`❌ Sponsored job flagged on review — not paid.`);
         const msgsNow = allMsgs(t);
@@ -965,7 +1010,7 @@
           if(last && last.by !== myPhone) toast(`💬 ${last.sender}: ${last.text.slice(0,50)}`);
         }
       }
-      prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:allMsgs(t).length, reviewStatus:t.reviewStatus };
+      prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:allMsgs(t).length, reviewStatus:t.reviewStatus, vs:t.verify&&t.verify.status };
     });
   }
 
@@ -1064,7 +1109,7 @@
     activeWrap.innerHTML = active.length ? '' : '<p class="muted">Nothing active right now.</p>';
     active.forEach(t=>{
       const el = document.createElement('div'); el.className = 'task';
-      const statusLabel = t.status === 'flagged' ? 'flagged' : (t.stage === 'delivered' ? 'delivered' : t.status);
+      const statusLabel = t.status === 'flagged' ? 'flagged' : (verifyPending(t) ? 'being verified' : (t.stage === 'delivered' ? 'delivered' : t.status));
       const pill = `<span class="status-pill status-${t.status === 'flagged' ? 'flagged' : t.status}">${statusLabel}</span>${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}`;
       let contactHtml = '';
       if(t.status !== 'open' && t.erranderName){
@@ -1087,7 +1132,7 @@
           </div>
           ${priceBlock(t.budget, t.sponsored)}
         </div>
-        ${taskPhotoHtml(t)}${bandLine(t)}${itemsLine(t,'boss')}${raiseLimitHtml(t)}${contactHtml}${proofHtml}${reviewStatusHtml(t)}${confirmHtml}${cancelHtml}${chatBoxHtml}`;
+        ${taskPhotoHtml(t)}${bandLine(t)}${itemsLine(t,'boss')}${raiseLimitHtml(t)}${contactHtml}${proofHtml}${reviewStatusHtml(t)}${verifyNoteHtml(t,'boss')}${confirmHtml}${cancelHtml}${chatBoxHtml}${t.status !== 'open' ? reportHtml(t) : ''}`;
       activeWrap.appendChild(el);
     });
 
@@ -1201,7 +1246,7 @@
     } else if(t.stage === 'delivered'){
       actionHtml = t.sponsored && t.reviewStatus === 'pending'
         ? '<div class="sponsor-note">🎓 Boss confirmed — awaiting Errander review before payout.</div>'
-        : '<p class="muted">Waiting for the Boss to confirm — payout releases automatically once they do.</p>';
+        : (t.verify ? verifyNoteHtml(t,'errander') : '<p class="muted">Waiting for the Boss to confirm — payout releases automatically once they do.</p>');
     } else if(t.sponsored){
       actionHtml = `<input type="file" accept="image/*" capture="environment" id="proof-${t.id}" class="hidden" onchange="advanceWithPhoto('${t.id}', this)">
         <button class="btn btn-primary" onclick="document.getElementById('proof-${t.id}').click()">📷 ${buttons[t.stage]} (photo required)</button>`;
@@ -1224,7 +1269,7 @@
       ${t.stage !== 'accepted' ? itemsLine(t,'errander') : ''}
       ${proofsHtml}
       ${actionHtml}
-      ${chatHtml(t, myProfile.name, 'ac-', '', t.messages, '💬 Chat with ' + escapeHtml(t.clientName), 'Message ' + t.clientName)}`;
+      ${chatHtml(t, myProfile.name, 'ac-', '', t.messages, '💬 Chat with ' + escapeHtml(t.clientName), 'Message ' + t.clientName)}${reportHtml(t)}`;
   }
   async function advanceTask(id){ const r = await api('advance', 'POST', { id, phone: myPhone }); if(r.error) toast(r.error); refresh(); }
   function advanceWithReceipt(id, input){
@@ -1269,16 +1314,27 @@
     const total = mine.reduce((sum,t)=> sum + (Number(t.budget)||0), 0);
     const rated = mine.filter(t=>t.ratingForErrander);
     const avg = rated.length ? (rated.reduce((s,t)=>s+t.ratingForErrander,0)/rated.length).toFixed(1) : '—';
+    const held = mine.filter(t=>t.payout && t.payout.status === 'held');
+    const heldTotal = held.reduce((s,t)=> s + (Number(t.budget)||0), 0);
+    const mode = (myProfile.errander.payoutMode === 'weekly') ? 'weekly' : 'instant';
     document.getElementById('earnings').innerHTML = `
       <div class="stat"><span>Completed jobs</span><span>${mine.length}</span></div>
       <div class="stat"><span>Total earned</span><span>GHS ${total}</span></div>
-      <div class="stat"><span>Your average rating</span><span>${avg}${rated.length ? ' ★' : ''}</span></div>`;
+      <div class="stat"><span>Waiting for weekly payout</span><span>GHS ${heldTotal}</span></div>
+      <div class="stat"><span>Your average rating</span><span>${avg}${rated.length ? ' ★' : ''}</span></div>
+      <div style="margin-top:10px;"><b style="font-size:0.88rem;">How do you want to be paid?</b>
+        <div class="feed-chips" style="margin-top:6px;">
+          <button class="chip${mode==='instant'?' active':''}" onclick="setPayoutMode('instant')">⚡ As each job ends</button>
+          <button class="chip${mode==='weekly'?' active':''}" onclick="setPayoutMode('weekly')">📅 Once a week</button>
+        </div>
+        <p class="muted" style="font-size:0.8rem; margin:6px 0 0;">${mode==='instant' ? 'Your pay is released as soon as each job is confirmed and checked.' : 'Your pay is held and released together in the weekly payout, at least ' + payoutHoldHours + ' hours after each job. The planned Loyalty Bonus is for weekly payouts; it is not live yet.'} Changing this only affects future jobs.</p>
+      </div>`;
     document.getElementById('errander-history-count').textContent = `Completed history (${mine.length})`;
     const histWrap = document.getElementById('errander-history');
     histWrap.innerHTML = mine.length ? '' : '<p class="muted">Nothing here yet.</p>';
     mine.forEach(t=>{
       const el = document.createElement('div'); el.className = 'task';
-      el.innerHTML = `<div class="task-desc">${escapeHtml(t.desc)}${t.sponsored ? ' <span class="sponsor-badge">🎓</span>' : ''}</div><div class="task-meta">${escapeHtml(t.clientName)} · GHS ${t.budget}${t.ratingForErrander ? ' · they rated you ' + '★'.repeat(t.ratingForErrander) : ''}</div>`;
+      el.innerHTML = `<div class="task-desc">${escapeHtml(t.desc)}${t.sponsored ? ' <span class="sponsor-badge">🎓</span>' : ''}</div><div class="task-meta">${escapeHtml(t.clientName)} · GHS ${t.budget}${t.payout ? (t.payout.status==='paid' ? ' · 💸 paid' : ' · ⏳ held for weekly payout') : ''}${t.ratingForErrander ? ' · they rated you ' + '★'.repeat(t.ratingForErrander) : ''}</div>`;
       histWrap.appendChild(el);
     });
   }
@@ -1329,6 +1385,7 @@
     switchView('admin');
     loadPriceEditor();
     refreshAdmin();
+    refreshAdminSupport();
   }
   let lastAdminKey = '';
   async function refreshAdmin(){
@@ -1339,6 +1396,8 @@
     const akey = JSON.stringify([users, tasks]);
     if(akey === lastAdminKey) return;   // unchanged: don't rebuild the page under the admin's finger
     lastAdminKey = akey;
+    try{ renderPayoutQueue(tasks); }catch(e){ console.error('payout queue failed', e); }
+    try{ renderVerifyQueue(tasks); }catch(e){ console.error('verify queue failed', e); }
 
     const sponsorWrap = document.getElementById('admin-sponsor-review');
     const pendingSponsored = tasks.filter(t => t.sponsored && t.reviewStatus === 'pending');
@@ -1435,8 +1494,204 @@
     refreshAdmin();
   }
 
+  /* ---------- support: FAQ, help chat, report a problem ---------- */
+  let payoutHoldHours = 48, myTickets = [], supportPhone = '', faqGroup = 'all';
+  const FAQ = [
+    {g:'boss', q:'How do I post a task and what will it cost?', a:'Open Post a Task, describe it, add photos if useful, and set the location and number of stops. The app shows a fair price range. You pay the Errander\'s agreed price plus the platform fee, and the total is shown before you confirm.'},
+    {g:'boss', q:'Can I negotiate the price?', a:'Yes. Open the chat with an Errander and either of you can send an offer. A price is only agreed when you tap Accept on the latest offer; the chat then shows "Agreed at GHS X".'},
+    {g:'boss', q:'When do I pay, and is my money safe?', a:'During this pilot no real money moves through the app: sponsored jobs are paid by the company and other jobs are settled as explained in your pilot briefing. After launch you will pay into escrow through a licensed payment partner, and the Errander is paid only after you confirm the job.'},
+    {g:'boss', q:'The Errander is late or did not show up.', a:'Message them in the chat first. If there is no reply, open the task and tap "Report a problem". You will not be charged for work that was not done.'},
+    {g:'boss', q:'The work is poor or incomplete.', a:'Do not confirm the job. Tap "Report a problem" on the task and say what is wrong. Our team reads the chat and the proof photos, then decides on a fix, partial refund or full refund.'},
+    {g:'boss', q:'Who pays for items bought during an errand?', a:'You do. Set an item limit when you post. The Errander uploads the receipt photo and you reimburse the receipt amount only. If they need more, they ask in chat and you raise the limit in the app. Item costs are never sponsored.'},
+    {g:'boss', q:'Can I cancel a task?', a:'Yes, any time while it is still open (before an Errander is accepted). After acceptance, message the Errander and use "Report a problem" if you cannot agree.'},
+    {g:'boss', q:'Is it safe to send someone to my home?', a:'Check their verified status, rating and job history, and chat first. Have someone else at home if you can, and do not hand over keys or valuables. If anything feels wrong, end the job and report it.'},
+    {g:'errander', q:'How do I become an Errander?', a:'Sign up, choose Apply as Errander, and submit a Ghana Card or driver\'s licence with your photo. Our team reviews it before you can take jobs.'},
+    {g:'errander', q:'How and when do I get paid?', a:'During this pilot payment is handled as explained in your pilot briefing; sponsored jobs are paid after the Boss confirms and our team reviews your proof photos. After launch, earnings are paid to your Mobile Money wallet once the Boss confirms.'},
+    {g:'errander', q:'The Boss has not confirmed my job.', a:'Message them in chat. If there is still no reply, tap "Report a problem" on the job. Always upload your proof photos, because they protect you.'},
+    {g:'errander', q:'Why can I only do one job at a time?', a:'A new job unlocks when you mark your current one complete. This keeps service quality high.'},
+    {g:'errander', q:'What is a sponsored job?', a:'A job paid for by the company during the pilot. You must upload a photo at each step, the Boss confirms, then our team reviews before payment. Only one sponsored job is allowed per Boss and Errander pair.'},
+    {g:'errander', q:'The Boss changed the task or wants extra work.', a:'Do not do extra work for the same price. Ask for a new offer in chat and wait for the Boss to accept it before you start.'},
+    {g:'errander', q:'Can the Boss pay me directly, outside the app?', a:'Please do not. Outside the app there is no proof, no dispute support and no refund route. Accounts that move jobs off the platform can be suspended.'},
+    {g:'errander', q:'I feel unsafe on a job.', a:'Leave. Your safety comes before any payment. For an emergency call the police or emergency services first, then tell us using Report a problem.'},
+    {g:'safety', q:'How are people verified?', a:'Erranders submit an ID and a photo, and our team reviews them before approval. Duplicate IDs are blocked. Verification lowers risk but does not remove it, so keep using your own judgement.'},
+    {g:'safety', q:'How is my PIN protected?', a:'Your PIN is stored only as a hash, never in plain text. Never share your PIN. We will never ask for it. In this pilot, login does not yet use session tokens or attempt limits; we will add them before public launch.'},
+    {g:'safety', q:'Who can see my phone number and ID?', a:'Other users see your name, photo and rating. Your ID is used only for verification and is seen by our team. Pilot photo links are unguessable but not yet login-protected; private storage is planned before public launch. Your data is handled under Ghana\'s Data Protection Act, 2012 (Act 843).'},
+    {g:'safety', q:'How do I spot a scam?', a:'Red flags: being asked to pay or be paid outside the app, to share your PIN or any code, to click a strange link, or being rushed. Our team will never ask for your PIN or Mobile Money PIN.'},
+    {g:'safety', q:'Someone is harassing me.', a:'Do not reply. Tap Report a problem on the job or message our team below. We can warn, suspend or remove users.'},
+    {g:'safety', q:'What is not allowed on Errander?', a:'Anything illegal, plus weapons, drugs, adult services and anything involving minors or unsafe tasks. Our tagline is "Anything Legal", and tasks that break it are removed.'},
+    {g:'safety', q:'How are disputes decided?', a:'Our team reads the chat, the agreed price and the proof photos or receipts, and may call both sides. We explain the decision in the app.'},
+    {g:'safety', q:'Are ratings real?', a:'Only the two people on a completed job can rate each other. We remove ratings that are abusive or manipulated.'}
+  ];
+  const FAQ_GROUPS = [['all','All'],['boss','Boss'],['errander','Errander'],['safety','Safety & privacy']];
+  function renderFaq(){
+    const chips = document.getElementById('faq-chips');
+    if(!chips) return;
+    chips.innerHTML = FAQ_GROUPS.map(g=>`<button class="chip${faqGroup===g[0]?' active':''}" onclick="faqGroup='${g[0]}'; renderFaq();">${g[1]}</button>`).join('');
+    const q = (document.getElementById('faq-search').value || '').toLowerCase().trim();
+    const rows = FAQ.filter(f=> (faqGroup==='all' || f.g===faqGroup) && (!q || (f.q + ' ' + f.a).toLowerCase().indexOf(q) >= 0));
+    document.getElementById('faq-list').innerHTML = rows.length ? rows.map(f=>`<details class="chat-box"><summary>${escapeHtml(f.q)}</summary><p style="margin:6px 0; font-size:0.88rem;">${escapeHtml(f.a)}</p></details>`).join('')
+      : '<p class="muted">No match. Message our team below and we will help.</p>';
+  }
+  function supportBubbles(tk, mePhone){
+    return (tk && tk.messages || []).map(m=>{
+      const mine = m.from === 'user';
+      const sender = mine ? 'You' : 'Errander Support';
+      return `<div class="chat-row" style="justify-content:${mine?'flex-end':'flex-start'};"><div class="chat-bubble" style="background:${mine?'var(--navy)':'var(--paper-raise)'}; color:${mine?'var(--white)':'var(--ink)'};"><b>${sender}:</b> ${escapeHtml(m.text)}</div></div>`;
+    }).join('');
+  }
+  function helpTicket(){ return myTickets.find(x=>x.kind==='chat') || null; }
+  function renderHelp(){
+    const el = document.getElementById('help-chat');
+    if(!el || !myProfile) return;
+    const tk = helpTicket();
+    const contact = supportPhone ? `<p class="muted" style="font-size:0.82rem;">Urgent? Call <a href="tel:${escapeHtml(supportPhone)}">${escapeHtml(supportPhone)}</a> or <a href="https://wa.me/${escapeHtml(String(supportPhone).replace(/\D/g,''))}" target="_blank" rel="noopener">WhatsApp us</a>. In an emergency, call the police first.</p>` : '<p class="muted" style="font-size:0.82rem;">In an emergency, call the police first.</p>';
+    document.getElementById('help-note').textContent = 'A real person reads this. We usually reply within a few hours between 8am and 8pm.';
+    el.innerHTML = `<div class="chat-messages" style="max-height:260px;">${supportBubbles(tk) || '<p class="muted">No messages yet. Tell us what happened.</p>'}</div>
+      ${tk && tk.status === 'resolved' ? '<p class="muted">✅ Marked resolved. Send a message to reopen.</p>' : ''}
+      <div class="chat-input-row"><input type="text" id="hp-input" onkeydown="if(event.key==='Enter'){sendHelp()}" placeholder="Write to our team…"><button class="btn btn-ghost" onclick="sendHelp()">Send</button></div>${contact}`;
+    const n = myTickets.filter(x=>x.awaiting==='user' && x.status==='open').length;
+    const b = document.getElementById('help-tab-btn');
+    if(b) b.textContent = n ? `❓ Help 💬${n}` : '❓ Help';
+  }
+  async function sendHelp(){
+    const inp = document.getElementById('hp-input'); const text = inp.value.trim();
+    if(!text) return;
+    const r = await api('support-send','POST',{ phone: myPhone, kind:'chat', text, cid:newCid() });
+    if(r.error){ toast(r.error); return; }
+    inp.value = ''; toast('Sent to our team.'); refresh();
+  }
+  function reportTicket(taskId){ return myTickets.find(x=>x.kind==='report' && x.taskId===taskId && x.status==='open') || null; }
+  function reportHtml(t){
+    const tk = reportTicket(t.id);
+    const inId = 'rp-' + t.id;
+    return `<details class="chat-box"${tk ? ' open' : ''}><summary>⚠️ ${tk ? 'Problem reported' + (tk.awaiting==='user' ? ' · <b style="color:var(--amber-deep)">team replied</b>' : ' · waiting for our team') : 'Report a problem'}</summary>
+      ${tk ? `<div class="chat-messages">${supportBubbles(tk)}</div>` : '<p class="muted" style="margin:6px 0;">Tell us what went wrong. Our team will read this job\'s chat and photos and get back to you here.</p>'}
+      <div class="chat-input-row"><input type="text" id="${inId}" placeholder="${tk ? 'Add more details…' : 'What went wrong?'}" onkeydown="if(event.key==='Enter'){sendReport('${t.id}')}"><button class="btn btn-ghost" onclick="sendReport('${t.id}')">Send</button></div></details>`;
+  }
+  async function sendReport(taskId){
+    const inp = document.getElementById('rp-' + taskId); const text = inp.value.trim();
+    if(!text){ toast('Write what went wrong first.'); return; }
+    const r = await api('support-send','POST',{ phone: myPhone, kind:'report', taskId, text, cid:newCid() });
+    if(r.error){ toast(r.error); return; }
+    inp.value = ''; toast('Reported. Our team will reply here.'); refresh();
+  }
+
+  /* admin side */
+  let adminTickets = [], lastSupportKey = '';
+  async function refreshAdminSupport(){
+    const r = await api('admin-support-list','GET');
+    if(!Array.isArray(r.tickets)) return;
+    const k = JSON.stringify(r.tickets);
+    if(k === lastSupportKey) return;
+    lastSupportKey = k; adminTickets = r.tickets;
+    const wrap = document.getElementById('admin-support');
+    const vals = {}, opens = {};
+    wrap.querySelectorAll('input[id]').forEach(i=>{ if(i.value) vals[i.id] = i.value; });
+    wrap.querySelectorAll('details[data-tk]').forEach(d=>{ opens[d.dataset.tk] = d.open; });
+    const order = adminTickets.slice().sort((a,b)=> (a.status==='open'?0:1)-(b.status==='open'?0:1) || (b.awaiting==='admin'?1:0)-(a.awaiting==='admin'?1:0) || b.updatedAt-a.updatedAt);
+    wrap.innerHTML = order.length ? order.map(tk=>{
+      const c = tk.context;
+      const ctx = c ? `<div class="task-meta">Job: ${escapeHtml(c.desc)} · ${c.status}/${c.stage||''} · GHS ${c.budget}${c.sponsored?' · sponsored':''}<br>Boss: ${escapeHtml(c.boss)} (${c.bossPhone}) · Errander: ${escapeHtml(c.errander||'-')} (${c.erranderPhone||'-'})</div>
+        <div>${[c.pickupPhoto,c.deliveryPhoto,c.receiptPhoto].filter(Boolean).map(p=>`<img src="${photoSrc(p)}" class="proof-photo" onclick="window.open(this.src)">`).join('')}</div>` : '';
+      const icon = tk.status==='resolved' ? '✅' : (tk.awaiting==='admin' ? '🔴' : '🟡');
+      return `<details class="chat-box" data-tk="${tk.id}"${opens[tk.id] || (tk.status==='open' && tk.awaiting==='admin' && opens[tk.id]===undefined) ? ' open' : ''}>
+        <summary>${icon} ${escapeHtml(tk.name)} (${escapeHtml(tk.role)}, ${tk.phone}) · ${escapeHtml(tk.subject)} · ${timeAgo(tk.updatedAt)}</summary>
+        ${ctx}<div class="chat-messages" style="max-height:260px;">${(tk.messages||[]).map(m=>{ const a = m.from==='admin'; return `<div class="chat-row" style="justify-content:${a?'flex-end':'flex-start'};"><div class="chat-bubble" style="background:${a?'var(--navy)':'var(--paper-raise)'}; color:${a?'var(--white)':'var(--ink)'};"><b>${a?'Support':escapeHtml(m.sender)}:</b> ${escapeHtml(m.text)}</div></div>`; }).join('')}</div>
+        <div class="chat-input-row"><input type="text" id="as-in-${tk.id}" placeholder="Reply…" onkeydown="if(event.key==='Enter'){adminSupportReply('${tk.id}',false)}"><button class="btn btn-ghost" onclick="adminSupportReply('${tk.id}',false)">Reply</button></div>
+        <div class="task-actions">${tk.status==='open' ? `<button class="btn btn-primary" onclick="adminSupportReply('${tk.id}',true)">Reply &amp; resolve</button>` : `<button class="btn btn-ghost" onclick="adminSupportReply('${tk.id}','reopen')">Reopen</button>`}</div></details>`;
+    }).join('') : '<p class="muted">No support messages yet.</p>';
+    Object.keys(vals).forEach(id=>{ const el = document.getElementById(id); if(el) el.value = vals[id]; });
+  }
+  async function adminSupportReply(id, resolve){
+    const inp = document.getElementById('as-in-' + id); const text = inp ? inp.value.trim() : '';
+    if(!text && resolve !== true && resolve !== 'reopen') return;
+    const body = { id, text, cid:newCid() };
+    if(resolve === true) body.resolved = true;
+    if(resolve === 'reopen') body.resolved = false;
+    const r = await api('admin-support-reply','POST',body);
+    if(r.error){ toast(r.error); return; }
+    if(inp) inp.value = '';
+    lastSupportKey = ''; refreshAdminSupport();
+  }
+  try{ renderFaq(); }catch(e){ console.error('renderFaq failed', e); }
+
+  /* ---------- verification (human check before payout) ---------- */
+  function verifyPending(t){ return !!(t.verify && t.verify.status === 'pending'); }
+  function verifyNoteHtml(t, who){
+    if(!t.verify) return '';
+    if(t.verify.status === 'pending'){
+      const lv = t.verify.level === 'visit' ? 'a quick in-person check' : 'a quick confirmation call';
+      return `<div class="trust-note">🔎 ${who==='boss' ? 'Thanks for confirming.' : 'The Boss confirmed.'} For your protection, our team will do ${lv} before payout is released. Please answer calls from us.</div>`;
+    }
+    if(t.verify.status === 'verified') return '<div class="trust-note">✅ Verified by our team.</div>';
+    return `<div class="trust-note" style="color:var(--red); border-color:var(--red);">⚠️ Our team found a problem with this job${t.verify.note ? ': ' + escapeHtml(t.verify.note) : ''}. Use Report a problem to reply.</div>`;
+  }
+  async function adminVerifyDecide(id, decision){
+    const note = (document.getElementById('vn-'+id)||{}).value || '';
+    const agent = (document.getElementById('va-'+id)||{}).value || '';
+    if(decision !== 'verified' && !note.trim()){ toast('Add a short note explaining the problem.'); return; }
+    const r = await api('admin-verify-decide','POST',{ id, decision, note, agent });
+    if(r.error){ toast(r.error); return; }
+    lastAdminKey = ''; refreshAdmin();
+  }
+  function renderVerifyQueue(tasks){
+    const wrap = document.getElementById('admin-verify');
+    if(!wrap) return;
+    const pend = tasks.filter(t=>t.verify && t.verify.status === 'pending');
+    const vals = {};
+    wrap.querySelectorAll('input[id]').forEach(i=>{ if(i.value) vals[i.id] = i.value; });
+    wrap.innerHTML = pend.length ? pend.map(t=>{
+      const v = t.verify;
+      const steps = v.level === 'visit'
+        ? ['Call the Boss and the Errander separately', 'Visit the location or meet the Errander; check the item/work', 'Match proof photos to the job', 'Check the receipt amount if items were bought']
+        : ['Call the Boss: was the job done as agreed?', 'Call the Errander: confirm the same story', 'Check proof photos against the description'];
+      return `<div class="task"><div class="task-desc">${v.level==='visit'?'🏠 Site visit':'📞 Call check'} · ${escapeHtml(t.desc)}</div>
+        <div class="task-meta">GHS ${t.budget} · ${escapeHtml(v.reasons.join(' · '))}</div>
+        <div class="task-meta">Boss: ${escapeHtml(t.clientName)} <a href="tel:${t.clientPhone}">${t.clientPhone}</a> · Errander: ${escapeHtml(t.erranderName)} <a href="tel:${t.erranderPhone}">${t.erranderPhone}</a></div>
+        <div>${[t.pickupPhoto,t.deliveryPhoto,t.receiptPhoto].filter(Boolean).map(p=>`<img src="${photoSrc(p)}" class="proof-photo" onclick="window.open(this.src)">`).join('')}</div>
+        <ul class="muted" style="margin:6px 0 6px 18px; padding:0; font-size:0.82rem;">${steps.map(x=>'<li>'+x+'</li>').join('')}</ul>
+        <div class="chat-input-row"><input type="text" id="va-${t.id}" placeholder="Checked by (agent name)"></div>
+        <div class="chat-input-row"><input type="text" id="vn-${t.id}" placeholder="Note (required if there is a problem)"></div>
+        <div class="task-actions"><button class="btn btn-primary" onclick="adminVerifyDecide('${t.id}','verified')">✅ Verified, release payout</button>
+        <button class="btn btn-danger" onclick="adminVerifyDecide('${t.id}','flag-errander')">Flag Errander</button>
+        <button class="btn btn-danger" onclick="adminVerifyDecide('${t.id}','flag-boss')">Flag Boss</button></div></div>`;
+    }).join('') : '<p class="muted">Nothing waiting for a check.</p>';
+    Object.keys(vals).forEach(id=>{ const el = document.getElementById(id); if(el) el.value = vals[id]; });
+  }
+
+  async function changePin(){
+    const r = await api('change-pin','POST',{ phone: myPhone, oldPin: document.getElementById('cp-old').value.trim(), newPin: document.getElementById('cp-new').value.trim() });
+    if(r.error){ toast(r.error); return; }
+    document.getElementById('cp-old').value = ''; document.getElementById('cp-new').value = '';
+    document.getElementById('change-pin-details').removeAttribute('open');
+    toast('PIN changed. Other devices were signed out.');
+  }
+
+  /* ---------- payout choice ---------- */
+  async function setPayoutMode(mode){
+    const r = await api('set-payout-mode','POST',{ phone: myPhone, mode });
+    if(r.error){ toast(r.error); return; }
+    myProfile = r.user; toast(mode==='weekly' ? 'Weekly payout selected for future jobs.' : 'Pay-as-each-job-ends selected for future jobs.');
+    lastRenderKey = ''; refresh();
+  }
+  async function adminReleasePayouts(){
+    const r = await api('admin-release-payouts','POST',{});
+    if(r.error){ toast(r.error); return; }
+    toast(r.count ? `Released ${r.count} job(s), GHS ${r.total}.` : 'Nothing eligible to release yet.');
+    lastAdminKey = ''; refreshAdmin();
+  }
+  function renderPayoutQueue(tasks){
+    const wrap = document.getElementById('admin-payouts'); if(!wrap) return;
+    const held = tasks.filter(t=>t.payout && t.payout.status==='held' && t.status==='completed');
+    const now = Date.now(), holdMs = payoutHoldHours*3600000, by = {};
+    held.forEach(t=>{ const k = t.erranderPhone; const o = by[k] || (by[k] = { name:t.erranderName, ready:0, wait:0, n:0 }); o.n++; if(now - t.payout.completedAt >= holdMs) o.ready += Number(t.budget)||0; else o.wait += Number(t.budget)||0; });
+    const rows = Object.keys(by).map(k=>`<div class="stat"><span>${escapeHtml(by[k].name)} (${k}) · ${by[k].n} job(s)</span><span>ready GHS ${by[k].ready}${by[k].wait ? ' · in window GHS ' + by[k].wait : ''}</span></div>`).join('');
+    const ready = Object.values(by).reduce((s,o)=>s+o.ready,0);
+    wrap.innerHTML = (rows || '<p class="muted">No weekly payouts waiting.</p>') + (ready ? `<button class="btn btn-primary btn-block" style="margin-top:8px;" onclick="adminReleasePayouts()">Release GHS ${ready} now</button>` : '');
+  }
+
   /* ---------- init ---------- */
-  const BUILD_TAG = 'v9.0';
+  const BUILD_TAG = 'v10.0';
   console.log('Errander pilot build:', BUILD_TAG);
   const footerBuild = document.getElementById('footer-build');
   if(footerBuild) footerBuild.textContent = ' · build ' + BUILD_TAG;
@@ -1468,7 +1723,7 @@
   setInterval(()=>{
     try{ refresh(); }catch(e){ console.error('refresh() failed', e); }
     try{ loadConfig(); }catch(e){ console.error('loadConfig() failed', e); }
-    if(adminAuthed){ try{ refreshAdmin(); }catch(e){ console.error('refreshAdmin() failed', e); } }
+    if(adminAuthed){ try{ refreshAdmin(); refreshAdminSupport(); }catch(e){ console.error('refreshAdmin() failed', e); } }
   }, 4000);
 </script>
 </body>

@@ -369,3 +369,41 @@ If the build fails, check that `package.json` made it into the repo root
   UI for that yet, since wiping real people's accounts mid-pilot would be
   more disruptive than useful.
 
+
+
+## v9.1 - Support
+- Help tab: searchable FAQ (Boss / Errander / Safety & privacy) and a chat to the Errander team.
+- "Report a problem" on every accepted job (Boss and Errander). The ticket carries the job, parties and proof photos.
+- Admin: Support inbox with replies, Resolve and Reopen. New messages from a user reopen the ticket.
+- Optional env var SUPPORT_PHONE (e.g. 0244000000) shows a call / WhatsApp line in Help.
+- Edit the reply-time sentence in renderHelp() once you know your real support hours.
+
+## v9.2 - Verification queue
+- When a Boss confirms a (non-sponsored) job, it may be held for a human check before payout:
+  GHS 400+ = site visit / in-person check; GHS 150+ = confirmation call; also any job where either person
+  was flagged before, the Errander's first job, and a random 1 in 10 sample. Change the thresholds
+  (VERIFY_CALL_AT, VERIFY_VISIT_AT) at the top of api.mjs.
+- Admin: "Verification queue" shows both phone numbers (tap to call), proof photos, a checklist,
+  agent name and note. Decisions: Verified (releases payout), Flag Errander, Flag Boss (note required).
+- Boss and Errander see a plain explanation while the check is pending, and a notification when it is decided.
+
+## v9.3 - Payout choice
+- Each approved Errander chooses how to be paid: "As each job ends" (default) or "Once a week". The choice applies to future jobs only.
+- Weekly jobs are held for at least 48 hours (env PAYOUT_HOLD_HOURS to change) so disputes can be raised. Admin sees them under "Weekly payouts" and taps "Release" to mark them paid.
+- In this pilot "paid" is a status only; no real Mobile Money moves yet.
+- The Loyalty Bonus is NOT built; the Errander screen says it is planned for weekly payouts.
+
+## v10.0 - Login security (do these two steps after deploying)
+In Netlify -> Site configuration -> Environment variables add:
+1. ADMIN_PASSCODE = a long passcode only you know (the old default is public in older zips and in this README history).
+2. SESSION_SECRET = a long random string (e.g. 40+ random characters). Without it the app makes its own secret and stores it, which works but is less robust.
+Then trigger a deploy. Check ?action=health shows "adminPasscodeIsDefault": false.
+
+What changed
+- Every account action now needs a signed session token that matches the phone it acts as. Knowing someone's phone number is no longer enough to act as them.
+- 5 wrong PINs lock that account for 15 minutes. 5 wrong admin passcodes lock that IP for 15 minutes.
+- PINs are stored with scrypt and a random salt. Old PINs are upgraded the next time that person logs in.
+- PINs must be 4 to 12 digits. Users can change their PIN (profile -> Change my PIN); this signs out their other devices.
+- get-user now only returns your own profile (it contains the ID number).
+- Everyone who was logged in before v10.0 will be asked to log in once more.
+Still not done: photo links are unguessable but not login-protected; the data store is pilot-grade; payments are simulated.
