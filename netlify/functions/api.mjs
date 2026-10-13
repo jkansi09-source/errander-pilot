@@ -329,7 +329,7 @@ async function core(event) {
     const ts = await store.get('all-tasks', { type: 'json' });
     const us = await store.get('users', { type: 'json' });
     return json(200, {
-      ok: true, version: 'v10.1', time: Date.now(),
+      ok: true, version: 'v10.2', time: Date.now(),
       readMode: blobsMode,
       adminPasscodeIsDefault: ADMIN_PASSCODE === DEFAULT_ADMIN_PASSCODE,
       sessionSecretFromEnv: !!process.env.SESSION_SECRET,

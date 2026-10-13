@@ -412,3 +412,10 @@ Still not done: photo links are unguessable but not login-protected; the data st
 - Optional title at sign-up (Prof., Dr., Rev., Ing., Mr., Mrs., Ms.), editable in the profile. It appears with the name everywhere others see it, and the greeting reads "Good afternoon, Prof. Mensah" (surname with a title, first name without).
 - "Call us" is always in the header. Set the SUPPORT_PHONE environment variable in Netlify (e.g. 0244000000) to make it dial; until then it opens the Help chat.
 - The profile moved to the top corner: tap your photo for the profile sheet (photo, name and title, quote, PIN, Log out). The dashboard no longer starts with a big profile card.
+
+## v10.2 - Notification bell fix
+- The bell now shows its state (🔕 off / 🔔 on), and tapping it again turns alerts off or on.
+- Works on phones: alerts are shown through a tiny service worker (public/sw.js); older code failed on Android Chrome.
+- If the browser has blocked alerts, the app explains how to allow them instead of failing quietly.
+- Toast messages now appear at the bottom of the screen so they no longer cover the top bar.
+- Honest limit: alerts appear while the app page is open or in the background. True push alerts when the app is closed need a push service (a later step).

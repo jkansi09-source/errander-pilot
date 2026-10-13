@@ -124,7 +124,7 @@
   .mode-banner.mode-boss{background:var(--navy);}
   .mode-banner.mode-errander{background:var(--green);}
   .tab-panel{display:none;} .tab-panel.show{display:block;}
-  #toast-stack{position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:999; display:flex; flex-direction:column; gap:8px; width:min(92vw,420px); pointer-events:none;}
+  #toast-stack{position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:999; display:flex; flex-direction:column; gap:8px; width:min(92vw,420px); pointer-events:none;}
   .toast{background:var(--navy); color:var(--white); padding:11px 14px; border-radius:8px; font-size:0.85rem; box-shadow:0 6px 18px rgba(0,0,0,0.25); animation:fadein .2s ease; pointer-events:none;}
   @keyframes fadein{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
   footer{padding:16px 0 40px; text-align:center; color:var(--slate); font-size:0.74rem;}
@@ -157,7 +157,7 @@
     </div>
     <div class="hdr-actions">
       <button class="hdr-btn call-btn" id="hdr-call-btn" onclick="callUs()">📞 Call us</button>
-      <button class="bell-btn" onclick="enableNotifications()" title="Enable notifications">🔔</button>
+      <button class="bell-btn" id="bell-btn" onclick="enableNotifications()" title="Phone alerts" aria-label="Phone alerts">🔕</button>
       <button class="avatar-btn hidden" id="hdr-avatar-btn" onclick="toggleProfile()" aria-label="My profile"><img id="hdr-avatar-img" alt=""></button>
       <button class="hdr-btn" id="hdr-login-btn" onclick="switchView('auth')">Log in</button>
     </div>
@@ -467,11 +467,38 @@
     const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
     stack.appendChild(el);
     setTimeout(()=> el.remove(), 5000);
-    if(notifyEnabled && document.hidden){ try{ new Notification('Errander', { body: msg }); }catch(e){} }
+    if(notifyEnabled && document.hidden) showSystemNotification(msg);
+  }
+  // Phones (Android Chrome) refuse "new Notification(...)"; they need the service worker to show it.
+  function showSystemNotification(msg){
+    try{
+      const opts = { body: msg, icon: '/assets/logo-icon.png', tag: 'errander' };
+      if('serviceWorker' in navigator && navigator.serviceWorker.getRegistration){
+        navigator.serviceWorker.getRegistration().then(r=>{ if(r && r.showNotification) r.showNotification('Errander', opts); else new Notification('Errander', opts); }).catch(()=>{});
+      } else { new Notification('Errander', opts); }
+    }catch(e){}
+  }
+  function refreshBell(){
+    const b = document.getElementById('bell-btn'); if(!b) return;
+    b.textContent = notifyEnabled ? '🔔' : '🔕';
+    b.title = notifyEnabled ? 'Phone alerts are on (tap to turn off)' : 'Phone alerts are off (tap to turn on)';
+  }
+  function setNotify(on){
+    notifyEnabled = on;
+    try{ localStorage.setItem('notify_on', on ? '1' : '0'); }catch(e){}
+    refreshBell();
   }
   function enableNotifications(){
-    if(!('Notification' in window)){ toast('Notifications not supported in this browser.'); return; }
-    Notification.requestPermission().then(p=>{ notifyEnabled = (p === 'granted'); toast(notifyEnabled ? 'Notifications enabled.' : 'Notifications not enabled.'); });
+    if(!('Notification' in window)){ toast('This phone browser cannot show alerts. Keep Errander open to see updates here.'); return; }
+    const perm = Notification.permission;
+    if(perm === 'denied'){ toast('Alerts are blocked for this site. In your browser menu open Site settings, then Notifications, and allow this site.'); return; }
+    if(perm === 'granted'){ setNotify(!notifyEnabled); toast(notifyEnabled ? 'Phone alerts are on.' : 'Phone alerts are off.'); return; }
+    // Some browsers use a callback, others return a promise; handle both.
+    const done = (p)=>{ if(p === 'granted'){ setNotify(true); toast('Phone alerts are on.'); } else { setNotify(false); toast('Alerts were not turned on. You will still see updates inside the app.'); } };
+    try{
+      const r = Notification.requestPermission(done);
+      if(r && typeof r.then === 'function') r.then(done);
+    }catch(e){ toast('Could not ask for alert permission on this browser.'); }
   }
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function fileToResizedDataUrl(file, maxDim){
@@ -1732,7 +1759,7 @@
   }
 
   /* ---------- init ---------- */
-  const BUILD_TAG = 'v10.1';
+  const BUILD_TAG = 'v10.2';
   console.log('Errander pilot build:', BUILD_TAG);
   const footerBuild = document.getElementById('footer-build');
   if(footerBuild) footerBuild.textContent = ' · build ' + BUILD_TAG;
@@ -1759,7 +1786,11 @@
       }
     }).catch(e=> console.error('get-user on load failed — check your network tab for a failed request to /.netlify/functions/api', e));
   }
-  if('Notification' in window && Notification.permission === 'granted') notifyEnabled = true;
+  try{
+    if('Notification' in window && Notification.permission === 'granted' && localStorage.getItem('notify_on') !== '0') notifyEnabled = true;
+    refreshBell();
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  }catch(e){ console.error('notification setup failed', e); }
 
   setInterval(()=>{
     try{ refresh(); }catch(e){ console.error('refresh() failed', e); }
