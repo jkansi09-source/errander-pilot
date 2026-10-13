@@ -419,3 +419,9 @@ Still not done: photo links are unguessable but not login-protected; the data st
 - If the browser has blocked alerts, the app explains how to allow them instead of failing quietly.
 - Toast messages now appear at the bottom of the screen so they no longer cover the top bar.
 - Honest limit: alerts appear while the app page is open or in the background. True push alerts when the app is closed need a push service (a later step).
+
+## v10.3 - Pilot readiness round
+- Forgotten PIN: Admin -> All users -> "Reset PIN" gives a one-time 6-digit temporary PIN (tell the person in person or by phone after confirming who they are). They must choose their own PIN at next login. It also clears any lockout and signs out their old devices.
+- Terms and Privacy Notice: sign-up needs a tick ("I am 18 or older and accept..."), the acceptance is stored with the time and version, and existing users are asked to accept at their next login. The wording is a plain-language pilot draft; have a lawyer review it and fill the retention line.
+- Backup and ledger (Admin): "Download full backup (JSON)" (users without PIN hashes, jobs, chats, support) and "Download payout ledger (CSV)" to match against the Mobile Money you send. Backups contain personal data: keep them private.
+- Pilot categories (Admin): only Delivery & Pickup and Errands & Queuing are open by default. Tick others to open them. Closed categories are refused by the server too.
