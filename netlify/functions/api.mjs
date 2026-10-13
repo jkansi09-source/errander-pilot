@@ -221,8 +221,12 @@ function readToken(secret, tok, usersList) {
   if (!u || (u.epoch || 0) !== d.e) return null;
   return d.p;
 }
+const TITLES = ['Prof.', 'Dr.', 'Rev.', 'Ing.', 'Mr.', 'Mrs.', 'Ms.'];
+const cleanTitle = (v) => TITLES.includes(String(v || '').trim()) ? String(v).trim() : '';
+// How a person's name appears to others: "Prof. Kwame Mensah" when they gave a title.
+const fullName = (u) => (u && u.title ? u.title + ' ' : '') + (u ? u.name : '');
 function publicUser(u) {
-  return { phone: u.phone, name: u.name, photo: u.photo || null, bio: u.bio || null, createdAt: u.createdAt, errander: u.errander || null, flagCount: u.flagCount || 0 };
+  return { phone: u.phone, name: u.name, title: u.title || '', photo: u.photo || null, bio: u.bio || null, createdAt: u.createdAt, errander: u.errander || null, flagCount: u.flagCount || 0 };
 }
 function normalizePhone(v) { return String(v || '').replace(/\s+/g, ''); }
 function normalizeId(v) { return String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
@@ -325,7 +329,7 @@ async function core(event) {
     const ts = await store.get('all-tasks', { type: 'json' });
     const us = await store.get('users', { type: 'json' });
     return json(200, {
-      ok: true, version: 'v10.0', time: Date.now(),
+      ok: true, version: 'v10.1', time: Date.now(),
       readMode: blobsMode,
       adminPasscodeIsDefault: ADMIN_PASSCODE === DEFAULT_ADMIN_PASSCODE,
       sessionSecretFromEnv: !!process.env.SESSION_SECRET,
@@ -472,7 +476,7 @@ async function core(event) {
       if (!/^\d{4,12}$/.test(pin)) return json(400, { error: 'Your PIN must be 4 to 12 digits.' });
       if (findUser(phone)) return json(409, { error: 'An account with that phone number already exists — log in instead.' });
       const user = {
-        phone, pinHash: hashPin(phone, pin), name,
+        phone, pinHash: hashPin(phone, pin), name, title: cleanTitle(body.title),
         photo: (isInline(body.photo) && body.photo.length <= 250000) ? await storePhoto(photoStore, body.photo) : null,
         createdAt: Date.now(), errander: null, flagCount: 0
       };
@@ -519,6 +523,7 @@ async function core(event) {
       if (typeof body.name === 'string' && body.name.trim()) u.name = body.name.trim().slice(0, 60);
       if (isInline(body.photo) && body.photo.length <= 250000) u.photo = await storePhoto(photoStore, body.photo);
       if (typeof body.bio === 'string') u.bio = body.bio.trim().slice(0, 140);
+      if (body.title !== undefined) u.title = cleanTitle(body.title);
       await saveUsers();
       return json(200, { user: publicUser(u) });
     }
@@ -689,7 +694,7 @@ async function core(event) {
         lng: typeof body.lng === 'number' ? body.lng : null,
         urgency: String(body.urgency || '').slice(0, 60),
         budget,
-        clientName: boss.name, clientPhone: boss.phone, clientPhoto: boss.photo || null,
+        clientName: fullName(boss), clientPhone: boss.phone, clientPhoto: boss.photo || null,
         sponsored, metrics, band, itemsLimit,
         createdAt: Date.now()
       });
@@ -751,7 +756,7 @@ async function core(event) {
       }
       t.status = 'accepted';
       t.stage = 'accepted';
-      t.erranderName = errander.name;
+      t.erranderName = fullName(errander);
       t.erranderPhone = errander.phone;
       t.erranderPhoto = errander.photo || null;
       t.budget = agreed;
@@ -879,7 +884,7 @@ async function core(event) {
       const thr = await loadThreads(store, t);
       if (me === t.clientPhone && !thr.threads[erranderPhone]) return json(409, { error: 'That Errander has not written to you yet.' });
       const errUser = findUser(erranderPhone);
-      const th = thr.threads[erranderPhone] || (thr.threads[erranderPhone] = { name: errUser ? errUser.name : 'Errander', photo: errUser ? (errUser.photo || null) : null, messages: [] });
+      const th = thr.threads[erranderPhone] || (thr.threads[erranderPhone] = { name: errUser ? fullName(errUser) : 'Errander', photo: errUser ? (errUser.photo || null) : null, messages: [] });
       // A repeated send of the same message (the app retries until it sees it) is stored once.
       if (!th.messages.some(m => m.cid === cid)) {
         th.messages.push(Object.assign({ sender: me === t.clientPhone ? t.clientName : th.name, by: me, text, ts: Date.now(), cid },
@@ -942,7 +947,7 @@ async function core(event) {
         tk = all.find(x => x.kind === 'report' && x.phone === me && x.taskId === t.id && x.status === 'open');
         if (!tk) {
           tk = {
-            id: 'sp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), kind, phone: me, name: u.name,
+            id: 'sp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), kind, phone: me, name: fullName(u),
             role: me === t.clientPhone ? 'Boss' : 'Errander', taskId: t.id,
             subject: 'Problem with: ' + String(t.desc).slice(0, 60),
             context: { desc: t.desc, category: t.category, status: t.status, stage: t.stage, budget: t.budget, sponsored: !!t.sponsored,
@@ -955,7 +960,7 @@ async function core(event) {
       } else {
         tk = all.find(x => x.kind === 'chat' && x.phone === me);
         if (!tk) {
-          tk = { id: 'sp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), kind, phone: me, name: u.name,
+          tk = { id: 'sp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), kind, phone: me, name: fullName(u),
             role: 'User', subject: 'Help chat', status: 'open', human: false, createdAt: Date.now(), updatedAt: Date.now(), messages: [] };
           all.push(tk);
         }
@@ -963,7 +968,7 @@ async function core(event) {
         if (body.human) tk.human = true;
       }
       if (!tk.messages.some(m => m.cid === cid)) {
-        tk.messages.push({ from: 'user', sender: u.name, text, ts: Date.now(), cid });
+        tk.messages.push({ from: 'user', sender: fullName(u), text, ts: Date.now(), cid });
         if (tk.messages.length > 300) tk.messages = tk.messages.slice(-300);
         tk.updatedAt = Date.now();
         tk.awaiting = 'admin';

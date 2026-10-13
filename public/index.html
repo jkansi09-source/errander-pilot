@@ -29,6 +29,13 @@
   .bell-btn{background:none; border:1px solid rgba(255,255,255,0.3); border-radius:9px; min-width:42px; min-height:42px; cursor:pointer; font-size:1rem; color:var(--white); touch-action:manipulation;}
   .hdr-btn{background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.3); color:var(--white); border-radius:9px; padding:10px 14px; min-height:42px; font-size:0.82rem; font-weight:600; cursor:pointer; touch-action:manipulation;}
   .hdr-name{font-size:0.82rem; color:var(--amber); font-weight:600; padding:10px 2px;}
+  .hdr-actions{flex-wrap:nowrap !important; width:auto !important; justify-content:flex-end !important;}
+  .call-btn{background:var(--amber); color:var(--navy); border-color:var(--amber);}
+  .avatar-btn{width:42px; height:42px; border-radius:50%; padding:0; border:2px solid rgba(255,255,255,0.7); background:var(--paper-raise); cursor:pointer; overflow:hidden; touch-action:manipulation;}
+  .avatar-btn img{width:100%; height:100%; object-fit:cover; display:block;}
+  #profile-sheet{position:fixed; left:0; right:0; top:66px; bottom:0; background:rgba(20,30,40,0.45); z-index:7; overflow-y:auto; padding:10px 0 30px;}
+  .greet{font-size:1.02rem; font-weight:700; margin:0 0 12px; font-family:'Space Grotesk',system-ui,sans-serif;}
+  .greet small{display:block; font-weight:400; font-size:0.8rem; color:var(--slate); font-family:'Inter',system-ui,sans-serif;}
   main{padding:18px 0 60px;}
   .view{display:none;} .view.show{display:block;}
   .panel{background:var(--white); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:14px;}
@@ -149,14 +156,45 @@
       Errander <span style="font-weight:400; font-size:0.68rem; color:var(--amber);">· pilot</span>
     </div>
     <div class="hdr-actions">
+      <button class="hdr-btn call-btn" id="hdr-call-btn" onclick="callUs()">📞 Call us</button>
       <button class="bell-btn" onclick="enableNotifications()" title="Enable notifications">🔔</button>
-      <span class="hdr-name hidden" id="hdr-name"></span>
-      <button class="hdr-btn hidden" id="hdr-dashboard-btn" onclick="switchView('dashboard')">Dashboard</button>
-      <button class="hdr-btn hidden" id="hdr-logout-btn" onclick="logout()">Log out</button>
+      <button class="avatar-btn hidden" id="hdr-avatar-btn" onclick="toggleProfile()" aria-label="My profile"><img id="hdr-avatar-img" alt=""></button>
       <button class="hdr-btn" id="hdr-login-btn" onclick="switchView('auth')">Log in</button>
     </div>
   </div>
 </header>
+
+<div id="profile-sheet" class="hidden" onclick="if(event.target===this) toggleProfile(false)"><div class="wrap">
+      <div class="panel">
+        <div class="profile-card">
+          <img class="profile-photo" id="profile-photo" alt="">
+          <div><div class="profile-name" id="profile-name"></div><div class="muted" id="profile-phone"></div></div>
+        </div>
+        <p class="muted" id="profile-bio-display" style="font-style:italic; margin:0 0 8px;"></p>
+        <span class="verify-badge" id="errander-badge"></span><span class="uni-badge hidden" id="profile-uni-badge">🎓 Errander University Certified</span><span class="flag-badge hidden" id="profile-flag-badge"></span>
+        <div style="margin-bottom:10px;"><input type="file" id="edit-photo-input" accept="image/*" capture="user" class="hidden" onchange="handleProfilePhotoChange(this)"><button class="btn btn-ghost" onclick="document.getElementById('edit-photo-input').click()">Change photo</button></div>
+
+        <details id="edit-profile-details">
+          <summary style="cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--teal);">✏️ Edit name &amp; personal quote</summary>
+          <div style="margin-top:10px;">
+            <div class="field"><label>Title</label><select id="edit-title"><option value="">No title</option><option>Prof.</option><option>Dr.</option><option>Rev.</option><option>Ing.</option><option>Mr.</option><option>Mrs.</option><option>Ms.</option></select></div>
+            <div class="field"><label>Name</label><input id="edit-name" type="text"></div>
+            <div class="field"><label>A quote or motto you believe in <span class="muted">(shown on your profile)</span></label><textarea id="edit-bio" maxlength="140" placeholder="e.g. Reliable, on time, every time."></textarea></div>
+            <button class="btn btn-primary btn-block" onclick="saveProfileDetails()">Save</button>
+          </div>
+        </details>
+        <details id="change-pin-details">
+          <summary style="cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--teal); margin-top:6px;">🔐 Change my PIN</summary>
+          <div style="margin-top:10px;">
+            <div class="field"><label>Current PIN</label><input id="cp-old" type="password" inputmode="numeric" autocomplete="current-password"></div>
+            <div class="field"><label>New PIN (4 to 12 digits)</label><input id="cp-new" type="password" inputmode="numeric" autocomplete="new-password"></div>
+            <button class="btn btn-primary btn-block" onclick="changePin()">Change PIN</button>
+            <p class="muted" style="font-size:0.8rem;">Changing your PIN signs you out on every other device.</p>
+          </div>
+        </details>
+        <div class="task-actions" style="margin-top:10px;"><button class="btn btn-danger" onclick="toggleProfile(false); logout();">Log out</button><button class="btn btn-ghost" onclick="toggleProfile(false)">Close</button></div>
+      </div>
+</div></div>
 
 <main>
   <div class="wrap">
@@ -191,6 +229,7 @@
           <button class="btn btn-primary btn-block" onclick="doLogin()">Log in</button>
         </div>
         <div id="auth-signup-form" class="hidden">
+          <div class="field"><label>Title <span class="muted">(optional, we will use it when we greet you)</span></label><select id="su-title"><option value="">No title</option><option>Prof.</option><option>Dr.</option><option>Rev.</option><option>Ing.</option><option>Mr.</option><option>Mrs.</option><option>Ms.</option></select></div>
           <div class="field"><label>Full name</label><input id="su-name" type="text" placeholder="Your name"></div>
           <div class="field"><label>Phone number</label><input id="su-phone" type="tel" placeholder="024 000 0000"></div>
           <div class="field"><label>Choose a PIN</label><input id="su-pin" type="password" inputmode="numeric" placeholder="4+ digits"></div>
@@ -207,33 +246,7 @@
 
     <!-- DASHBOARD -->
     <div class="view" id="view-dashboard">
-      <div class="panel">
-        <div class="profile-card">
-          <img class="profile-photo" id="profile-photo" alt="">
-          <div><div class="profile-name" id="profile-name"></div><div class="muted" id="profile-phone"></div></div>
-        </div>
-        <p class="muted" id="profile-bio-display" style="font-style:italic; margin:0 0 8px;"></p>
-        <span class="verify-badge" id="errander-badge"></span><span class="uni-badge hidden" id="profile-uni-badge">🎓 Errander University Certified</span><span class="flag-badge hidden" id="profile-flag-badge"></span>
-        <div style="margin-bottom:10px;"><input type="file" id="edit-photo-input" accept="image/*" capture="user" class="hidden" onchange="handleProfilePhotoChange(this)"><button class="btn btn-ghost" onclick="document.getElementById('edit-photo-input').click()">Change photo</button></div>
-
-        <details id="edit-profile-details">
-          <summary style="cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--teal);">✏️ Edit name &amp; personal quote</summary>
-          <div style="margin-top:10px;">
-            <div class="field"><label>Name</label><input id="edit-name" type="text"></div>
-            <div class="field"><label>A quote or motto you believe in <span class="muted">(shown on your profile)</span></label><textarea id="edit-bio" maxlength="140" placeholder="e.g. Reliable, on time, every time."></textarea></div>
-            <button class="btn btn-primary btn-block" onclick="saveProfileDetails()">Save</button>
-          </div>
-        </details>
-        <details id="change-pin-details">
-          <summary style="cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--teal); margin-top:6px;">🔐 Change my PIN</summary>
-          <div style="margin-top:10px;">
-            <div class="field"><label>Current PIN</label><input id="cp-old" type="password" inputmode="numeric" autocomplete="current-password"></div>
-            <div class="field"><label>New PIN (4 to 12 digits)</label><input id="cp-new" type="password" inputmode="numeric" autocomplete="new-password"></div>
-            <button class="btn btn-primary btn-block" onclick="changePin()">Change PIN</button>
-            <p class="muted" style="font-size:0.8rem;">Changing your PIN signs you out on every other device.</p>
-          </div>
-        </details>
-      </div>
+      <div class="greet" id="greet"></div>
 
       <nav class="tabs">
         <button class="active" data-mode="feed" onclick="showDashTab('feed', this)">📰 Feed</button>
@@ -763,7 +776,7 @@
     const errEl = document.getElementById('auth-error');
     if(!name || !phone || pin.length < 4){ errEl.textContent='Fill in your name, phone, and a 4+ digit PIN.'; errEl.style.display='block'; return; }
     const photo = localStorage.getItem('pending_signup_photo') || null;
-    const res = await api('signup', 'POST', { name, phone, pin, photo });
+    const res = await api('signup', 'POST', { name, phone, pin, photo, title: document.getElementById('su-title').value });
     if(res.error){ errEl.textContent = res.error; errEl.style.display='block'; return; }
     localStorage.removeItem('pending_signup_photo');
     completeLogin(res.user);
@@ -784,23 +797,50 @@
   }
   function logout(){
     try{ localStorage.removeItem('my_token'); }catch(e){}
+    toggleProfile(false);
     myPhone = null; myProfile = null; lastRenderKey = ''; allTasks = []; prevSnapshot = null;
     document.getElementById('net-status').className = 'hidden';
     localStorage.removeItem('my_phone');
     renderHeaderAuth(); switchView('home');
   }
+  function greetingText(){
+    if(!myProfile) return '';
+    const h = new Date().getHours();
+    const part = h < 12 ? 'Good morning' : (h < 17 ? 'Good afternoon' : 'Good evening');
+    const parts = String(myProfile.name || '').trim().split(/\s+/);
+    // With a title we use the surname ("Prof. Mensah"); without one, the first name ("Ama").
+    const who = myProfile.title ? myProfile.title + ' ' + parts[parts.length-1] : parts[0];
+    return part + ', ' + who;
+  }
   function renderHeaderAuth(){
-    document.getElementById('hdr-name').classList.toggle('hidden', !myProfile);
-    document.getElementById('hdr-dashboard-btn').classList.toggle('hidden', !myProfile);
-    document.getElementById('hdr-logout-btn').classList.toggle('hidden', !myProfile);
+    document.getElementById('hdr-avatar-btn').classList.toggle('hidden', !myProfile);
     document.getElementById('hdr-login-btn').classList.toggle('hidden', !!myProfile);
-    if(myProfile) document.getElementById('hdr-name').textContent = 'Hi, ' + myProfile.name;
+    if(myProfile){
+      document.getElementById('hdr-avatar-img').src = photoSrc(myProfile.photo) || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="42" height="42"%3E%3Crect width="42" height="42" fill="%23EDE9DE"/%3E%3C/svg%3E';
+      const g = document.getElementById('greet');
+      if(g) g.innerHTML = escapeHtml(greetingText()) + '<small>What would you like to do today?</small>';
+    }
+  }
+  function toggleProfile(force){
+    const el = document.getElementById('profile-sheet');
+    const show = (typeof force === 'boolean') ? force : el.classList.contains('hidden');
+    el.classList.toggle('hidden', !show);
+  }
+  function openHelp(){
+    switchView('dashboard');
+    const b = document.getElementById('help-tab-btn');
+    if(b) showDashTab('help', b);
+  }
+  function callUs(){
+    if(supportPhone){ window.location.href = 'tel:' + String(supportPhone).replace(/\s+/g,''); return; }
+    if(myProfile){ openHelp(); toast('Our phone line is being set up. Message our team here and we will reply.'); }
+    else toast('Log in to message our team, or ask the person who invited you.');
   }
 
   /* ---------- profile / dashboard ---------- */
   function renderProfileCard(){
     if(!myProfile) return;
-    document.getElementById('profile-name').textContent = myProfile.name;
+    document.getElementById('profile-name').textContent = (myProfile.title ? myProfile.title + ' ' : '') + myProfile.name;
     document.getElementById('profile-phone').textContent = myProfile.phone;
     const img = document.getElementById('profile-photo');
     img.src = photoSrc(myProfile.photo) || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="56" height="56"%3E%3Crect width="56" height="56" fill="%23EDE9DE"/%3E%3C/svg%3E';
@@ -819,6 +859,7 @@
     bioDisplay.textContent = myProfile.bio ? '"' + myProfile.bio + '"' : '';
     if(!document.getElementById('edit-profile-details').hasAttribute('open')){
       document.getElementById('edit-name').value = myProfile.name || '';
+      document.getElementById('edit-title').value = myProfile.title || '';
       document.getElementById('edit-bio').value = myProfile.bio || '';
     }
   }
@@ -826,7 +867,7 @@
     const name = document.getElementById('edit-name').value.trim();
     const bio = document.getElementById('edit-bio').value.trim();
     if(!name){ toast('Name cannot be empty.'); return; }
-    const res = await api('update-profile', 'POST', { phone: myPhone, name, bio });
+    const res = await api('update-profile', 'POST', { phone: myPhone, name, bio, title: document.getElementById('edit-title').value });
     if(res.error){ toast(res.error); return; }
     myProfile = res.user;
     renderHeaderAuth();
@@ -1691,7 +1732,7 @@
   }
 
   /* ---------- init ---------- */
-  const BUILD_TAG = 'v10.0';
+  const BUILD_TAG = 'v10.1';
   console.log('Errander pilot build:', BUILD_TAG);
   const footerBuild = document.getElementById('footer-build');
   if(footerBuild) footerBuild.textContent = ' · build ' + BUILD_TAG;

@@ -407,3 +407,8 @@ What changed
 - get-user now only returns your own profile (it contains the ID number).
 - Everyone who was logged in before v10.0 will be asked to log in once more.
 Still not done: photo links are unguessable but not login-protected; the data store is pilot-grade; payments are simulated.
+
+## v10.1 - Titles, Call us, profile in the corner
+- Optional title at sign-up (Prof., Dr., Rev., Ing., Mr., Mrs., Ms.), editable in the profile. It appears with the name everywhere others see it, and the greeting reads "Good afternoon, Prof. Mensah" (surname with a title, first name without).
+- "Call us" is always in the header. Set the SUPPORT_PHONE environment variable in Netlify (e.g. 0244000000) to make it dial; until then it opens the Help chat.
+- The profile moved to the top corner: tap your photo for the profile sheet (photo, name and title, quote, PIN, Log out). The dashboard no longer starts with a big profile card.
