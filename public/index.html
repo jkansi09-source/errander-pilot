@@ -1,0 +1,1901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Errander Pilot</title>
+<link rel="icon" type="image/png" href="/assets/logo-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Brand palette sampled directly from the Errander logo */
+    --navy:#0B2A57; --navy-soft:#163F7A;        /* trust & reliability */
+    --green:#0E7A3B; --teal:#0E7A3B;             /* safety, service, "done" — teal alias kept for existing class names */
+    --amber:#FDC902; --amber-deep:#E09500;       /* speed, value, energy */
+    --paper:#FFFFFF; --paper-raise:#F2F4F7;      /* transparency & simplicity */
+    --ink:#181B20; --slate:#5C6470; --red:#B14B3E; --line:#DDE2E8; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  h1,h2,.brand{font-family:'Space Grotesk',system-ui,sans-serif;}
+  .wrap{max-width:640px; margin:0 auto; padding:0 18px;}
+  header{background:var(--navy); color:var(--white); padding:12px 0; position:sticky; top:0; z-index:6;}
+  header .wrap{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; row-gap:10px;}
+  .brand{font-size:1.1rem; font-weight:700; cursor:pointer;}
+  .hdr-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap; width:100%; justify-content:flex-start;}
+  @media (min-width:560px){ .hdr-actions{width:auto; justify-content:flex-end;} }
+  .bell-btn{background:none; border:1px solid rgba(255,255,255,0.3); border-radius:9px; min-width:42px; min-height:42px; cursor:pointer; font-size:1rem; color:var(--white); touch-action:manipulation;}
+  .hdr-btn{background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.3); color:var(--white); border-radius:9px; padding:10px 14px; min-height:42px; font-size:0.82rem; font-weight:600; cursor:pointer; touch-action:manipulation;}
+  .hdr-name{font-size:0.82rem; color:var(--amber); font-weight:600; padding:10px 2px;}
+  .hdr-actions{flex-wrap:nowrap !important; width:auto !important; justify-content:flex-end !important;}
+  .call-btn{background:var(--amber); color:var(--navy); border-color:var(--amber);}
+  .avatar-btn{width:42px; height:42px; border-radius:50%; padding:0; border:2px solid rgba(255,255,255,0.7); background:var(--paper-raise); cursor:pointer; overflow:hidden; touch-action:manipulation;}
+  .avatar-btn img{width:100%; height:100%; object-fit:cover; display:block;}
+  #profile-sheet{position:fixed; left:0; right:0; top:66px; bottom:0; background:rgba(20,30,40,0.45); z-index:7; overflow-y:auto; padding:10px 0 30px;}
+  .greet{font-size:1.02rem; font-weight:700; margin:0 0 12px; font-family:'Space Grotesk',system-ui,sans-serif;}
+  .greet small{display:block; font-weight:400; font-size:0.8rem; color:var(--slate); font-family:'Inter',system-ui,sans-serif;}
+  main{padding:18px 0 60px;}
+  .view{display:none;} .view.show{display:block;}
+  .panel{background:var(--white); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:14px;}
+  .panel h2{font-size:0.95rem; margin:0 0 10px;}
+  .muted{color:var(--slate); font-size:0.82rem;}
+  .field{margin-bottom:10px;}
+  .field label{display:block; font-size:0.78rem; color:var(--slate); margin-bottom:4px; font-weight:500;}
+  .field input, .field select, .field textarea{width:100%; padding:11px 12px; min-height:44px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.95rem; background:var(--paper); color:var(--ink); box-sizing:border-box;}
+  .field textarea{min-height:56px; resize:vertical;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  @media (max-width:480px){.row2{grid-template-columns:1fr;}}
+  .hidden{display:none !important;}
+  .chip-row{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;}
+  .chip{border:1px solid var(--line); background:var(--paper); border-radius:20px; padding:9px 14px; min-height:40px; font-size:0.78rem; font-weight:600; color:var(--slate); cursor:pointer; touch-action:manipulation; box-sizing:border-box;}
+  .chip.active{background:var(--navy); color:var(--white); border-color:var(--navy);}
+  .btn{appearance:none; border:none; border-radius:8px; padding:12px 18px; min-height:44px; font-family:inherit; font-size:0.9rem; font-weight:600; cursor:pointer; touch-action:manipulation; box-sizing:border-box;}
+  .btn-primary{background:var(--navy); color:var(--white);}
+  .btn-primary:hover{background:var(--navy-soft);}
+  .btn-primary:disabled{opacity:0.45; cursor:not-allowed;}
+  .btn-ghost{background:transparent; color:var(--navy); border:1px solid var(--line); padding:10px 16px; min-height:44px; font-size:0.84rem;}
+  .btn-danger{background:transparent; color:var(--red); border:1px solid var(--line); padding:10px 14px; min-height:40px; font-size:0.8rem;}
+  .btn-block{width:100%;}
+  .btn-loc{background:var(--paper-raise); border:1px solid var(--line); color:var(--teal); padding:11px 12px; min-height:44px; font-size:0.82rem; border-radius:7px; cursor:pointer; margin-bottom:10px; touch-action:manipulation; box-sizing:border-box;}
+  .task{border:1px solid var(--line); border-radius:9px; padding:12px; margin-bottom:9px; background:var(--paper);}
+  .task-top{display:flex; justify-content:space-between; gap:8px;}
+  .task-cat{font-weight:600; font-size:0.76rem; color:var(--teal); margin-bottom:2px;}
+  .task-desc{font-weight:600; font-size:0.9rem; margin-bottom:3px;}
+  .task-meta{font-size:0.76rem; color:var(--slate);}
+  .task-price{font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--green); white-space:nowrap; text-align:right;}
+  .fee-line{font-size:0.68rem; color:var(--slate); white-space:nowrap; text-align:right; margin-top:1px;}
+  .status-pill{display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 9px; border-radius:20px; margin-top:6px; margin-right:4px;}
+  .status-open{background:rgba(224,149,0,0.2); color:var(--amber-deep);}
+  .status-accepted{background:rgba(14,122,59,0.15); color:var(--teal);}
+  .status-completed{background:rgba(14,122,59,0.15); color:var(--green);}
+  .status-flagged{background:rgba(177,75,62,0.12); color:var(--red);}
+  .task-actions{display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; align-items:center;}
+  .amount-input{width:90px; padding:10px; min-height:42px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.88rem; box-sizing:border-box;}
+  .negotiation-box{border-top:1px solid var(--line); margin-top:9px; padding-top:9px;}
+  .nego-item{border:1px solid var(--line); border-radius:8px; padding:9px; margin-bottom:7px; background:var(--white);}
+  .nego-top{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .trust-note{font-size:0.76rem; color:var(--slate); background:var(--paper); border:1px dashed var(--line); border-radius:7px; padding:7px 9px; margin-bottom:10px;}
+  .sponsor-note{font-size:0.78rem; color:var(--amber-deep); background:rgba(224,149,0,0.12); border:1px solid rgba(224,149,0,0.4); border-radius:7px; padding:8px 10px; margin-bottom:10px; font-weight:600;}
+  .verify-badge{display:inline-block; font-size:0.76rem; font-weight:600; padding:5px 12px; border-radius:20px; margin:6px 4px 6px 0;}
+  .badge-pending{background:rgba(224,149,0,0.2); color:var(--amber-deep);}
+  .badge-approved{background:rgba(14,122,59,0.15); color:var(--green);}
+  .badge-rejected{background:rgba(177,75,62,0.12); color:var(--red);}
+  .badge-none{background:var(--paper-raise); color:var(--slate);}
+  .uni-badge{display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(224,149,0,0.25); color:var(--amber-deep); margin-left:4px;}
+  .sponsor-badge{display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(224,149,0,0.25); color:var(--amber-deep); margin-left:4px;}
+  .flag-badge{display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(177,75,62,0.15); color:var(--red); margin-left:4px;}
+  .stat{display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--line); font-size:0.83rem;}
+  .stat:last-child{border-bottom:none;}
+  .contact-box{background:rgba(14,122,59,0.1); border:1px solid rgba(14,122,59,0.3); border-radius:7px; padding:8px 10px; font-size:0.82rem; margin:8px 0; color:var(--green); font-weight:600; display:flex; align-items:center;}
+  .stars{display:flex; gap:4px; margin:6px 0;}
+  .star-pick{font-size:1.5rem; cursor:pointer; color:var(--line); background:none; border:none; padding:6px; min-width:40px; min-height:40px; touch-action:manipulation;}
+  .star-pick.on{color:var(--amber-deep);}
+  details.history summary{cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--teal); padding:4px 0;}
+  .chat-box{margin-top:10px; border-top:1px dashed var(--line); padding-top:8px;}
+  .chat-box summary{cursor:pointer; font-size:0.82rem; font-weight:600; color:var(--teal);}
+  .chat-messages{max-height:200px; overflow-y:auto; margin:8px 0; padding-right:2px;}
+  .chat-bubble{display:inline-block; max-width:80%; padding:6px 10px; border-radius:10px; font-size:0.82rem; margin:3px 0;}
+  .chat-row{display:flex;}
+  .chat-input-row{display:flex; gap:6px; margin-top:4px;}
+  .chat-input-row input{flex:1; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:0.85rem;}
+  .busy-note{background:rgba(224,149,0,0.15); border:1px solid rgba(224,149,0,0.4); color:var(--amber-deep); border-radius:7px; padding:8px 10px; font-size:0.8rem; margin-bottom:10px;}
+  .photo-thumb{width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--line); vertical-align:middle; margin-right:8px;}
+  .proof-photo{width:64px; height:64px; border-radius:8px; object-fit:cover; border:1px solid var(--line); margin-right:6px; cursor:pointer;}
+  .scroll-portal{max-height:460px; overflow-y:auto; padding-right:4px; -webkit-overflow-scrolling:touch;}
+  .scroll-portal::-webkit-scrollbar{width:6px;}
+  .scroll-portal::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
+  .id-type-row{display:flex; gap:8px; margin-bottom:10px;}
+  .id-type-row .chip{flex:1; text-align:center;}
+  .photo-preview{width:64px; height:64px; border-radius:50%; object-fit:cover; border:1px solid var(--line); margin-top:6px; display:block;}
+  .profile-card{display:flex; align-items:center; gap:12px; margin-bottom:6px;}
+  .profile-photo{width:56px; height:56px; border-radius:50%; object-fit:cover; border:1px solid var(--line); background:var(--paper-raise); flex:none;}
+  .profile-name{font-weight:700; font-size:1rem;}
+  .auth-tabs{display:flex; gap:4px; background:var(--paper-raise); border-radius:9px; padding:4px; margin-bottom:14px;}
+  .auth-tabs button{flex:1; background:none; border:none; border-radius:6px; padding:8px; font-size:0.85rem; font-weight:600; color:var(--slate); cursor:pointer;}
+  .auth-tabs button.active{background:var(--navy); color:var(--white);}
+  nav.tabs{display:flex; gap:4px; background:var(--white); border:1px solid var(--line); border-radius:9px; padding:4px; margin-bottom:14px;}
+  nav.tabs button{flex:1; background:none; border:none; border-radius:6px; padding:11px 6px; min-height:42px; font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600; color:var(--slate); cursor:pointer; touch-action:manipulation;}
+  nav.tabs button.active{background:var(--navy); color:var(--white);}
+  nav.tabs button[data-mode="errander"].active{background:var(--green); color:var(--white);}
+  nav.tabs button[data-mode="report"].active{background:var(--amber-deep); color:var(--white);}
+  .mode-banner{display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:9px; font-weight:700; font-size:0.85rem; margin-bottom:14px; color:var(--white);}
+  .mode-banner.mode-boss{background:var(--navy);}
+  .mode-banner.mode-errander{background:var(--green);}
+  .tab-panel{display:none;} .tab-panel.show{display:block;}
+  #toast-stack{position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:999; display:flex; flex-direction:column; gap:8px; width:min(92vw,420px); pointer-events:none;}
+  .toast{background:var(--navy); color:var(--white); padding:11px 14px; border-radius:8px; font-size:0.85rem; box-shadow:0 6px 18px rgba(0,0,0,0.25); animation:fadein .2s ease; pointer-events:none;}
+  @keyframes fadein{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
+  footer{padding:16px 0 40px; text-align:center; color:var(--slate); font-size:0.74rem;}
+  footer a{color:var(--slate);}
+
+  .band-hint{font-size:0.82rem;margin:-4px 0 12px;padding:8px 10px;border-radius:8px;background:rgba(14,122,59,0.08);border:1px solid rgba(14,122,59,0.25);color:var(--ink);}
+  .band-hint.warn{background:rgba(224,149,0,0.12);border-color:rgba(224,149,0,0.5);}
+  .band-line{font-size:0.78rem;color:var(--muted);margin-top:4px;}
+  .band-line.warn{color:#9a6200;font-weight:600;}
+  .price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}
+  .price-grid input{min-width:0;}
+  .receipt-box{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(11,42,87,0.06);border:1px dashed var(--navy);font-size:0.85rem;}
+
+  .task-photo{width:100%;max-height:220px;object-fit:cover;border-radius:9px;margin:8px 0 4px;border:1px solid var(--line);cursor:pointer;}
+  .feed-by{display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--slate);margin-bottom:6px;}
+  .feed-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:var(--white);}
+  .feed-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;}
+  .feed-chips .chip{white-space:nowrap;flex:none;}
+</style>
+</head>
+<body>
+
+<div id="toast-stack"></div>
+
+<header>
+  <div class="wrap">
+    <div class="brand" onclick="goHome()" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+      <img src="/assets/logo-icon.png" alt="" style="height:30px; width:auto;">
+      Errander <span style="font-weight:400; font-size:0.68rem; color:var(--amber);">· pilot</span>
+    </div>
+    <div class="hdr-actions">
+      <button class="hdr-btn call-btn" id="hdr-call-btn" onclick="callUs()">📞 Call us</button>
+      <button class="bell-btn" id="bell-btn" onclick="enableNotifications()" title="Phone alerts" aria-label="Phone alerts">🔕</button>
+      <button class="avatar-btn hidden" id="hdr-avatar-btn" onclick="toggleProfile()" aria-label="My profile"><img id="hdr-avatar-img" alt=""></button>
+      <button class="hdr-btn" id="hdr-login-btn" onclick="switchView('auth')">Log in</button>
+    </div>
+  </div>
+</header>
+
+<div id="profile-sheet" class="hidden" onclick="if(event.target===this) toggleProfile(false)"><div class="wrap">
+      <div class="panel">
+        <div class="profile-card">
+          <img class="profile-photo" id="profile-photo" alt="">
+          <div><div class="profile-name" id="profile-name"></div><div class="muted" id="profile-phone"></div></div>
+        </div>
+        <p class="muted" id="profile-bio-display" style="font-style:italic; margin:0 0 8px;"></p>
+        <span class="verify-badge" id="errander-badge"></span><span class="uni-badge hidden" id="profile-uni-badge">🎓 Errander University Certified</span><span class="flag-badge hidden" id="profile-flag-badge"></span>
+        <div style="margin-bottom:10px;"><input type="file" id="edit-photo-input" accept="image/*" capture="user" class="hidden" onchange="handleProfilePhotoChange(this)"><button class="btn btn-ghost" onclick="document.getElementById('edit-photo-input').click()">Change photo</button></div>
+
+        <details id="edit-profile-details">
+          <summary style="cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--teal);">✏️ Edit name &amp; personal quote</summary>
+          <div style="margin-top:10px;">
+            <div class="field"><label>Title</label><select id="edit-title"><option value="">No title</option><option>Prof.</option><option>Dr.</option><option>Rev.</option><option>Ing.</option><option>Mr.</option><option>Mrs.</option><option>Ms.</option></select></div>
+            <div class="field"><label>Name</label><input id="edit-name" type="text"></div>
+            <div class="field"><label>A quote or motto you believe in <span class="muted">(shown on your profile)</span></label><textarea id="edit-bio" maxlength="140" placeholder="e.g. Reliable, on time, every time."></textarea></div>
+            <button class="btn btn-primary btn-block" onclick="saveProfileDetails()">Save</button>
+          </div>
+        </details>
+        <details id="change-pin-details">
+          <summary style="cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--teal); margin-top:6px;">🔐 Change my PIN</summary>
+          <div style="margin-top:10px;">
+            <div class="field"><label>Current PIN</label><input id="cp-old" type="password" inputmode="numeric" autocomplete="current-password"></div>
+            <div class="field"><label>New PIN (4 to 12 digits)</label><input id="cp-new" type="password" inputmode="numeric" autocomplete="new-password"></div>
+            <button class="btn btn-primary btn-block" onclick="changePin()">Change PIN</button>
+            <p class="muted" style="font-size:0.8rem;">Changing your PIN signs you out on every other device.</p>
+          </div>
+        </details>
+        <div class="task-actions" style="margin-top:10px;"><button class="btn btn-danger" onclick="toggleProfile(false); logout();">Log out</button><button class="btn btn-ghost" onclick="toggleProfile(false)">Close</button></div>
+      </div>
+</div></div>
+
+<div id="terms-modal" class="hidden" style="position:fixed; inset:0; background:rgba(20,30,40,0.55); z-index:20; overflow-y:auto; padding:16px 0;"><div class="wrap"><div class="panel">
+  <h2>Terms and Privacy Notice <span class="muted">(pilot version)</span></h2>
+  <div id="terms-body" style="font-size:0.9rem; max-height:60vh; overflow-y:auto;">
+    <p class="muted">This is a plain-language pilot notice. It has not yet been reviewed by a lawyer.</p>
+    <p><b>Who we are.</b> Errander is run by Premor Ltd as a pilot at KNUST. Students (Erranders) are independent people doing tasks; they are not employees of Premor.</p>
+    <p><b>Age.</b> You must be 18 or older.</p>
+    <p><b>Using Errander.</b> Legal and safe tasks only. Keep chat, price and proof photos inside the app. Never share your PIN or any code. Do not take or make payments outside the app.</p>
+    <p><b>Payments in the pilot.</b> The app records payment status. It does not move real money. Sponsored jobs are paid by Premor separately, as explained in your pilot briefing.</p>
+    <p><b>Checks.</b> We may read job chats and photos and may call you to confirm a job was done. We may flag, pause or remove accounts that break these rules.</p>
+    <p><b>Data we collect.</b> Name, title, phone number, profile photo, task details, messages, photos you upload, ratings, location if you share it, and for Erranders the ID type and number. We use it to run the pilot, verify people, keep everyone safe, give support and prevent fraud.</p>
+    <p><b>Who sees it.</b> Other users see your name, photo, rating and task details. Our team can see your ID number, chats and photos when needed. We do not sell your data. Our hosting provider stores it for us.</p>
+    <p><b>Your rights.</b> Under Ghana's Data Protection Act, 2012 (Act 843) you can ask to see, correct or delete your data. Ask through Help or Call us.</p>
+    <p><b>How long we keep it.</b> [To be confirmed before launch.]</p>
+  </div>
+  <div class="task-actions" style="margin-top:12px;"><button class="btn btn-primary" id="terms-accept-btn" onclick="acceptTerms()">I accept</button><button class="btn btn-ghost" id="terms-close-btn" onclick="showTerms(false)">Close</button></div>
+</div></div></div>
+
+<main>
+  <div class="wrap">
+    <div id="net-status" class="hidden" style="margin:10px 0; padding:8px 12px; border-radius:9px; font-size:0.82rem;"></div>
+
+    <!-- HOME -->
+    <div class="view show" id="view-home">
+      <div class="panel" style="text-align:center;">
+        <img src="/assets/logo-hero.png" alt="Errander — Anything Legal. Anywhere. Anytime." style="width:100%; max-width:320px; height:auto; margin:0 auto 8px;">
+        <p style="margin:0 0 12px;"><em>My Kpakpakpa money making place</em></p>
+        <p class="muted" style="margin:0 0 18px;">Post any legal task — deliveries, errands, home services and more. Negotiate a fair price with a nearby, ID-verified Errander. Or become an Errander yourself and start earning, one job at a time.</p>
+        <button class="btn btn-primary btn-block" onclick="switchView('auth')">Get started — log in or sign up</button>
+      </div>
+      <div class="panel">
+        <h2>How it works</h2>
+        <div class="stat"><span>1. Create one profile</span><span class="muted">Use it as a Boss, or apply to be an Errander too</span></div>
+        <div class="stat"><span>2. Post &amp; negotiate</span><span class="muted">Boss sets an offer; Erranders can counter</span></div>
+        <div class="stat"><span>3. Match, chat &amp; confirm</span><span class="muted">Boss confirms it's done — both sides rate</span></div>
+      </div>
+    </div>
+
+    <!-- AUTH -->
+    <div class="view" id="view-auth">
+      <div class="panel">
+        <div class="auth-tabs">
+          <button class="active" id="auth-tab-login" onclick="setAuthMode('login')">Log in</button>
+          <button id="auth-tab-signup" onclick="setAuthMode('signup')">Create account</button>
+        </div>
+        <div id="auth-login-form">
+          <div class="field"><label>Phone number</label><input id="li-phone" type="tel" placeholder="024 000 0000"></div>
+          <div class="field"><label>PIN</label><input id="li-pin" type="password" inputmode="numeric" placeholder="4+ digit PIN"></div>
+          <button class="btn btn-primary btn-block" onclick="doLogin()">Log in</button>
+        </div>
+        <div id="auth-signup-form" class="hidden">
+          <div class="field"><label>Title <span class="muted">(optional, we will use it when we greet you)</span></label><select id="su-title"><option value="">No title</option><option>Prof.</option><option>Dr.</option><option>Rev.</option><option>Ing.</option><option>Mr.</option><option>Mrs.</option><option>Ms.</option></select></div>
+          <div class="field"><label>Full name</label><input id="su-name" type="text" placeholder="Your name"></div>
+          <div class="field"><label>Phone number</label><input id="su-phone" type="tel" placeholder="024 000 0000"></div>
+          <div class="field"><label>Choose a PIN</label><input id="su-pin" type="password" inputmode="numeric" placeholder="4+ digits"></div>
+          <div class="field">
+            <label>Profile photo <span class="muted">(shown to whoever you're matched with)</span></label>
+            <input type="file" id="su-photo-input" accept="image/*" capture="user" onchange="handlePhotoUpload(this,'pending_signup_photo','su-photo-preview')">
+            <img id="su-photo-preview" class="photo-preview hidden" alt="Your photo">
+          </div>
+          <label style="display:flex; gap:8px; align-items:flex-start; font-size:0.84rem; margin:6px 0 12px;"><input type="checkbox" id="su-agree" style="width:22px; height:22px; flex:none; margin-top:1px;"><span>I am 18 or older and I accept the <a href="#" onclick="showTerms(false); return false;">Terms and Privacy Notice</a>.</span></label>
+          <button class="btn btn-primary btn-block" onclick="doSignup()">Create account</button>
+        </div>
+        <p class="muted" id="auth-error" style="display:none; color:var(--red); margin:8px 0 0;"></p>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="view" id="view-dashboard">
+      <div class="greet" id="greet"></div>
+
+      <nav class="tabs">
+        <button class="active" data-mode="feed" onclick="showDashTab('feed', this)">📰 Feed</button>
+        <button data-mode="boss" onclick="showDashTab('post', this)">Post a Task</button>
+        <button data-mode="errander" onclick="showDashTab('jobs', this)">Find Jobs</button>
+        <button data-mode="report" onclick="showDashTab('report', this)">My Report</button>
+        <button data-mode="help" id="help-tab-btn" onclick="showDashTab('help', this)">❓ Help</button>
+      </nav>
+
+      <!-- FEED (everyone) -->
+      <div class="tab-panel show" id="dash-feed">
+        <div class="panel hidden" id="inbox-panel">
+          <h2>💬 Messages</h2>
+          <p class="muted" style="margin:0 0 8px;">Conversations about jobs — questions from Erranders and your replies. Answer right here.</p>
+          <div id="inbox-list"></div>
+        </div>
+        <div class="panel">
+          <h2>📰 Jobs &amp; requests</h2>
+          <p class="muted" style="margin:0 0 10px;">Everything open right now, from every Boss. Approved Erranders can take or counter a job straight from here.</p>
+          <div class="feed-chips" id="feed-chips"></div>
+          <div id="feed-list"></div>
+        </div>
+      </div>
+
+      <!-- POST (Boss) -->
+      <div class="tab-panel" id="dash-post">
+        <div class="mode-banner mode-boss">👤 BOSS MODE — you're posting and paying for tasks</div>
+        <div class="panel">
+          <h2>Post a task</h2>
+          <div class="chip-row" id="cat-chips"></div>
+          <div class="field"><label>Describe the task</label><textarea id="c-desc" placeholder="e.g. Pick up a prescription from Ridge Pharmacy and drop it at my office"></textarea></div>
+          <button type="button" class="btn-loc" onclick="captureClientLocation()" id="c-loc-btn">📍 Use my current location</button>
+          <div class="row2">
+            <div class="field"><label>Location</label><input id="c-loc" type="text" placeholder="e.g. Adum, Kumasi"></div>
+            <div class="field"><label>Urgency / timing</label><input id="c-urgency" type="text" placeholder="e.g. Today, or Sat 9am"></div>
+          </div>
+          <div class="field">
+            <label>Photo of the task <span class="muted">(optional — e.g. the leaking tap, the parcel, the place)</span></label>
+            <input type="file" id="c-photo-input" accept="image/*" onchange="handleTaskPhoto(this)">
+            <img id="c-photo-preview" class="task-photo hidden" alt="Task photo">
+            <button type="button" class="btn btn-ghost hidden" id="c-photo-clear" onclick="clearTaskPhoto()">Remove photo</button>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Distance (km)</label><input id="c-km" type="number" min="0" step="0.5" value="3"></div>
+            <div class="field"><label>Number of stops</label><input id="c-stops" type="number" min="1" step="1" value="1"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Expected waiting / working hours</label><input id="c-wait" type="number" min="0" step="0.5" value="0"></div>
+            <div class="field"><label style="display:flex;align-items:center;gap:8px;margin-top:22px;cursor:pointer;"><input type="checkbox" id="c-urgent" style="width:auto;"> ⚡ Urgent</label></div>
+          </div>
+          <div class="band-hint" id="c-band-hint">Typical price for this job: …</div>
+          <div class="field">
+            <label>Your offer for the Errander's service (GHS) <span class="muted">— Erranders can accept or counter this</span></label>
+            <input id="c-budget" type="number" value="40">
+          </div>
+          <div class="field">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="c-buy" style="width:auto;" onchange="document.getElementById('c-items-wrap').classList.toggle('hidden', !this.checked); updateFeePreview();">
+              🛒 The Errander must buy items for me
+            </label>
+            <div class="hidden" id="c-items-wrap" style="margin-top:6px;">
+              <input id="c-items-limit" type="number" min="1" placeholder="Most I'll reimburse for items (GHS)">
+              <div class="muted" style="margin-top:4px;">The Errander pays at the shop, uploads the receipt, and you pay back exactly the receipt total — no haggling over item prices. Item costs are never covered by sponsorship.</div>
+            </div>
+          </div>
+          <div class="field hidden" id="sponsor-field">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="c-sponsored" style="width:auto;" onchange="updateFeePreview()">
+              🎓 KNUST-sponsored pilot slot — Errander (the company) pays, free for you
+            </label>
+            <div class="muted" id="sponsor-slots" style="margin-top:4px;"></div>
+          </div>
+          <div class="trust-note" id="c-fee-preview"></div>
+          <button class="btn btn-primary btn-block" onclick="postTask()">Post task</button>
+        </div>
+        <div class="panel">
+          <h2>Your posted tasks</h2>
+          <div class="trust-note">🔒 An Errander can mark a job delivered, but only you can confirm it complete — that's what releases payment and unlocks ratings.</div>
+          <div id="client-active" class="scroll-portal"></div>
+          <div id="client-rate-prompt"></div>
+          <details class="history"><summary id="client-history-count">Completed history</summary><div id="client-history" class="scroll-portal"></div></details>
+        </div>
+      </div>
+
+      <!-- JOBS (Errander) -->
+      <div class="tab-panel" id="dash-jobs">
+        <div class="mode-banner mode-errander">🛵 ERRANDER MODE — you're finding and completing tasks to earn</div>
+        <div class="panel hidden" id="errander-apply-panel">
+          <h2>Become an Errander</h2>
+          <p class="muted" style="margin:0 0 10px;">Real deployments verify a Ghana Card or license before you can accept tasks.</p>
+          <div class="field">
+            <label>ID type</label>
+            <div class="id-type-row" id="id-type-row">
+              <button type="button" class="chip active" data-type="ghana_card" onclick="selectIdType('ghana_card', this)">Ghana Card</button>
+              <button type="button" class="chip" data-type="license" onclick="selectIdType('license', this)">Driver's License</button>
+            </div>
+          </div>
+          <div class="field"><label id="apply-id-label">Ghana Card number</label><input id="apply-id" type="text" placeholder="GHA-000000000-0"></div>
+          <button class="btn btn-primary btn-block" onclick="applyErrander()">Submit for verification</button>
+          <p class="muted" id="apply-error" style="display:none; color:var(--red); margin:8px 0 0;"></p>
+        </div>
+        <div class="hidden" id="errander-dashboard-inner">
+          <button type="button" class="btn-loc" onclick="captureErranderLocation()" id="e-loc-btn">📍 Enable location (sorts tasks by distance)</button>
+          <div class="panel"><h2>Open tasks near you</h2><div id="open-tasks" class="scroll-portal"></div></div>
+          <div class="panel hidden" id="active-panel"><h2>Your active task</h2><div id="active-task"></div></div>
+          <div id="errander-rate-prompt"></div>
+          <div class="panel">
+            <h2>Earnings (this pilot)</h2>
+            <div id="earnings"></div>
+            <details class="history" style="margin-top:8px;"><summary id="errander-history-count">Completed history</summary><div id="errander-history"></div></details>
+          </div>
+        </div>
+      </div>
+
+      <!-- HELP -->
+      <div class="tab-panel" id="dash-help">
+        <div class="panel">
+          <h2>❓ Help &amp; FAQ</h2>
+          <input type="text" id="faq-search" placeholder="Search: payment, price, safety, ID…" oninput="renderFaq()" style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; font-family:inherit;">
+          <div class="feed-chips" id="faq-chips" style="margin-top:8px;"></div>
+          <div id="faq-list"></div>
+        </div>
+        <div class="panel">
+          <h2>💬 Still stuck? Message our team</h2>
+          <p class="muted" id="help-note" style="margin:0 0 8px;"></p>
+          <div id="help-chat"></div>
+        </div>
+      </div>
+
+      <!-- REPORT -->
+      <div class="tab-panel" id="dash-report">
+        <div class="panel"><h2>As a Boss</h2><div id="report-boss"></div></div>
+        <div class="panel"><h2>As an Errander</h2><div id="report-errander"></div></div>
+      </div>
+    </div>
+
+    <!-- ADMIN LOGIN -->
+    <div class="view" id="view-admin-login">
+      <div class="panel">
+        <h2>Admin login</h2>
+        <div class="field"><label>Passcode</label><input id="admin-pass" type="password"></div>
+        <button class="btn btn-primary btn-block" onclick="adminLogin()">Log in</button>
+        <p class="muted" id="admin-login-error" style="display:none; color:var(--red); margin:8px 0 0;">Incorrect passcode.</p>
+      </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div class="view" id="view-admin">
+      <div class="panel"><h2>🎓 Sponsored jobs awaiting review</h2><div id="admin-sponsor-review"></div></div>
+      <div class="panel"><h2>💸 Weekly payouts</h2><p class="muted" style="margin:0 0 8px;">Erranders who chose weekly payout. Money becomes ready after the safety window. In this pilot "release" only marks the jobs paid; send the actual Mobile Money yourself.</p><div id="admin-payouts"></div></div>
+      <div class="panel"><h2>🔎 Verification queue</h2><p class="muted" style="margin:0 0 8px;">Jobs are held here until you have checked them. Bigger jobs get a bigger check; new or flagged people and a random 1-in-10 sample are also checked.</p><div id="admin-verify"></div></div>
+      <div class="panel"><h2>🛟 Support inbox</h2><div id="admin-support"></div></div>
+      <div class="panel"><h2>Pending Errander applications</h2><div id="admin-pending"></div></div>
+      <div class="panel"><h2>All users</h2><div id="admin-pin-result"></div><div id="admin-users"></div></div>
+      <div class="panel"><h2>Pilot categories</h2><p class="muted" style="margin:0 0 8px;">Only ticked categories can be posted. Start with the low-risk ones and open more as the pilot goes well.</p><div id="admin-cats"></div><button class="btn btn-primary btn-block" onclick="adminSaveCategories()">Save categories</button></div>
+      <div class="panel"><h2>Backup and ledger</h2><p class="muted" style="margin:0 0 8px;">Download a full backup of users, jobs, chats and support (contains personal data, keep it safe), and a payout ledger to match against the Mobile Money you send.</p><div class="task-actions"><button class="btn btn-ghost" onclick="adminDownloadAll()">Download full backup (JSON)</button><button class="btn btn-ghost" onclick="adminDownloadLedger()">Download payout ledger (CSV)</button></div></div>
+      <div class="panel"><h2>Task overview</h2><div id="admin-task-stats"></div></div>
+      <div class="panel"><h2>💰 Price bands (GHS)</h2>
+        <p class="muted" style="margin:0 0 8px;">Placeholder guesses until you replace them with real Kumasi prices. Typical = base + per-km × km + per-extra-stop × stops + per-hour × hours (×(1+urgent uplift) if urgent). Sponsored jobs are capped at the top of the range.</p>
+        <div id="admin-price-editor"></div>
+        <button class="btn btn-primary btn-block" onclick="savePriceConfig()">Save price bands</button>
+      </div>
+      <button class="btn btn-ghost" onclick="resetDemo()">Reset all task data</button>
+      <button class="btn btn-ghost" onclick="switchView('home'); adminAuthed=false; adminPass='';">Log out of admin</button>
+    </div>
+
+  </div>
+</main>
+<footer>Errander pilot — shared data via Netlify Functions + Blobs. <a href="#" onclick="switchView('admin-login'); return false;">Admin</a><span id="footer-build"></span></footer>
+
+<script>
+  const API = '/.netlify/functions/api';
+  let CATEGORIES = ['Delivery & Pickup','Errands & Queuing'];   // replaced by the list the server says is open
+  const ALL_CATEGORIES = ['Delivery & Pickup','Errands & Queuing','Home Services · Plumbing','Home Services · Cleaning','Business & Field'];
+
+  let activeCategory = CATEGORIES[0];
+  let allTasks = [];
+  let clientCoords = null, erranderCoords = null;
+  let prevSnapshot = null, notifyEnabled = false;
+  let myPhone = localStorage.getItem('my_phone') || null;
+  let myProfile = null;
+  let adminAuthed = false;
+  let signupIdType = 'ghana_card';
+  let authMode = 'login';
+  let feeRate = 0.10, sponsoredCap = 100, sponsoredUsed = 0;
+
+  /* ---------- helpers ---------- */
+  function timeAgo(ts){
+    const mins = Math.round((Date.now() - ts) / 60000);
+    if(mins < 1) return 'just now';
+    if(mins < 60) return mins + ' min ago';
+    const hrs = Math.round(mins/60);
+    return hrs + (hrs===1 ? ' hour ago' : ' hours ago');
+  }
+  function distKm(lat1,lng1,lat2,lng2){
+    const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+  function fee(amount){ return Math.round(amount * feeRate); }
+  function priceBlock(amount, sponsored){
+    if(sponsored) return `<div><div class="task-price">GHS ${amount}</div><div class="fee-line">🎓 Sponsored — no charge to Boss</div></div>`;
+    const f = fee(amount), total = amount + f;
+    return `<div><div class="task-price">GHS ${amount}</div><div class="fee-line">+GHS ${f} fee = GHS ${total} Boss pays</div></div>`;
+  }
+  function bandLine(t){
+    if(!t.band) return '';
+    const warn = t.priceFlag === 'above' ? ' · ⚠️ agreed price is above the typical range' : (t.priceFlag === 'below' ? ' · ⚠️ agreed price is below the typical range' : '');
+    return `<div class="band-line${warn ? ' warn' : ''}">Typical for this job: GHS ${t.band.low}–${t.band.high}${warn}</div>`;
+  }
+  function itemsLine(t, role){
+    if(t.itemsLimit == null) return '';
+    if(t.receiptAmount != null){
+      return `<div class="receipt-box">🧾 Receipt: <b>GHS ${t.receiptAmount}</b> for items (limit GHS ${t.itemsLimit})${role==='boss' ? ` — you pay the Errander back GHS ${t.receiptAmount} for the items, on top of their service price.` : ' — the Boss pays this back to you directly.'}
+        ${t.receiptPhoto ? `<br><img src="${photoSrc(t.receiptPhoto)}" class="proof-photo" alt="Receipt" onclick="window.open(this.src)">` : ''}</div>`;
+    }
+    return `<div class="receipt-box">🛒 Buys items — Boss reimburses the receipt, up to GHS ${t.itemsLimit}. Not covered by sponsorship.</div>`;
+  }
+  function toast(msg){
+    const stack = document.getElementById('toast-stack');
+    const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
+    stack.appendChild(el);
+    setTimeout(()=> el.remove(), 5000);
+    if(notifyEnabled && document.hidden) showSystemNotification(msg);
+  }
+  // Phones (Android Chrome) refuse "new Notification(...)"; they need the service worker to show it.
+  function showSystemNotification(msg){
+    try{
+      const opts = { body: msg, icon: '/assets/logo-icon.png', tag: 'errander' };
+      if('serviceWorker' in navigator && navigator.serviceWorker.getRegistration){
+        navigator.serviceWorker.getRegistration().then(r=>{ if(r && r.showNotification) r.showNotification('Errander', opts); else new Notification('Errander', opts); }).catch(()=>{});
+      } else { new Notification('Errander', opts); }
+    }catch(e){}
+  }
+  function refreshBell(){
+    const b = document.getElementById('bell-btn'); if(!b) return;
+    b.textContent = notifyEnabled ? '🔔' : '🔕';
+    b.title = notifyEnabled ? 'Phone alerts are on (tap to turn off)' : 'Phone alerts are off (tap to turn on)';
+  }
+  function setNotify(on){
+    notifyEnabled = on;
+    try{ localStorage.setItem('notify_on', on ? '1' : '0'); }catch(e){}
+    refreshBell();
+  }
+  function enableNotifications(){
+    if(!('Notification' in window)){ toast('This phone browser cannot show alerts. Keep Errander open to see updates here.'); return; }
+    const perm = Notification.permission;
+    if(perm === 'denied'){ toast('Alerts are blocked for this site. In your browser menu open Site settings, then Notifications, and allow this site.'); return; }
+    if(perm === 'granted'){ setNotify(!notifyEnabled); toast(notifyEnabled ? 'Phone alerts are on.' : 'Phone alerts are off.'); return; }
+    // Some browsers use a callback, others return a promise; handle both.
+    const done = (p)=>{ if(p === 'granted'){ setNotify(true); toast('Phone alerts are on.'); } else { setNotify(false); toast('Alerts were not turned on. You will still see updates inside the app.'); } };
+    try{
+      const r = Notification.requestPermission(done);
+      if(r && typeof r.then === 'function') r.then(done);
+    }catch(e){ toast('Could not ask for alert permission on this browser.'); }
+  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function fileToResizedDataUrl(file, maxDim){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = e=>{
+        const img = new Image();
+        img.onload = ()=>{
+          let w=img.width, h=img.height;
+          if(w>h){ if(w>maxDim){h=Math.round(h*maxDim/w); w=maxDim;} } else { if(h>maxDim){w=Math.round(w*maxDim/h); h=maxDim;} }
+          const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+          canvas.getContext('2d').drawImage(img,0,0,w,h);
+          resolve(canvas.toDataURL('image/jpeg',0.7));
+        };
+        img.onerror=reject; img.src=e.target.result;
+      };
+      reader.onerror=reject; reader.readAsDataURL(file);
+    });
+  }
+  function handlePhotoUpload(input, storageKey, previewId){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    fileToResizedDataUrl(file, 200).then(dataUrl=>{
+      localStorage.setItem(storageKey, dataUrl);
+      const img = document.getElementById(previewId);
+      img.src = dataUrl; img.classList.remove('hidden');
+    }).catch(()=> toast('Could not read that photo — try a different file.'));
+  }
+  function starRow(taskId, onPick){
+    const wrap = document.createElement('div'); wrap.className = 'stars';
+    for(let i=1;i<=5;i++){
+      const b = document.createElement('button');
+      b.type='button'; b.className='star-pick'; b.textContent='★'; b.dataset.v=i;
+      b.onclick = ()=>{ wrap.querySelectorAll('.star-pick').forEach(s=> s.classList.toggle('on', Number(s.dataset.v) <= i)); onPick(i); };
+      wrap.appendChild(b);
+    }
+    return wrap;
+  }
+  // Messages you've sent but the server hasn't shown back yet. They are re-sent
+  // automatically (same id, so never duplicated) until they appear in the chat.
+  let pendingMsgs = {};   // taskId -> [{cid, text, ts, tries, lastTry, failed}]
+  function askedList(){ try{ return JSON.parse(localStorage.getItem('asked_tasks_' + myPhone) || '[]').slice(-40); }catch(e){ return []; } }
+  function rememberAsked(id){ try{ const a = askedList().filter(x=>x!==id); a.push(id); localStorage.setItem('asked_tasks_' + myPhone, JSON.stringify(a.slice(-40))); }catch(e){} }
+  function newCid(){ return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function allMsgs(t){
+    const seen = new Set(), out = [];
+    (t.messages||[]).concat(...(t.threads||[]).map(th=>th.messages||[])).forEach(m=>{ const k = m.cid || (m.ts+m.text); if(!seen.has(k)){ seen.add(k); out.push(m); } });
+    return out.sort((x,y)=>x.ts-y.ts);
+  }
+  // pre: unique id prefix per place on screen; to: Errander phone (Boss replying to a thread);
+  // msgs: the messages of this thread; title: summary line.
+  function chatHtml(t, myName, pre, to, msgs, title, ph){
+    pre = pre || ''; to = to || ''; msgs = msgs || t.messages || [];
+    const have = new Set(msgs.map(m=>m.cid).filter(Boolean));
+    const pend = (pendingMsgs[t.id]||[]).filter(p=> !have.has(p.cid) && (p.to||'') === to);
+    const rows = msgs.map(m=>({ mine: m.by ? m.by === myPhone : m.sender === myName, sender: m.sender, text: (m.type === 'offer' ? '💰 ' : '') + m.text, state: '', kind: m.type || '' }))
+      .concat(pend.map(p=>({ mine: true, sender: myName, text: p.text, state: p.failed ? ' ⚠️ not sent — tap Send to retry' : ' ⏳' })));
+    const bubbles = rows.map(m=>{
+      if(m.kind === 'system') return `<div class="muted" style="text-align:center; font-size:0.8rem; margin:6px 0;">${escapeHtml(m.text)}</div>`;
+      return `<div class="chat-row" style="justify-content:${m.mine?'flex-end':'flex-start'};">
+        <div class="chat-bubble" style="background:${m.mine?'var(--navy)':'var(--paper-raise)'}; color:${m.mine?'var(--white)':'var(--ink)'}; ${m.state ? 'opacity:0.7;' : ''}">
+          <b>${m.mine?'You':escapeHtml(m.sender)}:</b> ${escapeHtml(m.text)}${m.state}
+        </div></div>`;
+    }).join('');
+    const last = msgs.length ? msgs[msgs.length-1] : null;
+    const waiting = last && (last.by ? last.by !== myPhone : last.sender !== myName);
+    const inId = `${pre}chat-input-${t.id}`;
+    const toArg = JSON.stringify(to).replace(/"/g, '&quot;');
+    return `<details class="chat-box"${waiting ? ' open' : ''}>
+      <summary>${title || '💬 Chat'}${rows.length ? ' (' + rows.length + ')' : ''}${waiting ? ' · <b style="color:var(--amber-deep)">new — reply</b>' : ''}</summary>
+      <div class="chat-messages">${bubbles || '<p class="muted">No messages yet — say hello.</p>'}</div>
+      ${(t.status === 'open' && (msgs.length || t.clientPhone !== myPhone)) ? priceBarHtml(t, msgs, to, pre) : ''}
+      <div class="chat-input-row">
+        <input type="text" id="${inId}" onkeydown="if(event.key==='Enter'){sendChatMessage('${t.id}','${inId}',${toArg})}" placeholder="${escapeHtml(ph || 'Type a message…')}">
+        <button class="btn btn-ghost" onclick="sendChatMessage('${t.id}','${inId}',${toArg})">Send</button>
+      </div>
+    </details>`;
+  }
+  // Boss: one chat per Errander who has written (before a match), or the matched chat.
+  function bossChatsHtml(t, pfx){
+    pfx = pfx || '';
+    if(t.erranderName){
+      return chatHtml(t, myProfile.name, pfx + 'bm-', t.erranderPhone, t.messages, '💬 Chat with ' + escapeHtml(t.erranderName), 'Message ' + t.erranderName);
+    }
+    if(t.status !== 'open' || !(t.threads||[]).length) return '';
+    return '<div class="negotiation-box"><div class="muted" style="font-weight:600; margin-bottom:6px;">Erranders talking to you about this job</div>' +
+      t.threads.map(th=> chatHtml(t, myProfile.name, pfx + 'bt-' + th.erranderPhone + '-', th.erranderPhone, th.messages, '💬 ' + escapeHtml(th.erranderName) + (lastOffer(th.messages) ? ' · offer GHS ' + lastOffer(th.messages).amount : ''), 'Reply to ' + th.erranderName)).join('') + '</div>';
+  }
+  // ---- price talk lives inside the conversation ----
+  function lastOffer(msgs){ const o = (msgs||[]).filter(m=>m.type==='offer'); return o.length ? o[o.length-1] : null; }
+  function priceBarHtml(t, msgs, to, pre){
+    const isBoss = t.clientPhone === myPhone;
+    const last = lastOffer(msgs);
+    const inId = `${pre}price-${t.id}`;
+    const toArg = JSON.stringify(to || '').replace(/"/g, '&quot;');
+    const counter = (label)=> `<input type="number" class="amount-input" id="${inId}" placeholder="GHS" min="1">
+        <button class="btn btn-ghost" onclick="offerFromChat('${t.id}','${inId}',${toArg})">${label}</button>`;
+    let line, accept = '';
+    if(isBoss){
+      if(last && last.by !== myPhone){ line = `💰 <b>${escapeHtml(last.sender)}</b> offers <b>GHS ${last.amount}</b> (you posted GHS ${t.budget})`; accept = `<button class="btn btn-primary" onclick="acceptFromChat('${t.id}',${toArg},${last.amount})">Accept GHS ${last.amount}</button>`; }
+      else if(last){ line = `💰 You offered <b>GHS ${last.amount}</b> — waiting for their answer`; }
+      else line = `💰 Your posted price: <b>GHS ${t.budget}</b>`;
+      return `<div class="receipt-box"><div>${line}</div><div class="task-actions" style="margin-top:6px;">${accept}${counter(last ? 'Counter' : 'Propose price')}</div></div>`;
+    }
+    if(!last){ line = `💰 Listed price: <b>GHS ${t.budget}</b>`; accept = `<button class="btn btn-primary" onclick="acceptTask('${t.id}',${t.budget})">Accept GHS ${t.budget}</button>`; }
+    else if(last.by === myPhone){ line = `💰 Your offer: <b>GHS ${last.amount}</b> — waiting for the Boss`; }
+    else { line = `💰 Boss says <b>GHS ${last.amount}</b>`; accept = `<button class="btn btn-primary" onclick="acceptFromChat('${t.id}','',${last.amount})">Accept GHS ${last.amount}</button>`; }
+    return `<div class="receipt-box"><div>${line}</div><div class="task-actions" style="margin-top:6px;">${accept}${counter(last ? 'Counter' : 'Offer another price')}</div></div>`;
+  }
+  async function acceptFromChat(id, to, amount){
+    const t = allTasks.find(x=>x.id===id); if(!t) return;
+    const payload = t.clientPhone === myPhone
+      ? { id, erranderPhone: to, by: 'boss', bossPhone: myPhone, expectAmount: amount }
+      : { id, erranderPhone: myPhone, by: 'errander', expectAmount: amount };
+    const r = await api('accept', 'POST', payload);
+    if(r.error) toast(r.error); else toast('Deal agreed at GHS ' + amount + '.');
+    lastRenderKey = ''; refresh();
+  }
+  async function offerFromChat(id, inputId, to){
+    const el = document.getElementById(inputId);
+    const amount = Number(el.value);
+    if(!(amount > 0)){ el.style.borderColor = 'var(--red)'; return; }
+    const r = await api('message', 'POST', { id, phone: myPhone, to: to || undefined, offer: amount, cid: newCid() });
+    if(r.error){ toast(r.error); return; }
+    if(!to) rememberAsked(id);
+    el.value = '';
+    lastRenderKey = ''; refresh();
+  }
+  // Errander: quick accept at the listed price, or a one-line status of the talks so far.
+  function quickAcceptHtml(t){
+    const last = lastOffer(t.messages);
+    if(last) return `<div class="muted" style="margin-top:8px;">${last.by === myPhone ? `Your offer GHS ${last.amount} — waiting for the Boss` : `Boss says GHS ${last.amount} — answer in the chat below`}</div>`;
+    return `<div class="task-actions"><button class="btn btn-primary" onclick="acceptTask('${t.id}',${t.budget})">Accept GHS ${t.budget}</button><span class="muted">or negotiate in the chat below</span></div>`;
+  }
+  // Errander: ask the Boss about an open job.
+  function askBossHtml(t, pre){
+    return chatHtml(t, myProfile.name, pre, '', t.messages, '💬 Ask the Boss a question', 'Ask ' + t.clientName + ' about this job…');
+  }
+  async function postPending(taskId, p){
+    p.tries++; p.lastTry = Date.now();
+    const r = await api('message', 'POST', { id: taskId, phone: myPhone, text: p.text, cid: p.cid, to: p.to || undefined });
+    if(r.error && !r.netError){ p.failed = true; p.fatal = true; toast(r.error); }
+  }
+  async function sendChatMessage(id, inputElId, to){
+    const input = document.getElementById(inputElId);
+    const text = input.value.trim();
+    if(!text) return;
+    input.value = '';
+    // retry button on a failed message re-sends the oldest failed one
+    if(!to) rememberAsked(id);
+    const p = { cid: newCid(), text, to: to || '', ts: Date.now(), tries: 0, lastTry: 0, failed: false };
+    (pendingMsgs[id] = pendingMsgs[id] || []).push(p);
+    lastRenderKey = '';
+    { const ui = snapshotUi(); renderAll(); restoreUi(ui); }
+    await postPending(id, p);
+    refresh();
+  }
+  // Called after every list refresh: confirm delivered messages, re-send missing ones.
+  function reconcilePending(){
+    Object.keys(pendingMsgs).forEach(id=>{
+      const t = allTasks.find(x=>x.id===id);
+      const have = new Set((t ? allMsgs(t) : []).map(m=>m.cid).filter(Boolean));
+      pendingMsgs[id] = pendingMsgs[id].filter(p=> !have.has(p.cid));
+      pendingMsgs[id].forEach(p=>{
+        if(p.fatal) return;
+        if(Date.now() - p.lastTry > 5000){
+          if(p.tries >= 12){ p.failed = true; return; }
+          postPending(id, p);
+        }
+      });
+      if(!pendingMsgs[id].length) delete pendingMsgs[id];
+    });
+  }
+  // Photos are stored server-side as short ids; older inline images (data: URLs) still display.
+  function photoSrc(v){ return !v ? '' : (String(v).indexOf('data:') === 0 ? v : API + '?action=photo&id=' + encodeURIComponent(v)); }
+  function contactPhoto(url){ return url ? `<img src="${photoSrc(url)}" class="photo-thumb" alt="" loading="lazy">` : ''; }
+
+  let adminPass = '';
+  let taskPhotoData = null, feedCategory = 'All';
+  function handleTaskPhoto(input){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    fileToResizedDataUrl(file, 600).then(d=>{
+      taskPhotoData = d;
+      const img = document.getElementById('c-photo-preview'); img.src = d; img.classList.remove('hidden');
+      document.getElementById('c-photo-clear').classList.remove('hidden');
+    }).catch(()=> toast('Could not read that photo — try another.'));
+  }
+  function clearTaskPhoto(){
+    taskPhotoData = null;
+    document.getElementById('c-photo-input').value = '';
+    document.getElementById('c-photo-preview').classList.add('hidden');
+    document.getElementById('c-photo-clear').classList.add('hidden');
+  }
+  function taskPhotoHtml(t){ return t.photo ? `<img src="${photoSrc(t.photo)}" class="task-photo" alt="Task photo" onclick="window.open(this.src)">` : ''; }
+  function setFeedCategory(c){ feedCategory = c; lastRenderKey = ''; refresh(); }
+  function goFindJobs(){
+    const btn = document.querySelector('nav.tabs button[data-mode="errander"]');
+    showDashTab('jobs', btn); window.scrollTo(0,0);
+  }
+  function renderFeed(){
+    if(!myProfile) return;
+    const chips = document.getElementById('feed-chips');
+    chips.innerHTML = '';
+    ['All'].concat(CATEGORIES).forEach(c=>{
+      const b = document.createElement('button'); b.type = 'button';
+      b.className = 'chip' + (feedCategory === c ? ' active' : ''); b.textContent = c;
+      b.onclick = ()=> setFeedCategory(c);
+      chips.appendChild(b);
+    });
+    const approved = myProfile.errander && myProfile.errander.status === 'approved';
+    const busy = allTasks.some(t => t.erranderPhone === myPhone && t.status === 'accepted');
+    const open = allTasks.filter(t => t.status === 'open' && (feedCategory === 'All' || t.category === feedCategory))
+                         .sort((a,b)=> b.createdAt - a.createdAt);
+    const wrap = document.getElementById('feed-list');
+    if(!open.length){ wrap.innerHTML = '<p class="muted">No open jobs in this category right now. Check back soon — or post one yourself.</p>'; return; }
+    wrap.innerHTML = '';
+    open.forEach(t=>{
+      const mine = t.clientPhone === myPhone;
+      let action;
+      if(mine) action = '<div class="muted" style="margin-top:8px;">This is your task — manage it under “Post a Task”.</div>' + bossChatsHtml(t, 'fb-');
+      else if(approved) action = busy ? '<div class="busy-note">🔒 Finish your active task before taking another.</div>' : quickAcceptHtml(t);
+      else if(myProfile.errander && myProfile.errander.status === 'pending') action = '<div class="muted" style="margin-top:8px;">⏳ Your Errander application is pending — you can take jobs once approved.</div>';
+      else action = '<div class="task-actions"><button class="btn btn-primary" onclick="goFindJobs()">Become an Errander to take this job</button></div>';
+      const el = document.createElement('div'); el.className = 'feed-card';
+      el.innerHTML = `
+        <div class="feed-by">${contactPhoto(t.clientPhoto)}<span><b>${escapeHtml(t.clientName)}</b> · ${timeAgo(t.createdAt)}</span>${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}</div>
+        <div class="task-top"><div><div class="task-cat">${escapeHtml(t.category)}</div><div class="task-desc">${escapeHtml(t.desc)}</div>
+        <div class="task-meta">📍 ${escapeHtml(t.loc)} · ${escapeHtml(t.urgency)}</div></div>${priceBlock(t.budget, t.sponsored)}</div>
+        ${taskPhotoHtml(t)}${bandLine(t)}${itemsLine(t,'errander')}
+        ${action}${(!mine && approved) ? askBossHtml(t, 'fd-') : ''}`;
+      wrap.appendChild(el);
+    });
+  }
+  async function api(action, method, body){
+    const opts = { method: method || 'GET', headers: {'Content-Type':'application/json'} };
+    try{ const tk = localStorage.getItem('my_token'); if(tk) opts.headers['X-Session'] = tk; }catch(e){}
+    if(action.indexOf('admin-') === 0 && adminPass) opts.headers['X-Admin-Passcode'] = adminPass;
+    // Browsers refuse a body on GET requests (it throws before anything is sent); GET data goes in the URL.
+    if(body && opts.method !== 'GET') opts.body = JSON.stringify(body);
+    let res;
+    try{ res = await fetch(API + '?action=' + action + (method==='GET' && body ? '&' + new URLSearchParams(body) : ''), opts); }
+    catch(e){ return { error: 'No connection to the server.', netError: true }; }
+    let out;
+    try{ out = await res.json(); }
+    catch(e){ return { error: 'Server problem (' + res.status + '). Retrying…', netError: true }; }
+    if(out && out.token){ try{ localStorage.setItem('my_token', out.token); }catch(e){} }
+    if(out && out.auth && myPhone){ sessionExpired(); }
+    return out;
+  }
+  async function loadConfig(){
+    const res = await api('config','GET');
+    if(res.feeRate!=null) feeRate = res.feeRate;
+    if(res.sponsoredCap!=null) sponsoredCap = res.sponsoredCap;
+    if(res.sponsoredUsed!=null) sponsoredUsed = res.sponsoredUsed;
+    if(res.supportPhone!=null) supportPhone = res.supportPhone;
+    if(Array.isArray(res.enabledCategories) && res.enabledCategories.length){
+      const k = JSON.stringify(res.enabledCategories);
+      if(k !== JSON.stringify(CATEGORIES)){ CATEGORIES = res.enabledCategories; try{ buildCatChips(); scheduleBandFetch(); }catch(e){ console.error(e); } }
+    }
+    if(res.payoutHoldHours!=null) payoutHoldHours = res.payoutHoldHours;
+    const field = document.getElementById('sponsor-field');
+    const slotsEl = document.getElementById('sponsor-slots');
+    if(sponsoredUsed < sponsoredCap){
+      field.classList.remove('hidden');
+      slotsEl.textContent = `${sponsoredCap - sponsoredUsed} of ${sponsoredCap} sponsored slots remaining`;
+    } else {
+      field.classList.add('hidden');
+    }
+    updateFeePreview();
+  }
+
+  /* ---------- view switching ---------- */
+  function switchView(view){
+    ['home','auth','dashboard','admin-login','admin'].forEach(v=>{
+      const el = document.getElementById('view-'+v);
+      if(el) el.classList.toggle('show', v===view);
+      else console.error('switchView: missing element #view-'+v);
+    });
+    window.scrollTo(0,0);
+  }
+  function goHome(){ switchView(myProfile ? 'dashboard' : 'home'); }
+
+  /* ---------- auth ---------- */
+  function setAuthMode(mode){
+    authMode = mode;
+    document.getElementById('auth-tab-login').classList.toggle('active', mode==='login');
+    document.getElementById('auth-tab-signup').classList.toggle('active', mode==='signup');
+    document.getElementById('auth-login-form').classList.toggle('hidden', mode!=='login');
+    document.getElementById('auth-signup-form').classList.toggle('hidden', mode!=='signup');
+    document.getElementById('auth-error').style.display = 'none';
+  }
+  async function doLogin(){
+    const phone = document.getElementById('li-phone').value.trim();
+    const pin = document.getElementById('li-pin').value.trim();
+    const errEl = document.getElementById('auth-error');
+    if(!phone || !pin){ errEl.textContent='Enter your phone and PIN.'; errEl.style.display='block'; return; }
+    const res = await api('login', 'POST', { phone, pin });
+    if(res.error){ errEl.textContent = res.error; errEl.style.display='block'; return; }
+    completeLogin(res.user);
+  }
+  async function doSignup(){
+    const name = document.getElementById('su-name').value.trim();
+    const phone = document.getElementById('su-phone').value.trim();
+    const pin = document.getElementById('su-pin').value.trim();
+    const errEl = document.getElementById('auth-error');
+    if(!name || !phone || pin.length < 4){ errEl.textContent='Fill in your name, phone, and a 4+ digit PIN.'; errEl.style.display='block'; return; }
+    const photo = localStorage.getItem('pending_signup_photo') || null;
+    if(!document.getElementById('su-agree').checked){ errEl.textContent='Please tick the box to accept the Terms and Privacy Notice.'; errEl.style.display='block'; return; }
+    const res = await api('signup', 'POST', { name, phone, pin, photo, title: document.getElementById('su-title').value, agree: true });
+    if(res.error){ errEl.textContent = res.error; errEl.style.display='block'; return; }
+    localStorage.removeItem('pending_signup_photo');
+    completeLogin(res.user);
+  }
+  function completeLogin(user){
+    myPhone = user.phone; myProfile = user;
+    localStorage.setItem('my_phone', myPhone);
+    document.getElementById('auth-error').style.display = 'none';
+    renderHeaderAuth(); renderProfileCard();
+    lastRenderKey = ''; prevSnapshot = null; allTasks = [];
+    switchView('dashboard'); refresh();
+  }
+  function sessionExpired(){
+    if(!myPhone) return;
+    logout();
+    toast('Please log in again.');
+    switchView('auth');
+  }
+  function logout(){
+    try{ localStorage.removeItem('my_token'); }catch(e){}
+    toggleProfile(false);
+    myPhone = null; myProfile = null; lastRenderKey = ''; allTasks = []; prevSnapshot = null;
+    document.getElementById('net-status').className = 'hidden';
+    localStorage.removeItem('my_phone');
+    renderHeaderAuth(); switchView('home');
+  }
+  function greetingText(){
+    if(!myProfile) return '';
+    const h = new Date().getHours();
+    const part = h < 12 ? 'Good morning' : (h < 17 ? 'Good afternoon' : 'Good evening');
+    const parts = String(myProfile.name || '').trim().split(/\s+/);
+    // With a title we use the surname ("Prof. Mensah"); without one, the first name ("Ama").
+    const who = myProfile.title ? myProfile.title + ' ' + parts[parts.length-1] : parts[0];
+    return part + ', ' + who;
+  }
+  function renderHeaderAuth(){
+    document.getElementById('hdr-avatar-btn').classList.toggle('hidden', !myProfile);
+    document.getElementById('hdr-login-btn').classList.toggle('hidden', !!myProfile);
+    if(myProfile){
+      document.getElementById('hdr-avatar-img').src = photoSrc(myProfile.photo) || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="42" height="42"%3E%3Crect width="42" height="42" fill="%23EDE9DE"/%3E%3C/svg%3E';
+      const g = document.getElementById('greet');
+      if(g) g.innerHTML = escapeHtml(greetingText()) + '<small>What would you like to do today?</small>';
+      checkAccountPrompts();
+    }
+  }
+  function toggleProfile(force){
+    const el = document.getElementById('profile-sheet');
+    const show = (typeof force === 'boolean') ? force : el.classList.contains('hidden');
+    el.classList.toggle('hidden', !show);
+  }
+  function openHelp(){
+    switchView('dashboard');
+    const b = document.getElementById('help-tab-btn');
+    if(b) showDashTab('help', b);
+  }
+  function callUs(){
+    if(supportPhone){ window.location.href = 'tel:' + String(supportPhone).replace(/\s+/g,''); return; }
+    if(myProfile){ openHelp(); toast('Our phone line is being set up. Message our team here and we will reply.'); }
+    else toast('Log in to message our team, or ask the person who invited you.');
+  }
+
+  /* ---------- profile / dashboard ---------- */
+  function renderProfileCard(){
+    if(!myProfile) return;
+    document.getElementById('profile-name').textContent = (myProfile.title ? myProfile.title + ' ' : '') + myProfile.name;
+    document.getElementById('profile-phone').textContent = myProfile.phone;
+    const img = document.getElementById('profile-photo');
+    img.src = photoSrc(myProfile.photo) || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="56" height="56"%3E%3Crect width="56" height="56" fill="%23EDE9DE"/%3E%3C/svg%3E';
+    const badge = document.getElementById('errander-badge');
+    const st = myProfile.errander ? myProfile.errander.status : 'none';
+    const labels = { none:'Not an Errander yet', pending:'⏳ Errander application pending review', approved:'✅ Approved Errander', rejected:'❌ Errander application rejected' };
+    badge.className = 'verify-badge badge-' + st;
+    badge.textContent = labels[st];
+    document.getElementById('profile-uni-badge').classList.toggle('hidden', !(myProfile.errander && myProfile.errander.universityCertified));
+    const flagBadge = document.getElementById('profile-flag-badge');
+    if(myProfile.flagCount > 0){ flagBadge.textContent = `⚠️ ${myProfile.flagCount} flagged job${myProfile.flagCount>1?'s':''}`; flagBadge.classList.remove('hidden'); }
+    else flagBadge.classList.add('hidden');
+    document.getElementById('errander-apply-panel').classList.toggle('hidden', st === 'approved' || st === 'pending');
+    document.getElementById('errander-dashboard-inner').classList.toggle('hidden', st !== 'approved');
+    const bioDisplay = document.getElementById('profile-bio-display');
+    bioDisplay.textContent = myProfile.bio ? '"' + myProfile.bio + '"' : '';
+    if(!document.getElementById('edit-profile-details').hasAttribute('open')){
+      document.getElementById('edit-name').value = myProfile.name || '';
+      document.getElementById('edit-title').value = myProfile.title || '';
+      document.getElementById('edit-bio').value = myProfile.bio || '';
+    }
+  }
+  async function saveProfileDetails(){
+    const name = document.getElementById('edit-name').value.trim();
+    const bio = document.getElementById('edit-bio').value.trim();
+    if(!name){ toast('Name cannot be empty.'); return; }
+    const res = await api('update-profile', 'POST', { phone: myPhone, name, bio, title: document.getElementById('edit-title').value });
+    if(res.error){ toast(res.error); return; }
+    myProfile = res.user;
+    renderHeaderAuth();
+    renderProfileCard();
+    document.getElementById('edit-profile-details').removeAttribute('open');
+    toast('Profile updated.');
+  }
+  function handleProfilePhotoChange(input){
+    const file = input.files && input.files[0];
+    if(!file || !myProfile) return;
+    fileToResizedDataUrl(file, 200).then(async dataUrl=>{
+      const res = await api('update-profile', 'POST', { phone: myPhone, photo: dataUrl });
+      if(res.user){ myProfile = res.user; renderProfileCard(); toast('Photo updated.'); }
+    });
+  }
+  function showDashTab(name, btn){
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('show'));
+    document.getElementById('dash-'+name).classList.add('show');
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  function buildCatChips(){
+    const wrap = document.getElementById('cat-chips');
+    wrap.innerHTML = '';
+    if(!CATEGORIES.includes(activeCategory)) activeCategory = CATEGORIES[0];
+    CATEGORIES.forEach((c,i)=>{
+      const b = document.createElement('button');
+      b.className = 'chip' + (c===activeCategory ? ' active' : '');
+      b.textContent = c;
+      b.onclick = ()=>{ activeCategory = c; document.querySelectorAll('#cat-chips .chip').forEach(x=>x.classList.remove('active')); b.classList.add('active'); scheduleBandFetch(); };
+      wrap.appendChild(b);
+    });
+  }
+  let currentBand = null, bandTimer = null;
+  function readMetrics(){
+    return {
+      km: Number(document.getElementById('c-km').value) || 0,
+      stops: Number(document.getElementById('c-stops').value) || 1,
+      waitHours: Number(document.getElementById('c-wait').value) || 0,
+      urgent: document.getElementById('c-urgent').checked
+    };
+  }
+  function scheduleBandFetch(){
+    clearTimeout(bandTimer);
+    bandTimer = setTimeout(async ()=>{
+      try{
+        const m = readMetrics();
+        const r = await api('price-band', 'GET', { category: activeCategory, km: m.km, stops: m.stops, waitHours: m.waitHours, urgent: m.urgent ? '1' : '0' });
+        if(r.band){ currentBand = r.band; updateFeePreview(); }
+      }catch(e){}
+    }, 250);
+  }
+  function updateFeePreview(){
+    const amt = Number(document.getElementById('c-budget').value) || 0;
+    const sponsored = document.getElementById('c-sponsored').checked;
+    const hint = document.getElementById('c-band-hint');
+    let over = false;
+    if(currentBand){
+      let msg = `Typical price for this job: <b>GHS ${currentBand.low}–${currentBand.high}</b> (around GHS ${currentBand.typical}).`;
+      hint.classList.remove('warn');
+      if(amt > currentBand.high){ msg += ' Your offer is above the typical range.'; hint.classList.add('warn'); over = true; }
+      else if(amt > 0 && amt < currentBand.low){ msg += ' Your offer is below the typical range — Erranders may decline or counter.'; hint.classList.add('warn'); }
+      hint.innerHTML = msg;
+    }
+    const capNote = (sponsored && over) ? `<br>⚠️ Sponsored jobs are capped at GHS ${currentBand.high}. Lower your offer or untick the sponsored option.` : '';
+    const buy = document.getElementById('c-buy').checked ? '<br>🛒 Items are paid back by you at the receipt total — not part of the figure above.' : '';
+    document.getElementById('c-fee-preview').innerHTML = (sponsored
+      ? `🎓 Sponsored slot — Errander receives GHS ${amt}, the company covers it. <b>You pay nothing for the service.</b>`
+      : `Errander receives GHS ${amt} · platform fee (${Math.round(feeRate*100)}%) GHS ${fee(amt)} · <b>you pay GHS ${amt+fee(amt)}</b>`) + capNote + buy;
+  }
+  function captureClientLocation(){
+    if(!navigator.geolocation){ toast('Location not supported.'); return; }
+    document.getElementById('c-loc-btn').textContent = 'Getting location…';
+    navigator.geolocation.getCurrentPosition(pos=>{
+      clientCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      document.getElementById('c-loc-btn').textContent = '📍 Location captured';
+    }, ()=>{ document.getElementById('c-loc-btn').textContent = '📍 Use my current location (permission denied)'; });
+  }
+  function captureErranderLocation(){
+    if(!navigator.geolocation){ toast('Location not supported.'); return; }
+    document.getElementById('e-loc-btn').textContent = 'Getting location…';
+    navigator.geolocation.getCurrentPosition(pos=>{
+      erranderCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      document.getElementById('e-loc-btn').textContent = '📍 Location enabled — sorting by distance';
+      refresh();
+    }, ()=>{ document.getElementById('e-loc-btn').textContent = '📍 Enable location (permission denied)'; });
+  }
+
+  const LIVE_IDS = ['help-chat','inbox-list','feed-list','client-active','client-rate-prompt','client-history','open-tasks','active-task','errander-rate-prompt','errander-history','earnings'];
+  function snapshotUi(){
+    const st = { vals:{}, open:{}, scroll:{}, focus:null };
+    LIVE_IDS.forEach(id=>{
+      const c = document.getElementById(id); if(!c) return;
+      c.querySelectorAll('input[id],textarea[id]').forEach(el=>{ if(el.type !== 'file' && el.value !== '') st.vals[el.id] = el.value; });
+      st.open[id] = Array.from(c.querySelectorAll('details')).map(d=>d.open);
+      st.scroll[id] = c.scrollTop;
+    });
+    const a = document.activeElement;
+    if(a && a.id && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) st.focus = { id:a.id, s:a.selectionStart, e:a.selectionEnd };
+    return st;
+  }
+  function restoreUi(st){
+    LIVE_IDS.forEach(id=>{
+      const c = document.getElementById(id); if(!c) return;
+      const ds = c.querySelectorAll('details');
+      (st.open[id]||[]).forEach((o,i)=>{ if(ds[i] && o) ds[i].open = true; });
+      c.scrollTop = st.scroll[id] || 0;
+    });
+    Object.keys(st.vals).forEach(id=>{ const el = document.getElementById(id); if(el && el.type !== 'file') el.value = st.vals[id]; });
+    if(st.focus){
+      const el = document.getElementById(st.focus.id);
+      if(el){ try{ el.focus(); if(st.focus.s != null) el.setSelectionRange(st.focus.s, st.focus.e); }catch(e){} }
+    }
+  }
+  let lastRenderKey = '', lastOkAt = null;
+  function showNetStatus(ok, msg){
+    const el = document.getElementById('net-status');
+    if(!el) return;
+    if(ok){
+      lastOkAt = new Date();
+      el.className = ''; el.style.background = 'rgba(14,122,59,0.08)'; el.style.border = '1px solid rgba(14,122,59,0.25)';
+      el.innerHTML = '🟢 Live · updated ' + lastOkAt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'}) + ' · <a href="#" onclick="manualRefresh(); return false;">Refresh now</a>';
+    } else {
+      el.className = ''; el.style.background = 'rgba(177,75,62,0.10)'; el.style.border = '1px solid rgba(177,75,62,0.4)';
+      el.innerHTML = '⚠️ ' + escapeHtml(msg) + ' · <a href="#" onclick="manualRefresh(); return false;">Try again</a>';
+    }
+  }
+  function manualRefresh(){ lastRenderKey = ''; refresh(); }
+  function renderAll(){
+    // each section is guarded so one failing section can never blank out the others
+    [renderInbox, renderHelp, renderFeed, renderClientTasks, renderOpenTasks, renderActiveTask, renderErranderRatePrompt, renderEarnings, renderReport].forEach(fn=>{
+      try{ fn(); }catch(e){ console.error(fn.name + ' failed', e); }
+    });
+  }
+  async function refresh(force){
+    if(!myProfile) return;
+    try{
+      const data = await api('list', 'GET', { phone: myPhone, ask: askedList().join(',') });
+      if(data.error || !Array.isArray(data.tasks)){ showNetStatus(false, data.error || 'Could not load jobs.'); return; }
+      showNetStatus(true);
+      try{ const tr = await api('support-list','GET',{phone:myPhone}); if(Array.isArray(tr.tickets)) myTickets = tr.tickets; }catch(e){}
+      const fresh = data.tasks;
+      checkNotifications(fresh);
+      allTasks = fresh;
+      reconcilePending();
+      const key = JSON.stringify(myTickets) + JSON.stringify(pendingMsgs) + '|' + myPhone + '|' + feedCategory + '|' + JSON.stringify(fresh) + '|' + (erranderCoords ? erranderCoords.lat + ',' + erranderCoords.lng : '') + '|' + (myProfile.errander ? myProfile.errander.status : '') + '|' + (myProfile.flagCount||0) + '|' + (myProfile.photo||'');
+      if(key !== lastRenderKey){
+        lastRenderKey = key;
+        const ui = snapshotUi();
+        renderAll();
+        restoreUi(ui);
+      }
+      // refresh own profile occasionally to pick up flagCount / review outcomes
+      api('get-user','GET',{phone:myPhone}).then(r=>{ if(r.user){ myProfile = r.user; renderProfileCard(); } });
+    }catch(e){ console.error('refresh failed', e); showNetStatus(false, 'Display problem: ' + e.message); }
+  }
+  function checkNotifications(fresh){
+    if(prevSnapshot === null){
+      prevSnapshot = {};
+      fresh.forEach(t=> prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:allMsgs(t).length, reviewStatus:t.reviewStatus, vs:t.verify&&t.verify.status });
+      return;
+    }
+    fresh.forEach(t=>{
+      const prev = prevSnapshot[t.id];
+      const involvesMe = t.clientPhone === myPhone || t.erranderPhone === myPhone;
+      if(prev){
+        if(t.clientPhone === myPhone){
+          if(prev.status === 'open' && t.status === 'accepted') toast(`🎉 ${t.erranderName} accepted "${t.desc.slice(0,30)}…"`);
+          if(prev.stage !== 'delivered' && t.stage === 'delivered') toast(`📦 Delivered — please confirm "${t.desc.slice(0,30)}…"`);
+        }
+        if(t.erranderPhone === myPhone){
+          if(prev.status === 'accepted' && t.status === 'completed') toast(`✅ Boss confirmed — payout released for "${t.desc.slice(0,30)}…"`);
+        }
+        if(involvesMe && prev.vs === 'pending' && t.verify && t.verify.status === 'verified') toast('✅ Job verified — payout released.');
+        if(involvesMe && prev.vs === 'pending' && t.verify && t.verify.status === 'problem') toast('⚠️ Our team found a problem with a job. Check Report a problem for details.');
+        if(involvesMe && prev.reviewStatus === 'pending' && t.reviewStatus === 'approved') toast(`✅ Sponsored job approved — payout released.`);
+        if(involvesMe && prev.reviewStatus === 'pending' && t.reviewStatus === 'rejected') toast(`❌ Sponsored job flagged on review — not paid.`);
+        const msgsNow = allMsgs(t);
+        const newMsgCount = msgsNow.length;
+        const chatsWithMe = t.clientPhone === myPhone || t.erranderPhone === myPhone || (t.messages||[]).length > 0;
+        if(chatsWithMe && newMsgCount > prev.msgCount){
+          const last = msgsNow[msgsNow.length-1];
+          if(last && last.by !== myPhone) toast(`💬 ${last.sender}: ${last.text.slice(0,50)}`);
+        }
+      }
+      prevSnapshot[t.id] = { status:t.status, stage:t.stage, msgCount:allMsgs(t).length, reviewStatus:t.reviewStatus, vs:t.verify&&t.verify.status };
+    });
+  }
+
+  /* ---------- Boss side ---------- */
+  async function postTask(){
+    const task = {
+      category: activeCategory,
+      desc: document.getElementById('c-desc').value.trim(),
+      loc: document.getElementById('c-loc').value.trim(),
+      lat: clientCoords ? clientCoords.lat : null,
+      lng: clientCoords ? clientCoords.lng : null,
+      urgency: document.getElementById('c-urgency').value.trim(),
+      budget: document.getElementById('c-budget').value,
+      clientPhone: myPhone,
+      sponsored: document.getElementById('c-sponsored').checked,
+      metrics: readMetrics(),
+      photo: taskPhotoData
+    };
+    if(document.getElementById('c-buy').checked){
+      task.itemsLimit = document.getElementById('c-items-limit').value;
+      if(!(Number(task.itemsLimit) > 0)){ toast('Enter the most you will reimburse for items.'); return; }
+    }
+    if(!task.desc){ toast('Describe the task first.'); return; }
+    const res = await api('create', 'POST', task);
+    if(res.error){ toast(res.error); return; }
+    document.getElementById('c-desc').value = '';
+    clearTaskPhoto();
+    document.getElementById('c-sponsored').checked = false;
+    document.getElementById('c-buy').checked = false;
+    document.getElementById('c-items-wrap').classList.add('hidden');
+    document.getElementById('c-items-limit').value = '';
+    updateFeePreview();
+    loadConfig();
+    refresh();
+  }
+  async function cancelTask(id){
+    if(!confirm('Cancel this task?')) return;
+    const r = await api('cancel', 'POST', { id, phone: myPhone }); if(r.error) toast(r.error);
+    refresh();
+  }
+  function raiseLimitHtml(t){
+    if(t.itemsLimit == null || t.status !== 'accepted' || t.stage !== 'accepted') return '';
+    return `<div class="task-actions"><input type="number" class="amount-input" id="rl-${t.id}" placeholder="New item limit (GHS)"><button class="btn btn-ghost" onclick="raiseItemLimit('${t.id}')">Raise item limit</button></div>`;
+  }
+  async function raiseItemLimit(id){
+    const v = document.getElementById('rl-'+id).value;
+    const r = await api('raise-item-limit', 'POST', { id, bossPhone: myPhone, newLimit: v });
+    if(r.error) toast(r.error); else toast('Item limit raised.');
+    refresh();
+  }
+  function reviewStatusHtml(t){
+    if(!t.sponsored || !t.bossConfirmedAt) return '';
+    if(t.reviewStatus === 'pending') return `<div class="sponsor-note">🎓 Confirmed — awaiting Errander's review before this counts as complete.</div>`;
+    if(t.reviewStatus === 'rejected') return `<div class="trust-note" style="color:var(--red); border-color:var(--red);">❌ Flagged during review — not marked complete, no payout.</div>`;
+    return '';
+  }
+  function renderInbox(){
+    if(!myProfile) return;
+    const convos = [];
+    allTasks.forEach(t=>{
+      const last = (m)=> (m && m.length) ? m[m.length-1].ts : 0;
+      if(t.clientPhone === myPhone){
+        if(t.status !== 'open' && t.status !== 'accepted') return;
+        if(t.erranderName){ if((t.messages||[]).length) convos.push({ t, to:t.erranderPhone, msgs:t.messages, who:t.erranderName, ts:last(t.messages) }); }
+        else (t.threads||[]).forEach(th=>{ if((th.messages||[]).length) convos.push({ t, to:th.erranderPhone, msgs:th.messages, who:th.erranderName, ts:last(th.messages) }); });
+      } else if((t.messages||[]).length && (t.status === 'open' || t.erranderPhone === myPhone) && t.status !== 'completed'){
+        convos.push({ t, to:'', msgs:t.messages, who:t.clientName, ts:last(t.messages) });
+      }
+    });
+    convos.sort((a,b)=> b.ts - a.ts);
+    document.getElementById('inbox-panel').classList.toggle('hidden', convos.length === 0);
+    document.getElementById('inbox-list').innerHTML = convos.map(c=>{
+      const title = '💬 ' + escapeHtml(c.who) + ' — ' + escapeHtml(c.t.desc.slice(0,32)) + (c.t.desc.length > 32 ? '…' : '');
+      return chatHtml(c.t, myProfile.name, 'ib-' + (c.to || 'boss') + '-', c.to, c.msgs, title, 'Reply to ' + c.who);
+    }).join('');
+  }
+  function updateChatBadge(){
+    const btn = document.querySelector('nav.tabs button[data-mode="boss"]');
+    if(!btn || !myProfile) return;
+    let n = 0;
+    allTasks.filter(t=>t.clientPhone===myPhone && (t.status==='open' || t.status==='accepted')).forEach(t=>{
+      const ths = t.erranderName ? [{messages:t.messages}] : (t.threads||[]);
+      ths.forEach(th=>{ const l = (th.messages||[]).slice(-1)[0]; if(l && l.by !== myPhone) n++; });
+    });
+    btn.textContent = n ? `Post a Task 💬${n}` : 'Post a Task';
+  }
+  function renderClientTasks(){
+    if(!myProfile) return;
+    updateChatBadge();
+    const mine = allTasks.filter(t => t.clientPhone === myPhone);
+    const active = mine.filter(t => t.status !== 'completed');
+    const awaitingRating = mine.filter(t => t.status === 'completed' && !t.ratingForErrander);
+    const history = mine.filter(t => t.status === 'completed' && t.ratingForErrander);
+
+    const activeWrap = document.getElementById('client-active');
+    activeWrap.innerHTML = active.length ? '' : '<p class="muted">Nothing active right now.</p>';
+    active.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      const statusLabel = t.status === 'flagged' ? 'flagged' : (verifyPending(t) ? 'being verified' : (t.stage === 'delivered' ? 'delivered' : t.status));
+      const pill = `<span class="status-pill status-${t.status === 'flagged' ? 'flagged' : t.status}">${statusLabel}</span>${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}`;
+      let contactHtml = '';
+      if(t.status !== 'open' && t.erranderName){
+        contactHtml = `<div class="contact-box">${contactPhoto(t.erranderPhoto)}📞 ${escapeHtml(t.erranderName)} — ${t.erranderPhone || 'no number given'}</div>`;
+      }
+      let confirmHtml = (t.stage === 'delivered' && !t.bossConfirmedAt) ? `<div class="task-actions"><button class="btn btn-primary" onclick="confirmTask('${t.id}')">Confirm job complete</button></div>` : '';
+      let cancelHtml = t.status === 'open' ? `<div class="task-actions"><button class="btn btn-danger" onclick="cancelTask('${t.id}')">Cancel task</button></div>` : '';
+      let chatBoxHtml = bossChatsHtml(t);
+      let proofHtml = (t.pickupPhoto || t.deliveryPhoto) ? `<div style="margin-top:8px;">
+          ${t.pickupPhoto ? `<img src="${photoSrc(t.pickupPhoto)}" class="proof-photo" alt="Pickup proof" onclick="window.open(this.src)">` : ''}
+          ${t.deliveryPhoto ? `<img src="${photoSrc(t.deliveryPhoto)}" class="proof-photo" alt="Delivery proof" onclick="window.open(this.src)">` : ''}
+        </div>` : '';
+      el.innerHTML = `
+        <div class="task-top">
+          <div>
+            <div class="task-cat">${escapeHtml(t.category)}</div>
+            <div class="task-desc">${escapeHtml(t.desc)}</div>
+            <div class="task-meta">${escapeHtml(t.loc)} · ${escapeHtml(t.urgency)} · ${timeAgo(t.createdAt)}</div>
+            ${pill}
+          </div>
+          ${priceBlock(t.budget, t.sponsored)}
+        </div>
+        ${taskPhotoHtml(t)}${bandLine(t)}${itemsLine(t,'boss')}${raiseLimitHtml(t)}${contactHtml}${proofHtml}${reviewStatusHtml(t)}${verifyNoteHtml(t,'boss')}${confirmHtml}${cancelHtml}${chatBoxHtml}${t.status !== 'open' ? reportHtml(t) : ''}`;
+      activeWrap.appendChild(el);
+    });
+
+    const rateWrap = document.getElementById('client-rate-prompt');
+    rateWrap.innerHTML = '';
+    awaitingRating.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `<div class="task-desc">Rate ${escapeHtml(t.erranderName)} for "${escapeHtml(t.desc.slice(0,40))}…"</div><p class="muted" style="margin:2px 0 0;">Were they prompt and reliable?</p>`;
+      el.appendChild(starRow(t.id, (n)=> rateTask(t.id, { ratingForErrander: n })));
+      rateWrap.appendChild(el);
+    });
+
+    document.getElementById('client-history-count').textContent = `Completed history (${history.length})`;
+    const histWrap = document.getElementById('client-history');
+    histWrap.innerHTML = history.length ? '' : '<p class="muted">Nothing here yet.</p>';
+    history.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `<div class="task-desc">${escapeHtml(t.desc)}</div><div class="task-meta">${escapeHtml(t.erranderName)} · GHS ${t.budget}${t.sponsored ? ' (sponsored)' : ' (+GHS ' + fee(t.budget) + ' fee)'} · you rated them ${'★'.repeat(t.ratingForErrander)}</div>`;
+      histWrap.appendChild(el);
+    });
+  }
+  async function confirmTask(id){
+    const res = await api('confirm', 'POST', { id, phone: myPhone });
+    if(res.error) toast(res.error);
+    refresh();
+  }
+  async function rateTask(id, payload){
+    payload.id = id; payload.phone = myPhone;
+    const r = await api('rate', 'POST', payload); if(r.error) toast(r.error);
+    refresh();
+  }
+
+  /* ---------- Errander side ---------- */
+  function selectIdType(type, btn){
+    signupIdType = type;
+    document.querySelectorAll('#id-type-row .chip').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    const label = document.getElementById('apply-id-label');
+    const input = document.getElementById('apply-id');
+    if(type === 'ghana_card'){ label.textContent = 'Ghana Card number'; input.placeholder = 'GHA-000000000-0'; }
+    else { label.textContent = "Driver's License number"; input.placeholder = 'e.g. DVLA-2201234'; }
+  }
+  async function applyErrander(){
+    const idRaw = document.getElementById('apply-id').value.trim().replace(/\s/g,'');
+    const errEl = document.getElementById('apply-error');
+    const formatValid = signupIdType === 'ghana_card' ? /^GHA-?\d{9}-?\d$/i.test(idRaw) : idRaw.replace(/[^A-Za-z0-9]/g,'').length >= 6;
+    if(!formatValid){
+      errEl.textContent = signupIdType === 'ghana_card' ? 'Enter a valid Ghana Card number (format GHA-000000000-0).' : "Enter a valid driver's license number.";
+      errEl.style.display = 'block'; return;
+    }
+    const res = await api('apply-errander', 'POST', { phone: myPhone, idType: signupIdType, idNumber: idRaw });
+    if(res.error){ errEl.textContent = res.error; errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    myProfile = res.user;
+    renderProfileCard();
+    toast('Application submitted — pending review.');
+  }
+  function renderOpenTasks(){
+    if(!myProfile || !myProfile.errander || myProfile.errander.status !== 'approved') return;
+    const wrap = document.getElementById('open-tasks');
+    const busy = allTasks.some(t => t.erranderPhone === myPhone && t.status === 'accepted');
+    let open = allTasks.filter(t => t.status === 'open');
+    if(erranderCoords){
+      open = open.map(t=> ({ t, d: (t.lat!=null && t.lng!=null) ? distKm(erranderCoords.lat, erranderCoords.lng, t.lat, t.lng) : null }))
+                 .sort((a,b)=> (a.d ?? 9999) - (b.d ?? 9999)).map(x=>x.t);
+    }
+    if(busy){ wrap.innerHTML = '<div class="busy-note">🔒 You have an active task — finish it before accepting or offering on another.</div>'; return; }
+    if(open.length === 0){ wrap.innerHTML = '<p class="muted">No open tasks right now.</p>'; return; }
+    wrap.innerHTML = '';
+    open.forEach(t=>{
+      let distLabel = '';
+      if(erranderCoords && t.lat!=null && t.lng!=null) distLabel = ' · ' + distKm(erranderCoords.lat, erranderCoords.lng, t.lat, t.lng).toFixed(1) + ' km away';
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `
+        <div class="task-top">
+          <div>
+            <div class="task-cat">${escapeHtml(t.category)}${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}</div>
+            <div class="task-desc">${escapeHtml(t.desc)}</div>
+            <div class="task-meta">${contactPhoto(t.clientPhoto)}${escapeHtml(t.loc)}${distLabel} · ${escapeHtml(t.urgency)} · ${escapeHtml(t.clientName)} · ${timeAgo(t.createdAt)}</div>
+          </div>
+          ${priceBlock(t.budget, t.sponsored)}
+        </div>
+        ${taskPhotoHtml(t)}${bandLine(t)}${itemsLine(t,'errander')}
+        ${t.sponsored ? '<div class="sponsor-note">🎓 Pickup &amp; delivery photos required for this sponsored job.</div>' : ''}
+        ${quickAcceptHtml(t)}${askBossHtml(t, 'ot-')}`;
+      wrap.appendChild(el);
+    });
+  }
+  async function acceptTask(id, expectAmount){
+    const res = await api('accept', 'POST', { id, erranderPhone: myPhone, by: 'errander', expectAmount });
+    if(res.error) toast(res.error);
+    refresh();
+  }
+  function renderActiveTask(){
+    if(!myProfile) return;
+    const t = allTasks.find(x => x.erranderPhone === myPhone && x.status === 'accepted');
+    const panel = document.getElementById('active-panel');
+    const wrap = document.getElementById('active-task');
+    if(!t){ panel.classList.add('hidden'); return; }
+    panel.classList.remove('hidden');
+    const labels = { accepted:'Accepted — head to pickup.', picked_up:'Picked up — on the way.', delivered:'Delivered.' };
+    const buttons = { accepted:'Confirm pickup', picked_up:'Confirm delivery' };
+
+    let actionHtml;
+    const buying = t.itemsLimit != null && t.stage === 'accepted';
+    if(buying){
+      actionHtml = `<div class="receipt-box">🛒 Buy the items, then enter the receipt total and take a photo of it. Limit: GHS ${t.itemsLimit}. Over the limit? Ask the Boss in chat to raise it first.</div>
+        <div class="task-actions"><input type="number" class="amount-input" id="rc-${t.id}" placeholder="Receipt total (GHS)" step="0.01">
+        <input type="file" accept="image/*" capture="environment" id="rcp-${t.id}" class="hidden" onchange="advanceWithReceipt('${t.id}', this)">
+        <button class="btn btn-primary" onclick="document.getElementById('rcp-${t.id}').click()">📷 Confirm purchase (receipt photo)</button></div>`;
+    } else if(t.stage === 'delivered'){
+      actionHtml = t.sponsored && t.reviewStatus === 'pending'
+        ? '<div class="sponsor-note">🎓 Boss confirmed — awaiting Errander review before payout.</div>'
+        : (t.verify ? verifyNoteHtml(t,'errander') : '<p class="muted">Waiting for the Boss to confirm — payout releases automatically once they do.</p>');
+    } else if(t.sponsored){
+      actionHtml = `<input type="file" accept="image/*" capture="environment" id="proof-${t.id}" class="hidden" onchange="advanceWithPhoto('${t.id}', this)">
+        <button class="btn btn-primary" onclick="document.getElementById('proof-${t.id}').click()">📷 ${buttons[t.stage]} (photo required)</button>`;
+    } else {
+      actionHtml = `<button class="btn btn-primary" onclick="advanceTask('${t.id}')">${buttons[t.stage]}</button>`;
+    }
+
+    const proofsHtml = (t.pickupPhoto || t.deliveryPhoto) ? `<div style="margin-top:8px;">
+        ${t.pickupPhoto ? `<img src="${photoSrc(t.pickupPhoto)}" class="proof-photo" alt="Pickup proof" onclick="window.open(this.src)">` : ''}
+        ${t.deliveryPhoto ? `<img src="${photoSrc(t.deliveryPhoto)}" class="proof-photo" alt="Delivery proof" onclick="window.open(this.src)">` : ''}
+      </div>` : '';
+
+    wrap.innerHTML = `
+      <div class="task-desc">${escapeHtml(t.desc)}${t.sponsored ? '<span class="sponsor-badge">🎓 Sponsored</span>' : ''}</div>
+      <div class="task-meta">${escapeHtml(t.loc)} · ${escapeHtml(t.urgency)}</div>
+      <div class="contact-box">${contactPhoto(t.clientPhoto)}📞 ${escapeHtml(t.clientName)} — ${t.clientPhone || 'no number given'}</div>
+      <div class="task-price" style="margin:6px 0;">GHS ${t.budget}</div>
+      ${taskPhotoHtml(t)}${bandLine(t)}
+      <p class="muted">${labels[t.stage]}</p>
+      ${t.stage !== 'accepted' ? itemsLine(t,'errander') : ''}
+      ${proofsHtml}
+      ${actionHtml}
+      ${chatHtml(t, myProfile.name, 'ac-', '', t.messages, '💬 Chat with ' + escapeHtml(t.clientName), 'Message ' + t.clientName)}${reportHtml(t)}`;
+  }
+  async function advanceTask(id){ const r = await api('advance', 'POST', { id, phone: myPhone }); if(r.error) toast(r.error); refresh(); }
+  function advanceWithReceipt(id, input){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    const amt = document.getElementById('rc-'+id).value;
+    if(!(Number(amt) > 0)){ toast('Enter the receipt total first, then take the photo.'); input.value = ''; return; }
+    fileToResizedDataUrl(file, 700).then(async photo=>{
+      const res = await api('advance', 'POST', { id, phone: myPhone, photo, receiptAmount: amt });
+      if(res.error) toast(res.error);
+      refresh();
+    });
+  }
+  function advanceWithPhoto(id, input){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    fileToResizedDataUrl(file, 500).then(async photo=>{
+      const res = await api('advance', 'POST', { id, phone: myPhone, photo });
+      if(res.error) toast(res.error);
+      refresh();
+    });
+  }
+  function renderErranderRatePrompt(){
+    if(!myProfile) return;
+    const wrap = document.getElementById('errander-rate-prompt');
+    wrap.innerHTML = '';
+    const needsRating = allTasks.filter(t => t.erranderPhone === myPhone && t.status === 'completed' && !t.ratingForClient);
+    if(needsRating.length === 0) return;
+    const panel = document.createElement('div'); panel.className = 'panel';
+    panel.innerHTML = '<h2>Rate your Boss</h2>';
+    needsRating.forEach(t=>{
+      const row = document.createElement('div'); row.className = 'task';
+      row.innerHTML = `<div class="task-desc">${escapeHtml(t.clientName)} — "${escapeHtml(t.desc.slice(0,40))}…"</div><p class="muted" style="margin:2px 0 0;">Did they live up to their word?</p>`;
+      row.appendChild(starRow(t.id, (n)=> rateTask(t.id, { ratingForClient: n })));
+      panel.appendChild(row);
+    });
+    wrap.appendChild(panel);
+  }
+  function renderEarnings(){
+    if(!myProfile || !myProfile.errander || myProfile.errander.status !== 'approved') return;
+    const mine = allTasks.filter(x => x.erranderPhone === myPhone && x.status === 'completed');
+    const total = mine.reduce((sum,t)=> sum + (Number(t.budget)||0), 0);
+    const rated = mine.filter(t=>t.ratingForErrander);
+    const avg = rated.length ? (rated.reduce((s,t)=>s+t.ratingForErrander,0)/rated.length).toFixed(1) : '—';
+    const held = mine.filter(t=>t.payout && t.payout.status === 'held');
+    const heldTotal = held.reduce((s,t)=> s + (Number(t.budget)||0), 0);
+    const mode = (myProfile.errander.payoutMode === 'weekly') ? 'weekly' : 'instant';
+    document.getElementById('earnings').innerHTML = `
+      <div class="stat"><span>Completed jobs</span><span>${mine.length}</span></div>
+      <div class="stat"><span>Total earned</span><span>GHS ${total}</span></div>
+      <div class="stat"><span>Waiting for weekly payout</span><span>GHS ${heldTotal}</span></div>
+      <div class="stat"><span>Your average rating</span><span>${avg}${rated.length ? ' ★' : ''}</span></div>
+      <div style="margin-top:10px;"><b style="font-size:0.88rem;">How do you want to be paid?</b>
+        <div class="feed-chips" style="margin-top:6px;">
+          <button class="chip${mode==='instant'?' active':''}" onclick="setPayoutMode('instant')">⚡ As each job ends</button>
+          <button class="chip${mode==='weekly'?' active':''}" onclick="setPayoutMode('weekly')">📅 Once a week</button>
+        </div>
+        <p class="muted" style="font-size:0.8rem; margin:6px 0 0;">${mode==='instant' ? 'Your pay is released as soon as each job is confirmed and checked.' : 'Your pay is held and released together in the weekly payout, at least ' + payoutHoldHours + ' hours after each job. The planned Loyalty Bonus is for weekly payouts; it is not live yet.'} Changing this only affects future jobs.</p>
+      </div>`;
+    document.getElementById('errander-history-count').textContent = `Completed history (${mine.length})`;
+    const histWrap = document.getElementById('errander-history');
+    histWrap.innerHTML = mine.length ? '' : '<p class="muted">Nothing here yet.</p>';
+    mine.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `<div class="task-desc">${escapeHtml(t.desc)}${t.sponsored ? ' <span class="sponsor-badge">🎓</span>' : ''}</div><div class="task-meta">${escapeHtml(t.clientName)} · GHS ${t.budget}${t.payout ? (t.payout.status==='paid' ? ' · 💸 paid' : ' · ⏳ held for weekly payout') : ''}${t.ratingForErrander ? ' · they rated you ' + '★'.repeat(t.ratingForErrander) : ''}</div>`;
+      histWrap.appendChild(el);
+    });
+  }
+
+  function renderReport(){
+    if(!myProfile) return;
+    const posted = allTasks.filter(t => t.clientPhone === myPhone);
+    const bossCompleted = posted.filter(t=>t.status==='completed');
+    const bossActive = posted.filter(t=>t.status==='open' || t.status==='accepted');
+    const bossCancelled = posted.filter(t=>t.status==='cancelled' || t.status==='flagged');
+    const totalSpent = bossCompleted.reduce((s,t)=> s + (t.sponsored ? 0 : (Number(t.budget)||0)+fee(Number(t.budget)||0)), 0);
+    document.getElementById('report-boss').innerHTML = `
+      <div class="stat"><span>Total tasks requested</span><span>${posted.length}</span></div>
+      <div class="stat"><span>Completed</span><span>${bossCompleted.length}</span></div>
+      <div class="stat"><span>Active / open</span><span>${bossActive.length}</span></div>
+      <div class="stat"><span>Cancelled / flagged</span><span>${bossCancelled.length}</span></div>
+      <div class="stat"><span>Total spent incl. fees</span><span>GHS ${totalSpent}</span></div>`;
+    if(myProfile.errander && myProfile.errander.status === 'approved'){
+      const jobs = allTasks.filter(t => t.erranderPhone === myPhone);
+      const completed = jobs.filter(t=>t.status==='completed');
+      const inProgress = jobs.filter(t=>t.status==='accepted');
+      const earned = completed.reduce((s,t)=>s+(Number(t.budget)||0),0);
+      const expected = inProgress.reduce((s,t)=>s+(Number(t.budget)||0),0);
+      document.getElementById('report-errander').innerHTML = `
+        <div class="stat"><span>Jobs completed</span><span>${completed.length}</span></div>
+        <div class="stat"><span>Total earned</span><span>GHS ${earned}</span></div>
+        <div class="stat"><span>Expected (in progress)</span><span>GHS ${expected}</span></div>`;
+    } else {
+      document.getElementById('report-errander').innerHTML = '<p class="muted">Not an approved Errander yet — apply from the "Find Jobs" tab.</p>';
+    }
+  }
+  async function resetDemo(){
+    if(!confirm('Reset all pilot task data for everyone?')) return;
+    const r = await api('admin-reset', 'POST', {}); if(r.error) toast(r.error);
+    prevSnapshot = null;
+    loadConfig();
+    refresh();
+  }
+
+  /* ---------- admin ---------- */
+  async function adminLogin(){
+    const pass = document.getElementById('admin-pass').value;
+    const res = await api('admin-login', 'POST', { passcode: pass });
+    const errEl = document.getElementById('admin-login-error');
+    if(res.error){ errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    adminAuthed = true; adminPass = pass;
+    switchView('admin');
+    loadPriceEditor();
+    refreshAdmin();
+    refreshAdminSupport();
+    renderAdminCategories(CATEGORIES);
+  }
+  let lastAdminKey = '';
+  async function refreshAdmin(){
+    if(!adminAuthed) return;
+    const [usersRes, tasksRes] = await Promise.all([ api('admin-list-users','GET'), api('admin-list-tasks','GET') ]);
+    const users = usersRes.users || [];
+    const tasks = tasksRes.tasks || [];
+    const akey = JSON.stringify([users, tasks]);
+    if(akey === lastAdminKey) return;   // unchanged: don't rebuild the page under the admin's finger
+    lastAdminKey = akey;
+    try{ renderPayoutQueue(tasks); }catch(e){ console.error('payout queue failed', e); }
+    try{ renderVerifyQueue(tasks); }catch(e){ console.error('verify queue failed', e); }
+
+    const sponsorWrap = document.getElementById('admin-sponsor-review');
+    const pendingSponsored = tasks.filter(t => t.sponsored && t.reviewStatus === 'pending');
+    sponsorWrap.innerHTML = pendingSponsored.length ? '' : '<p class="muted">Nothing awaiting review.</p>';
+    pendingSponsored.forEach(t=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `
+        <div class="task-desc">${escapeHtml(t.desc)}</div>
+        <div class="task-meta">Boss: ${escapeHtml(t.clientName)} (${t.clientPhone}) · Errander: ${escapeHtml(t.erranderName)} (${t.erranderPhone}) · GHS ${t.budget}</div>
+        ${bandLine(t)}${t.receiptAmount != null ? `<div class="task-meta">🧾 Receipt GHS ${t.receiptAmount} (paid by Boss, not sponsored)</div>` : ''}
+        <div style="margin-top:8px;">
+          ${t.pickupPhoto ? `<img src="${photoSrc(t.pickupPhoto)}" class="proof-photo" alt="Pickup"><span class="muted">pickup</span>` : '<span class="muted">No pickup photo</span>'}
+          ${t.deliveryPhoto ? `<img src="${photoSrc(t.deliveryPhoto)}" class="proof-photo" alt="Delivery" style="margin-left:10px;"><span class="muted">delivery</span>` : '<span class="muted">No delivery photo</span>'}
+        </div>
+        <div class="task-actions">
+          <button class="btn btn-primary" onclick="adminReviewSponsored('${t.id}','approved')">Approve &amp; pay</button>
+          <button class="btn btn-danger" onclick="adminReviewSponsored('${t.id}','rejected')">Reject — flag both</button>
+        </div>`;
+      sponsorWrap.appendChild(el);
+    });
+
+    const pending = users.filter(u => u.errander && u.errander.status === 'pending');
+    const pendingWrap = document.getElementById('admin-pending');
+    pendingWrap.innerHTML = pending.length ? '' : '<p class="muted">No pending applications.</p>';
+    pending.forEach(u=>{
+      const el = document.createElement('div'); el.className = 'task';
+      el.innerHTML = `
+        <div class="task-top"><div>${contactPhoto(u.photo)}<b>${escapeHtml(u.name)}</b> — ${u.phone}<div class="task-meta">${u.errander.idType === 'ghana_card' ? 'Ghana Card' : "Driver's License"}: ${u.errander.idNumber}</div></div></div>
+        <div class="task-actions">
+          <button class="btn btn-primary" onclick="adminDecide('${u.phone}','approved',this)">Approve</button>
+          <button class="btn btn-danger" onclick="adminDecide('${u.phone}','rejected',this)">Reject</button>
+        </div>`;
+      pendingWrap.appendChild(el);
+    });
+
+    const usersWrap = document.getElementById('admin-users');
+    usersWrap.innerHTML = '';
+    users.forEach(u=>{
+      const st = u.errander ? u.errander.status : 'none';
+      const row = document.createElement('div'); row.className = 'task';
+      const resetBtn = `<button class="btn btn-ghost" onclick="adminResetPin('${u.phone}')">🔑 Reset PIN</button>`;
+      const uniBtn0 = st === 'approved' ? `<button class="btn btn-ghost" onclick="adminToggleUni('${u.phone}')">${u.errander.universityCertified ? '🎓 Remove certification' : '🎓 Grant University certification'}</button>` : '';
+      row.innerHTML = `<div class="task-top"><div>${contactPhoto(u.photo)}${escapeHtml(u.name)} (${u.phone})${u.errander && u.errander.universityCertified ? '<span class="uni-badge">🎓</span>' : ''}${u.flagCount ? '<span class="flag-badge">⚠️ '+u.flagCount+'</span>' : ''}</div><span class="status-pill badge-${st}">${st}</span></div><div class="task-actions">${uniBtn0}${resetBtn}</div>`;
+      usersWrap.appendChild(row);
+    });
+
+    const counts = { open:0, accepted:0, completed:0, cancelled:0, flagged:0 };
+    tasks.forEach(t=>{ if(counts[t.status] !== undefined) counts[t.status]++; });
+    const sponsoredCompleted = tasks.filter(t=>t.sponsored && t.status==='completed').length;
+    document.getElementById('admin-task-stats').innerHTML = `
+      <div class="stat"><span>Open</span><span>${counts.open}</span></div>
+      <div class="stat"><span>In progress</span><span>${counts.accepted}</span></div>
+      <div class="stat"><span>Completed</span><span>${counts.completed}</span></div>
+      <div class="stat"><span>Flagged</span><span>${counts.flagged}</span></div>
+      <div class="stat"><span>Cancelled</span><span>${counts.cancelled}</span></div>
+      <div class="stat"><span>Sponsored slots used</span><span>${sponsoredCompleted} / ${sponsoredCap}</span></div>
+      <div class="stat"><span>Total tasks ever posted</span><span>${tasks.length}</span></div>`;
+  }
+  let priceCfg = null;
+  async function loadPriceEditor(){
+    const r = await api('admin-get-price-config', 'GET');
+    if(!r.config) return;
+    priceCfg = r.config;
+    const c = priceCfg;
+    let html = `<div class="price-grid"><label class="muted">Low ×<input id="pc-low" type="number" step="0.05" value="${c.lowFactor}"></label><label class="muted">High ×<input id="pc-high" type="number" step="0.05" value="${c.highFactor}"></label><label class="muted">Urgent +<input id="pc-urg" type="number" step="0.05" value="${c.urgentUplift}"></label><span></span></div>`;
+    html += `<div class="price-grid muted"><span>Category</span><span>Base</span><span>Per km</span><span>Per extra stop</span></div>`;
+    Object.keys(c.categories).forEach((cat,i)=>{
+      const v = c.categories[cat];
+      html += `<div class="muted" style="margin-top:6px;font-weight:600;">${cat}</div><div class="price-grid"><input id="pc-${i}-base" type="number" value="${v.base}"><input id="pc-${i}-km" type="number" value="${v.perKm}"><input id="pc-${i}-stop" type="number" value="${v.perStop}"><input id="pc-${i}-hr" type="number" value="${v.perHour}" title="Per hour"></div>`;
+    });
+    html += `<p class="muted">Columns: base · per km · per extra stop · per hour (4th box).</p>`;
+    document.getElementById('admin-price-editor').innerHTML = html;
+  }
+  async function savePriceConfig(){
+    if(!priceCfg) return;
+    const cfg = { lowFactor: document.getElementById('pc-low').value, highFactor: document.getElementById('pc-high').value, urgentUplift: document.getElementById('pc-urg').value, categories:{} };
+    Object.keys(priceCfg.categories).forEach((cat,i)=>{
+      cfg.categories[cat] = { base: document.getElementById(`pc-${i}-base`).value, perKm: document.getElementById(`pc-${i}-km`).value, perStop: document.getElementById(`pc-${i}-stop`).value, perHour: document.getElementById(`pc-${i}-hr`).value };
+    });
+    const r = await api('admin-set-price-config', 'POST', { config: cfg });
+    if(r.error){ toast(r.error); return; }
+    toast('Price bands saved.'); loadPriceEditor();
+  }
+  async function adminDecide(phone, decision, btn){
+    btn.closest('.task').style.opacity = '0.5';
+    await api('admin-decide', 'POST', { phone, decision });
+    refreshAdmin();
+  }
+  async function adminToggleUni(phone){
+    await api('admin-toggle-university', 'POST', { phone });
+    refreshAdmin();
+  }
+  async function adminReviewSponsored(id, decision){
+    await api('admin-review-sponsored', 'POST', { id, decision });
+    refreshAdmin();
+  }
+
+  /* ---------- support: FAQ, help chat, report a problem ---------- */
+  let payoutHoldHours = 48, myTickets = [], supportPhone = '', faqGroup = 'all';
+  const FAQ = [
+    {g:'boss', q:'How do I post a task and what will it cost?', a:'Open Post a Task, describe it, add photos if useful, and set the location and number of stops. The app shows a fair price range. You pay the Errander\'s agreed price plus the platform fee, and the total is shown before you confirm.'},
+    {g:'boss', q:'Can I negotiate the price?', a:'Yes. Open the chat with an Errander and either of you can send an offer. A price is only agreed when you tap Accept on the latest offer; the chat then shows "Agreed at GHS X".'},
+    {g:'boss', q:'When do I pay, and is my money safe?', a:'During this pilot no real money moves through the app: sponsored jobs are paid by the company and other jobs are settled as explained in your pilot briefing. After launch you will pay into escrow through a licensed payment partner, and the Errander is paid only after you confirm the job.'},
+    {g:'boss', q:'The Errander is late or did not show up.', a:'Message them in the chat first. If there is no reply, open the task and tap "Report a problem". You will not be charged for work that was not done.'},
+    {g:'boss', q:'The work is poor or incomplete.', a:'Do not confirm the job. Tap "Report a problem" on the task and say what is wrong. Our team reads the chat and the proof photos, then decides on a fix, partial refund or full refund.'},
+    {g:'boss', q:'Who pays for items bought during an errand?', a:'You do. Set an item limit when you post. The Errander uploads the receipt photo and you reimburse the receipt amount only. If they need more, they ask in chat and you raise the limit in the app. Item costs are never sponsored.'},
+    {g:'boss', q:'Can I cancel a task?', a:'Yes, any time while it is still open (before an Errander is accepted). After acceptance, message the Errander and use "Report a problem" if you cannot agree.'},
+    {g:'boss', q:'Is it safe to send someone to my home?', a:'Check their verified status, rating and job history, and chat first. Have someone else at home if you can, and do not hand over keys or valuables. If anything feels wrong, end the job and report it.'},
+    {g:'errander', q:'How do I become an Errander?', a:'Sign up, choose Apply as Errander, and submit a Ghana Card or driver\'s licence with your photo. Our team reviews it before you can take jobs.'},
+    {g:'errander', q:'How and when do I get paid?', a:'During this pilot payment is handled as explained in your pilot briefing; sponsored jobs are paid after the Boss confirms and our team reviews your proof photos. After launch, earnings are paid to your Mobile Money wallet once the Boss confirms.'},
+    {g:'errander', q:'The Boss has not confirmed my job.', a:'Message them in chat. If there is still no reply, tap "Report a problem" on the job. Always upload your proof photos, because they protect you.'},
+    {g:'errander', q:'Why can I only do one job at a time?', a:'A new job unlocks when you mark your current one complete. This keeps service quality high.'},
+    {g:'errander', q:'What is a sponsored job?', a:'A job paid for by the company during the pilot. You must upload a photo at each step, the Boss confirms, then our team reviews before payment. Only one sponsored job is allowed per Boss and Errander pair.'},
+    {g:'errander', q:'The Boss changed the task or wants extra work.', a:'Do not do extra work for the same price. Ask for a new offer in chat and wait for the Boss to accept it before you start.'},
+    {g:'errander', q:'Can the Boss pay me directly, outside the app?', a:'Please do not. Outside the app there is no proof, no dispute support and no refund route. Accounts that move jobs off the platform can be suspended.'},
+    {g:'errander', q:'I feel unsafe on a job.', a:'Leave. Your safety comes before any payment. For an emergency call the police or emergency services first, then tell us using Report a problem.'},
+    {g:'safety', q:'How are people verified?', a:'Erranders submit an ID and a photo, and our team reviews them before approval. Duplicate IDs are blocked. Verification lowers risk but does not remove it, so keep using your own judgement.'},
+    {g:'safety', q:'How is my PIN protected?', a:'Your PIN is stored only as a hash, never in plain text. Never share your PIN. We will never ask for it. In this pilot, login does not yet use session tokens or attempt limits; we will add them before public launch.'},
+    {g:'safety', q:'Who can see my phone number and ID?', a:'Other users see your name, photo and rating. Your ID is used only for verification and is seen by our team. Pilot photo links are unguessable but not yet login-protected; private storage is planned before public launch. Your data is handled under Ghana\'s Data Protection Act, 2012 (Act 843).'},
+    {g:'safety', q:'How do I spot a scam?', a:'Red flags: being asked to pay or be paid outside the app, to share your PIN or any code, to click a strange link, or being rushed. Our team will never ask for your PIN or Mobile Money PIN.'},
+    {g:'safety', q:'Someone is harassing me.', a:'Do not reply. Tap Report a problem on the job or message our team below. We can warn, suspend or remove users.'},
+    {g:'safety', q:'What is not allowed on Errander?', a:'Anything illegal, plus weapons, drugs, adult services and anything involving minors or unsafe tasks. Our tagline is "Anything Legal", and tasks that break it are removed.'},
+    {g:'safety', q:'How are disputes decided?', a:'Our team reads the chat, the agreed price and the proof photos or receipts, and may call both sides. We explain the decision in the app.'},
+    {g:'safety', q:'Are ratings real?', a:'Only the two people on a completed job can rate each other. We remove ratings that are abusive or manipulated.'}
+  ];
+  const FAQ_GROUPS = [['all','All'],['boss','Boss'],['errander','Errander'],['safety','Safety & privacy']];
+  function renderFaq(){
+    const chips = document.getElementById('faq-chips');
+    if(!chips) return;
+    chips.innerHTML = FAQ_GROUPS.map(g=>`<button class="chip${faqGroup===g[0]?' active':''}" onclick="faqGroup='${g[0]}'; renderFaq();">${g[1]}</button>`).join('');
+    const q = (document.getElementById('faq-search').value || '').toLowerCase().trim();
+    const rows = FAQ.filter(f=> (faqGroup==='all' || f.g===faqGroup) && (!q || (f.q + ' ' + f.a).toLowerCase().indexOf(q) >= 0));
+    document.getElementById('faq-list').innerHTML = rows.length ? rows.map(f=>`<details class="chat-box"><summary>${escapeHtml(f.q)}</summary><p style="margin:6px 0; font-size:0.88rem;">${escapeHtml(f.a)}</p></details>`).join('')
+      : '<p class="muted">No match. Message our team below and we will help.</p>';
+  }
+  function supportBubbles(tk, mePhone){
+    return (tk && tk.messages || []).map(m=>{
+      const mine = m.from === 'user';
+      const sender = mine ? 'You' : 'Errander Support';
+      return `<div class="chat-row" style="justify-content:${mine?'flex-end':'flex-start'};"><div class="chat-bubble" style="background:${mine?'var(--navy)':'var(--paper-raise)'}; color:${mine?'var(--white)':'var(--ink)'};"><b>${sender}:</b> ${escapeHtml(m.text)}</div></div>`;
+    }).join('');
+  }
+  function helpTicket(){ return myTickets.find(x=>x.kind==='chat') || null; }
+  function renderHelp(){
+    const el = document.getElementById('help-chat');
+    if(!el || !myProfile) return;
+    const tk = helpTicket();
+    const contact = supportPhone ? `<p class="muted" style="font-size:0.82rem;">Urgent? Call <a href="tel:${escapeHtml(supportPhone)}">${escapeHtml(supportPhone)}</a> or <a href="https://wa.me/${escapeHtml(String(supportPhone).replace(/\D/g,''))}" target="_blank" rel="noopener">WhatsApp us</a>. In an emergency, call the police first.</p>` : '<p class="muted" style="font-size:0.82rem;">In an emergency, call the police first.</p>';
+    document.getElementById('help-note').textContent = 'A real person reads this. We usually reply within a few hours between 8am and 8pm.';
+    el.innerHTML = `<div class="chat-messages" style="max-height:260px;">${supportBubbles(tk) || '<p class="muted">No messages yet. Tell us what happened.</p>'}</div>
+      ${tk && tk.status === 'resolved' ? '<p class="muted">✅ Marked resolved. Send a message to reopen.</p>' : ''}
+      <div class="chat-input-row"><input type="text" id="hp-input" onkeydown="if(event.key==='Enter'){sendHelp()}" placeholder="Write to our team…"><button class="btn btn-ghost" onclick="sendHelp()">Send</button></div>${contact}`;
+    const n = myTickets.filter(x=>x.awaiting==='user' && x.status==='open').length;
+    const b = document.getElementById('help-tab-btn');
+    if(b) b.textContent = n ? `❓ Help 💬${n}` : '❓ Help';
+  }
+  async function sendHelp(){
+    const inp = document.getElementById('hp-input'); const text = inp.value.trim();
+    if(!text) return;
+    const r = await api('support-send','POST',{ phone: myPhone, kind:'chat', text, cid:newCid() });
+    if(r.error){ toast(r.error); return; }
+    inp.value = ''; toast('Sent to our team.'); refresh();
+  }
+  function reportTicket(taskId){ return myTickets.find(x=>x.kind==='report' && x.taskId===taskId && x.status==='open') || null; }
+  function reportHtml(t){
+    const tk = reportTicket(t.id);
+    const inId = 'rp-' + t.id;
+    return `<details class="chat-box"${tk ? ' open' : ''}><summary>⚠️ ${tk ? 'Problem reported' + (tk.awaiting==='user' ? ' · <b style="color:var(--amber-deep)">team replied</b>' : ' · waiting for our team') : 'Report a problem'}</summary>
+      ${tk ? `<div class="chat-messages">${supportBubbles(tk)}</div>` : '<p class="muted" style="margin:6px 0;">Tell us what went wrong. Our team will read this job\'s chat and photos and get back to you here.</p>'}
+      <div class="chat-input-row"><input type="text" id="${inId}" placeholder="${tk ? 'Add more details…' : 'What went wrong?'}" onkeydown="if(event.key==='Enter'){sendReport('${t.id}')}"><button class="btn btn-ghost" onclick="sendReport('${t.id}')">Send</button></div></details>`;
+  }
+  async function sendReport(taskId){
+    const inp = document.getElementById('rp-' + taskId); const text = inp.value.trim();
+    if(!text){ toast('Write what went wrong first.'); return; }
+    const r = await api('support-send','POST',{ phone: myPhone, kind:'report', taskId, text, cid:newCid() });
+    if(r.error){ toast(r.error); return; }
+    inp.value = ''; toast('Reported. Our team will reply here.'); refresh();
+  }
+
+  /* admin side */
+  let adminTickets = [], lastSupportKey = '';
+  async function refreshAdminSupport(){
+    const r = await api('admin-support-list','GET');
+    if(!Array.isArray(r.tickets)) return;
+    const k = JSON.stringify(r.tickets);
+    if(k === lastSupportKey) return;
+    lastSupportKey = k; adminTickets = r.tickets;
+    const wrap = document.getElementById('admin-support');
+    const vals = {}, opens = {};
+    wrap.querySelectorAll('input[id]').forEach(i=>{ if(i.value) vals[i.id] = i.value; });
+    wrap.querySelectorAll('details[data-tk]').forEach(d=>{ opens[d.dataset.tk] = d.open; });
+    const order = adminTickets.slice().sort((a,b)=> (a.status==='open'?0:1)-(b.status==='open'?0:1) || (b.awaiting==='admin'?1:0)-(a.awaiting==='admin'?1:0) || b.updatedAt-a.updatedAt);
+    wrap.innerHTML = order.length ? order.map(tk=>{
+      const c = tk.context;
+      const ctx = c ? `<div class="task-meta">Job: ${escapeHtml(c.desc)} · ${c.status}/${c.stage||''} · GHS ${c.budget}${c.sponsored?' · sponsored':''}<br>Boss: ${escapeHtml(c.boss)} (${c.bossPhone}) · Errander: ${escapeHtml(c.errander||'-')} (${c.erranderPhone||'-'})</div>
+        <div>${[c.pickupPhoto,c.deliveryPhoto,c.receiptPhoto].filter(Boolean).map(p=>`<img src="${photoSrc(p)}" class="proof-photo" onclick="window.open(this.src)">`).join('')}</div>` : '';
+      const icon = tk.status==='resolved' ? '✅' : (tk.awaiting==='admin' ? '🔴' : '🟡');
+      return `<details class="chat-box" data-tk="${tk.id}"${opens[tk.id] || (tk.status==='open' && tk.awaiting==='admin' && opens[tk.id]===undefined) ? ' open' : ''}>
+        <summary>${icon} ${escapeHtml(tk.name)} (${escapeHtml(tk.role)}, ${tk.phone}) · ${escapeHtml(tk.subject)} · ${timeAgo(tk.updatedAt)}</summary>
+        ${ctx}<div class="chat-messages" style="max-height:260px;">${(tk.messages||[]).map(m=>{ const a = m.from==='admin'; return `<div class="chat-row" style="justify-content:${a?'flex-end':'flex-start'};"><div class="chat-bubble" style="background:${a?'var(--navy)':'var(--paper-raise)'}; color:${a?'var(--white)':'var(--ink)'};"><b>${a?'Support':escapeHtml(m.sender)}:</b> ${escapeHtml(m.text)}</div></div>`; }).join('')}</div>
+        <div class="chat-input-row"><input type="text" id="as-in-${tk.id}" placeholder="Reply…" onkeydown="if(event.key==='Enter'){adminSupportReply('${tk.id}',false)}"><button class="btn btn-ghost" onclick="adminSupportReply('${tk.id}',false)">Reply</button></div>
+        <div class="task-actions">${tk.status==='open' ? `<button class="btn btn-primary" onclick="adminSupportReply('${tk.id}',true)">Reply &amp; resolve</button>` : `<button class="btn btn-ghost" onclick="adminSupportReply('${tk.id}','reopen')">Reopen</button>`}</div></details>`;
+    }).join('') : '<p class="muted">No support messages yet.</p>';
+    Object.keys(vals).forEach(id=>{ const el = document.getElementById(id); if(el) el.value = vals[id]; });
+  }
+  async function adminSupportReply(id, resolve){
+    const inp = document.getElementById('as-in-' + id); const text = inp ? inp.value.trim() : '';
+    if(!text && resolve !== true && resolve !== 'reopen') return;
+    const body = { id, text, cid:newCid() };
+    if(resolve === true) body.resolved = true;
+    if(resolve === 'reopen') body.resolved = false;
+    const r = await api('admin-support-reply','POST',body);
+    if(r.error){ toast(r.error); return; }
+    if(inp) inp.value = '';
+    lastSupportKey = ''; refreshAdminSupport();
+  }
+  try{ renderFaq(); }catch(e){ console.error('renderFaq failed', e); }
+
+  /* ---------- verification (human check before payout) ---------- */
+  function verifyPending(t){ return !!(t.verify && t.verify.status === 'pending'); }
+  function verifyNoteHtml(t, who){
+    if(!t.verify) return '';
+    if(t.verify.status === 'pending'){
+      const lv = t.verify.level === 'visit' ? 'a quick in-person check' : 'a quick confirmation call';
+      return `<div class="trust-note">🔎 ${who==='boss' ? 'Thanks for confirming.' : 'The Boss confirmed.'} For your protection, our team will do ${lv} before payout is released. Please answer calls from us.</div>`;
+    }
+    if(t.verify.status === 'verified') return '<div class="trust-note">✅ Verified by our team.</div>';
+    return `<div class="trust-note" style="color:var(--red); border-color:var(--red);">⚠️ Our team found a problem with this job${t.verify.note ? ': ' + escapeHtml(t.verify.note) : ''}. Use Report a problem to reply.</div>`;
+  }
+  async function adminVerifyDecide(id, decision){
+    const note = (document.getElementById('vn-'+id)||{}).value || '';
+    const agent = (document.getElementById('va-'+id)||{}).value || '';
+    if(decision !== 'verified' && !note.trim()){ toast('Add a short note explaining the problem.'); return; }
+    const r = await api('admin-verify-decide','POST',{ id, decision, note, agent });
+    if(r.error){ toast(r.error); return; }
+    lastAdminKey = ''; refreshAdmin();
+  }
+  function renderVerifyQueue(tasks){
+    const wrap = document.getElementById('admin-verify');
+    if(!wrap) return;
+    const pend = tasks.filter(t=>t.verify && t.verify.status === 'pending');
+    const vals = {};
+    wrap.querySelectorAll('input[id]').forEach(i=>{ if(i.value) vals[i.id] = i.value; });
+    wrap.innerHTML = pend.length ? pend.map(t=>{
+      const v = t.verify;
+      const steps = v.level === 'visit'
+        ? ['Call the Boss and the Errander separately', 'Visit the location or meet the Errander; check the item/work', 'Match proof photos to the job', 'Check the receipt amount if items were bought']
+        : ['Call the Boss: was the job done as agreed?', 'Call the Errander: confirm the same story', 'Check proof photos against the description'];
+      return `<div class="task"><div class="task-desc">${v.level==='visit'?'🏠 Site visit':'📞 Call check'} · ${escapeHtml(t.desc)}</div>
+        <div class="task-meta">GHS ${t.budget} · ${escapeHtml(v.reasons.join(' · '))}</div>
+        <div class="task-meta">Boss: ${escapeHtml(t.clientName)} <a href="tel:${t.clientPhone}">${t.clientPhone}</a> · Errander: ${escapeHtml(t.erranderName)} <a href="tel:${t.erranderPhone}">${t.erranderPhone}</a></div>
+        <div>${[t.pickupPhoto,t.deliveryPhoto,t.receiptPhoto].filter(Boolean).map(p=>`<img src="${photoSrc(p)}" class="proof-photo" onclick="window.open(this.src)">`).join('')}</div>
+        <ul class="muted" style="margin:6px 0 6px 18px; padding:0; font-size:0.82rem;">${steps.map(x=>'<li>'+x+'</li>').join('')}</ul>
+        <div class="chat-input-row"><input type="text" id="va-${t.id}" placeholder="Checked by (agent name)"></div>
+        <div class="chat-input-row"><input type="text" id="vn-${t.id}" placeholder="Note (required if there is a problem)"></div>
+        <div class="task-actions"><button class="btn btn-primary" onclick="adminVerifyDecide('${t.id}','verified')">✅ Verified, release payout</button>
+        <button class="btn btn-danger" onclick="adminVerifyDecide('${t.id}','flag-errander')">Flag Errander</button>
+        <button class="btn btn-danger" onclick="adminVerifyDecide('${t.id}','flag-boss')">Flag Boss</button></div></div>`;
+    }).join('') : '<p class="muted">Nothing waiting for a check.</p>';
+    Object.keys(vals).forEach(id=>{ const el = document.getElementById(id); if(el) el.value = vals[id]; });
+  }
+
+  async function changePin(){
+    const r = await api('change-pin','POST',{ phone: myPhone, oldPin: document.getElementById('cp-old').value.trim(), newPin: document.getElementById('cp-new').value.trim() });
+    if(r.error){ toast(r.error); return; }
+    document.getElementById('cp-old').value = ''; document.getElementById('cp-new').value = '';
+    document.getElementById('change-pin-details').removeAttribute('open');
+    toast('PIN changed. Other devices were signed out.');
+  }
+
+  /* ---------- payout choice ---------- */
+  async function setPayoutMode(mode){
+    const r = await api('set-payout-mode','POST',{ phone: myPhone, mode });
+    if(r.error){ toast(r.error); return; }
+    myProfile = r.user; toast(mode==='weekly' ? 'Weekly payout selected for future jobs.' : 'Pay-as-each-job-ends selected for future jobs.');
+    lastRenderKey = ''; refresh();
+  }
+  async function adminReleasePayouts(){
+    const r = await api('admin-release-payouts','POST',{});
+    if(r.error){ toast(r.error); return; }
+    toast(r.count ? `Released ${r.count} job(s), GHS ${r.total}.` : 'Nothing eligible to release yet.');
+    lastAdminKey = ''; refreshAdmin();
+  }
+  function renderPayoutQueue(tasks){
+    const wrap = document.getElementById('admin-payouts'); if(!wrap) return;
+    const held = tasks.filter(t=>t.payout && t.payout.status==='held' && t.status==='completed');
+    const now = Date.now(), holdMs = payoutHoldHours*3600000, by = {};
+    held.forEach(t=>{ const k = t.erranderPhone; const o = by[k] || (by[k] = { name:t.erranderName, ready:0, wait:0, n:0 }); o.n++; if(now - t.payout.completedAt >= holdMs) o.ready += Number(t.budget)||0; else o.wait += Number(t.budget)||0; });
+    const rows = Object.keys(by).map(k=>`<div class="stat"><span>${escapeHtml(by[k].name)} (${k}) · ${by[k].n} job(s)</span><span>ready GHS ${by[k].ready}${by[k].wait ? ' · in window GHS ' + by[k].wait : ''}</span></div>`).join('');
+    const ready = Object.values(by).reduce((s,o)=>s+o.ready,0);
+    wrap.innerHTML = (rows || '<p class="muted">No weekly payouts waiting.</p>') + (ready ? `<button class="btn btn-primary btn-block" style="margin-top:8px;" onclick="adminReleasePayouts()">Release GHS ${ready} now</button>` : '');
+  }
+
+  /* ---------- terms, forced PIN change ---------- */
+  function showTerms(required){
+    const m = document.getElementById('terms-modal');
+    m.classList.remove('hidden');
+    document.getElementById('terms-accept-btn').classList.toggle('hidden', !required);
+    document.getElementById('terms-close-btn').classList.toggle('hidden', !!required);
+  }
+  async function acceptTerms(){
+    const r = await api('accept-terms','POST',{ phone: myPhone });
+    if(r.error){ toast(r.error); return; }
+    myProfile = r.user;
+    document.getElementById('terms-modal').classList.add('hidden');
+  }
+  let pinPromptShown = false;
+  function checkAccountPrompts(){
+    if(!myProfile) return;
+    if(!myProfile.termsAcceptedAt) showTerms(true);
+    else if(myProfile.mustChangePin && !pinPromptShown){
+      pinPromptShown = true;
+      toggleProfile(true);
+      document.getElementById('change-pin-details').setAttribute('open','');
+      toast('Please choose your own new PIN now.');
+    }
+  }
+
+  /* ---------- admin: reset PIN, categories, exports ---------- */
+  async function adminResetPin(phone){
+    if(!confirm('Reset the PIN for ' + phone + '? Only do this after you have confirmed who they are.')) return;
+    const r = await api('admin-reset-pin','POST',{ phone });
+    if(r.error){ toast(r.error); return; }
+    document.getElementById('admin-pin-result').innerHTML = `<div class="trust-note"><b>${escapeHtml(r.name)}</b>: temporary PIN <b style="font-size:1.1rem; letter-spacing:2px;">${r.tempPin}</b><br>Tell them in person or by phone only. They will be asked to choose their own PIN when they log in. This message disappears when you leave this page.</div>`;
+  }
+  function renderAdminCategories(enabled){
+    const w = document.getElementById('admin-cats'); if(!w) return;
+    if(w.dataset.k === JSON.stringify(enabled)) return;
+    w.dataset.k = JSON.stringify(enabled);
+    w.innerHTML = ALL_CATEGORIES.map((c,i)=>`<label style="display:flex; gap:8px; align-items:center; padding:6px 0;"><input type="checkbox" id="ac-${i}" ${enabled.includes(c)?'checked':''} style="width:20px; height:20px;"> ${escapeHtml(c)}</label>`).join('');
+  }
+  async function adminSaveCategories(){
+    if(!document.getElementById('ac-0')){ toast('Log in as admin first.'); return; }
+    const enabled = ALL_CATEGORIES.filter((c,i)=>{ const el = document.getElementById('ac-'+i); return el && el.checked; });
+    const r = await api('admin-set-categories','POST',{ enabled });
+    if(r.error){ toast(r.error); return; }
+    toast('Pilot categories saved.'); loadConfig();
+  }
+  function downloadText(name, text, type){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: type || 'text/plain' }));
+    a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  }
+  async function adminDownloadAll(){
+    const r = await api('admin-export','GET');
+    if(r.error){ toast(r.error); return; }
+    downloadText('errander-backup-' + new Date().toISOString().slice(0,10) + '.json', JSON.stringify(r, null, 2), 'application/json');
+    toast('Backup downloaded. Keep it somewhere safe; it contains personal data.');
+  }
+  async function adminDownloadLedger(){
+    const r = await api('admin-list-tasks','GET');
+    if(!Array.isArray(r.tasks)){ toast(r.error || 'Could not load jobs.'); return; }
+    const q = (v)=> '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"';
+    const d = (t)=> t ? new Date(t).toISOString() : '';
+    const rows = [['task_id','job','category','sponsored','boss','boss_phone','errander','errander_phone','amount_ghs','status','payout_mode','payout_status','completed_at','paid_at','verification']];
+    r.tasks.filter(t=>t.status==='completed' || t.status==='flagged').forEach(t=>{
+      rows.push([t.id,t.desc,t.category,t.sponsored?'yes':'no',t.clientName,t.clientPhone,t.erranderName,t.erranderPhone,t.budget,t.status,t.payout?t.payout.mode:'',t.payout?t.payout.status:'',t.payout?d(t.payout.completedAt):'',t.payout?d(t.payout.paidAt):'',t.verify?t.verify.status:'']);
+    });
+    downloadText('errander-payout-ledger-' + new Date().toISOString().slice(0,10) + '.csv', rows.map(x=>x.map(q).join(',')).join('\n'), 'text/csv');
+  }
+
+  /* ---------- init ---------- */
+  const BUILD_TAG = 'v10.3';
+  console.log('Errander pilot build:', BUILD_TAG);
+  const footerBuild = document.getElementById('footer-build');
+  if(footerBuild) footerBuild.textContent = ' · build ' + BUILD_TAG;
+
+  try{ buildCatChips(); }catch(e){ console.error('buildCatChips failed', e); }
+  try{ renderHeaderAuth(); }catch(e){ console.error('renderHeaderAuth failed', e); }
+  try{ loadConfig(); }catch(e){ console.error('loadConfig failed', e); }
+  try{
+    document.getElementById('c-budget').addEventListener('input', updateFeePreview);
+    ['c-km','c-stops','c-wait','c-urgent'].forEach(id=> document.getElementById(id).addEventListener('input', scheduleBandFetch));
+    document.getElementById('c-urgent').addEventListener('change', scheduleBandFetch);
+    scheduleBandFetch();
+  }catch(e){ console.error('fee preview wiring failed', e); }
+
+  if(myPhone){
+    api('get-user', 'GET', { phone: myPhone }).then(res=>{
+      if(res.user){
+        myProfile = res.user;
+        try{ renderHeaderAuth(); renderProfileCard(); }catch(e){ console.error('profile render failed', e); }
+        switchView('dashboard');
+        refresh();
+      } else {
+        localStorage.removeItem('my_phone');
+      }
+    }).catch(e=> console.error('get-user on load failed — check your network tab for a failed request to /.netlify/functions/api', e));
+  }
+  try{
+    if('Notification' in window && Notification.permission === 'granted' && localStorage.getItem('notify_on') !== '0') notifyEnabled = true;
+    refreshBell();
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  }catch(e){ console.error('notification setup failed', e); }
+
+  setInterval(()=>{
+    try{ refresh(); }catch(e){ console.error('refresh() failed', e); }
+    try{ loadConfig(); }catch(e){ console.error('loadConfig() failed', e); }
+    if(adminAuthed){ try{ refreshAdmin(); refreshAdminSupport(); renderAdminCategories(CATEGORIES); }catch(e){ console.error('refreshAdmin() failed', e); } }
+  }, 4000);
+</script>
+</body>
+</html>
