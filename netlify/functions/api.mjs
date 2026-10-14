@@ -333,7 +333,7 @@ async function core(event) {
     const ts = await store.get('all-tasks', { type: 'json' });
     const us = await store.get('users', { type: 'json' });
     return json(200, {
-      ok: true, version: 'v10.3', time: Date.now(),
+      ok: true, version: 'v10.4', time: Date.now(),
       readMode: blobsMode,
       adminPasscodeIsDefault: ADMIN_PASSCODE === DEFAULT_ADMIN_PASSCODE,
       sessionSecretFromEnv: !!process.env.SESSION_SECRET,
@@ -621,7 +621,7 @@ async function core(event) {
       for (const t of tasks) { const th = await store.get('thr/' + t.id, { type: 'json' }); if (th) threads[t.id] = th; }
       const support = (await store.get('support', { type: 'json' })) || [];
       const safeUsers = users.map(u => { const c = Object.assign({}, u); delete c.pinHash; return c; });
-      return json(200, { exportedAt: new Date().toISOString(), version: 'v10.3', users: safeUsers, tasks, threads, support, enabledCategories });
+      return json(200, { exportedAt: new Date().toISOString(), version: 'v10.4', users: safeUsers, tasks, threads, support, enabledCategories });
     }
     case 'admin-verify-decide': {
       if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });
@@ -696,7 +696,17 @@ async function core(event) {
         c.threads = c.threads.filter(th => (th.messages || []).length > 0);
         return c;
       }));
-      return json(200, { tasks: out });
+      // Everything the app needs on each refresh comes in this one response, so a phone makes one request, not four.
+      const extra = {};
+      if (viewer) {
+        const vu = findUser(viewer);
+        if (vu) extra.user = publicUser(vu);
+        const sup = (await store.get('support', { type: 'json' })) || [];
+        extra.tickets = sup.filter(x => x.phone === viewer);
+        extra.sponsoredUsed = sponsoredUsedCount();
+        extra.enabledCategories = enabledCategories;
+      }
+      return json(200, Object.assign({ tasks: out }, extra));
     }
 
     case 'create': {

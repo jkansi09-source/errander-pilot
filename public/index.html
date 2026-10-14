@@ -199,18 +199,18 @@
 <div id="terms-modal" class="hidden" style="position:fixed; inset:0; background:rgba(20,30,40,0.55); z-index:20; overflow-y:auto; padding:16px 0;"><div class="wrap"><div class="panel">
   <h2>Terms and Privacy Notice <span class="muted">(pilot version)</span></h2>
   <div id="terms-body" style="font-size:0.9rem; max-height:60vh; overflow-y:auto;">
-    <p class="muted">This is a plain-language pilot notice. It has not yet been reviewed by a lawyer.</p>
+    <p class="muted">This is a plain-language pilot notice.</p>
     <p><b>Who we are.</b> Errander is run by Premor Ltd as a pilot at KNUST. Students (Erranders) are independent people doing tasks; they are not employees of Premor.</p>
     <p><b>Age.</b> You must be 18 or older.</p>
     <p><b>Using Errander.</b> Legal and safe tasks only. Keep chat, price and proof photos inside the app. Never share your PIN or any code. Do not take or make payments outside the app.</p>
-    <p><b>Payments in the pilot.</b> The app records payment status. It does not move real money. Sponsored jobs are paid by Premor separately, as explained in your pilot briefing.</p>
+    <p><b>Payments during the pilot.</b> The app shows the status of each payment, such as pending or paid, but it does not send money itself. Premor pays sponsored jobs to students directly, outside the app. The details are in the pilot briefing you receive.</p>
     <p><b>Checks.</b> We may read job chats and photos and may call you to confirm a job was done. We may flag, pause or remove accounts that break these rules.</p>
     <p><b>Data we collect.</b> Name, title, phone number, profile photo, task details, messages, photos you upload, ratings, location if you share it, and for Erranders the ID type and number. We use it to run the pilot, verify people, keep everyone safe, give support and prevent fraud.</p>
     <p><b>Who sees it.</b> Other users see your name, photo, rating and task details. Our team can see your ID number, chats and photos when needed. We do not sell your data. Our hosting provider stores it for us.</p>
     <p><b>Your rights.</b> Under Ghana's Data Protection Act, 2012 (Act 843) you can ask to see, correct or delete your data. Ask through Help or Call us.</p>
     <p><b>How long we keep it.</b> [To be confirmed before launch.]</p>
   </div>
-  <div class="task-actions" style="margin-top:12px;"><button class="btn btn-primary" id="terms-accept-btn" onclick="acceptTerms()">I accept</button><button class="btn btn-ghost" id="terms-close-btn" onclick="showTerms(false)">Close</button></div>
+  <div class="task-actions" style="margin-top:12px;"><button class="btn btn-primary" id="terms-accept-btn" onclick="acceptTerms()">I accept</button><button class="btn btn-ghost" id="terms-close-btn" onclick="closeTerms()">Close</button></div>
 </div></div></div>
 
 <main>
@@ -1036,7 +1036,7 @@
       if(el){ try{ el.focus(); if(st.focus.s != null) el.setSelectionRange(st.focus.s, st.focus.e); }catch(e){} }
     }
   }
-  let lastRenderKey = '', lastOkAt = null;
+  let lastRenderKey = '', lastOkAt = null, lastProfileKey = '';
   function showNetStatus(ok, msg){
     const el = document.getElementById('net-status');
     if(!el) return;
@@ -1062,7 +1062,10 @@
       const data = await api('list', 'GET', { phone: myPhone, ask: askedList().join(',') });
       if(data.error || !Array.isArray(data.tasks)){ showNetStatus(false, data.error || 'Could not load jobs.'); return; }
       showNetStatus(true);
-      try{ const tr = await api('support-list','GET',{phone:myPhone}); if(Array.isArray(tr.tickets)) myTickets = tr.tickets; }catch(e){}
+      if(Array.isArray(data.tickets)) myTickets = data.tickets;
+      if(data.user){ const pk = JSON.stringify(data.user); if(pk !== lastProfileKey){ lastProfileKey = pk; myProfile = data.user; renderProfileCard(); renderHeaderAuth(); } }
+      if(data.sponsoredUsed != null) sponsoredUsed = data.sponsoredUsed;
+      if(Array.isArray(data.enabledCategories) && JSON.stringify(data.enabledCategories) !== JSON.stringify(CATEGORIES)){ CATEGORIES = data.enabledCategories; try{ buildCatChips(); scheduleBandFetch(); }catch(e){} }
       const fresh = data.tasks;
       checkNotifications(fresh);
       allTasks = fresh;
@@ -1074,8 +1077,6 @@
         renderAll();
         restoreUi(ui);
       }
-      // refresh own profile occasionally to pick up flagCount / review outcomes
-      api('get-user','GET',{phone:myPhone}).then(r=>{ if(r.user){ myProfile = r.user; renderProfileCard(); } });
     }catch(e){ console.error('refresh failed', e); showNetStatus(false, 'Display problem: ' + e.message); }
   }
   function checkNotifications(fresh){
@@ -1796,6 +1797,7 @@
     document.getElementById('terms-accept-btn').classList.toggle('hidden', !required);
     document.getElementById('terms-close-btn').classList.toggle('hidden', !!required);
   }
+  function closeTerms(){ document.getElementById('terms-modal').classList.add('hidden'); }
   async function acceptTerms(){
     const r = await api('accept-terms','POST',{ phone: myPhone });
     if(r.error){ toast(r.error); return; }
@@ -1858,7 +1860,7 @@
   }
 
   /* ---------- init ---------- */
-  const BUILD_TAG = 'v10.3';
+  const BUILD_TAG = 'v10.4';
   console.log('Errander pilot build:', BUILD_TAG);
   const footerBuild = document.getElementById('footer-build');
   if(footerBuild) footerBuild.textContent = ' · build ' + BUILD_TAG;
@@ -1891,11 +1893,16 @@
     if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
   }catch(e){ console.error('notification setup failed', e); }
 
+  // One light request every 6 seconds while the app is in view; nothing while it is hidden.
+  let tick = 0;
   setInterval(()=>{
+    if(document.hidden) return;
+    tick++;
     try{ refresh(); }catch(e){ console.error('refresh() failed', e); }
-    try{ loadConfig(); }catch(e){ console.error('loadConfig() failed', e); }
+    if(!myPhone || tick % 10 === 0){ try{ loadConfig(); }catch(e){ console.error('loadConfig() failed', e); } }
     if(adminAuthed){ try{ refreshAdmin(); refreshAdminSupport(); renderAdminCategories(CATEGORIES); }catch(e){ console.error('refreshAdmin() failed', e); } }
-  }, 4000);
+  }, 6000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && myPhone){ try{ refresh(); }catch(e){} } });
 </script>
 </body>
 </html>

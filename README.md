@@ -425,3 +425,8 @@ Still not done: photo links are unguessable but not login-protected; the data st
 - Terms and Privacy Notice: sign-up needs a tick ("I am 18 or older and accept..."), the acceptance is stored with the time and version, and existing users are asked to accept at their next login. The wording is a plain-language pilot draft; have a lawyer review it and fill the retention line.
 - Backup and ledger (Admin): "Download full backup (JSON)" (users without PIN hashes, jobs, chats, support) and "Download payout ledger (CSV)" to match against the Mobile Money you send. Backups contain personal data: keep them private.
 - Pilot categories (Admin): only Delivery & Pickup and Errands & Queuing are open by default. Tick others to open them. Closed categories are refused by the server too.
+
+## v10.4 - Corrections and speed
+- Terms: removed the "not reviewed by a lawyer" sentence; rewrote "Payments during the pilot".
+- Fixed: the Close button on the Terms screen did nothing (it was re-opening the screen). It now closes.
+- Speed: each refresh used to make 3-4 requests every 4 seconds; it is now ONE request every 6 seconds, and none while the app is hidden or in the background. This frees the phone for taps and keeps well inside Netlify's free usage limits.
