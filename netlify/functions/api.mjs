@@ -333,7 +333,7 @@ async function core(event) {
     const ts = await store.get('all-tasks', { type: 'json' });
     const us = await store.get('users', { type: 'json' });
     return json(200, {
-      ok: true, version: 'v10.4', time: Date.now(),
+      ok: true, version: 'v10.6', time: Date.now(),
       readMode: blobsMode,
       adminPasscodeIsDefault: ADMIN_PASSCODE === DEFAULT_ADMIN_PASSCODE,
       sessionSecretFromEnv: !!process.env.SESSION_SECRET,
@@ -621,7 +621,36 @@ async function core(event) {
       for (const t of tasks) { const th = await store.get('thr/' + t.id, { type: 'json' }); if (th) threads[t.id] = th; }
       const support = (await store.get('support', { type: 'json' })) || [];
       const safeUsers = users.map(u => { const c = Object.assign({}, u); delete c.pinHash; return c; });
-      return json(200, { exportedAt: new Date().toISOString(), version: 'v10.4', users: safeUsers, tasks, threads, support, enabledCategories });
+      return json(200, { exportedAt: new Date().toISOString(), version: 'v10.6', users: safeUsers, tasks, threads, support, enabledCategories });
+    }
+    case 'admin-scorecard': {
+      // Four pilot numbers. Seed demo jobs are ignored. Targets are suggestions, not rules.
+      const real = tasks.filter(t => !String(t.id).startsWith('seed-'));
+      const support = (await store.get('support', { type: 'json' })) || [];
+      const bosses = {};
+      for (const t of real) { if (t.clientPhone) bosses[t.clientPhone] = (bosses[t.clientPhone] || 0) + 1; }
+      const bossCount = Object.keys(bosses).length;
+      const repeatBosses = Object.values(bosses).filter(n => n >= 2).length;
+      const reached = real.filter(t => t.erranderPhone);                 // jobs an Errander actually took
+      const completed = reached.filter(t => t.status === 'completed').length;
+      const flaggedIds = new Set(real.filter(t => t.status === 'flagged').map(t => t.id));
+      for (const k of support) { if (k.kind === 'report' && k.taskId && real.some(t => t.id === k.taskId)) flaggedIds.add(k.taskId); }
+      const disputes = flaggedIds.size;
+      const paidJobs = real.filter(t => !t.sponsored).length;
+      const sponsoredJobs = real.filter(t => t.sponsored).length;
+      const pct = (a, b) => b ? Math.round((a / b) * 100) : null;
+      const r1 = x => Math.round(x * 10) / 10;
+      const metrics = {
+        jobsPerBoss: { value: bossCount ? r1(real.length / bossCount) : null, target: 2, goodWhen: 'atLeast', unit: '' },
+        repeatBosses: { value: pct(repeatBosses, bossCount), target: 40, goodWhen: 'atLeast', unit: '%' },
+        completionRate: { value: pct(completed, reached.length), target: 80, goodWhen: 'atLeast', unit: '%' },
+        disputesPer10: { value: reached.length ? r1((disputes / reached.length) * 10) : null, target: 1, goodWhen: 'atMost', unit: '' }
+      };
+      return json(200, {
+        metrics,
+        counts: { jobsPosted: real.length, bosses: bossCount, repeatBosses, jobsTaken: reached.length, completed, disputes, paidJobs, sponsoredJobs, neverMatched: real.filter(t => !t.erranderPhone && t.status !== 'open').length, stillOpen: real.filter(t => t.status === 'open').length },
+        enoughData: reached.length >= 10
+      });
     }
     case 'admin-verify-decide': {
       if (event.httpMethod !== 'POST') return json(405, { error: 'POST required' });

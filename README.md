@@ -1,3 +1,12 @@
+# Errander Pilot (v10.6)
+
+## New in v10.6: admin console redesign
+The admin side now has a left sidebar (a slide-out menu on phones) and a top bar with the page title. Pages: **Dashboard** (four summary cards, the pilot scorecard, a latest-jobs table, task overview), **Reviews** (sponsored review and verification queue), **Payouts**, **Support inbox**, **Applications and users**, **Categories and prices**, **Backup and data**. Red/amber badges on the menu count what needs you (reviews, payouts held, open support, pending applications). Nothing about how admin works changed, only the layout and styling. Styling is original to Errander (inspired by the general look of modern admin dashboards, no third-party template code or assets).
+
+
+## New in v10.5: Pilot scorecard
+**Admin -> Pilot scorecard** (top of the admin page) shows four numbers: jobs per Boss, repeat Bosses (posted 2 or more jobs), completion rate (of jobs an Errander took) and problems per 10 jobs taken (flagged jobs plus Report-a-problem tickets). Each has a suggested target and a colour label. It says "Too early to judge" until 10 jobs have been taken, and ignores the two demo jobs. It also warns when there are no paid (non-sponsored) jobs yet. Targets are suggestions: change them in `admin-scorecard` in `api.mjs`.
+
 # Errander Pilot — shared task feed (v9.0)
 
 ## New in v8: fair-price bands, receipts, and tighter security

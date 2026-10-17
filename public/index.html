@@ -143,6 +143,80 @@
   .feed-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:var(--white);}
   .feed-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;}
   .feed-chips .chip{white-space:nowrap;flex:none;}
+
+  /* ---------- Admin console (sidebar layout) ---------- */
+  body.adm-on header, body.adm-on footer{display:none;}
+  body.adm-on main{padding:0;}
+  body.adm-on main > .wrap{max-width:none; padding:0;}
+  .adm{--adm-bg:#F3F5F9; --adm-card:#fff; --adm-line:#E6EAF1; --adm-side:#0B2A57; display:flex; min-height:100vh; background:var(--adm-bg); color:var(--ink);}
+  .adm-side{position:fixed; top:0; bottom:0; left:0; width:252px; background:var(--adm-side); color:#fff; padding:16px 12px 12px; overflow-y:auto; z-index:30; transform:translateX(-100%); transition:transform .22s ease; display:flex; flex-direction:column;}
+  .adm-side.open{transform:none; box-shadow:0 0 40px rgba(0,0,0,.35);}
+  .adm-scrim{position:fixed; inset:0; background:rgba(11,20,35,.5); z-index:29; display:none;}
+  .adm-scrim.show{display:block;}
+  .adm-brand{display:flex; align-items:center; gap:10px; padding:4px 8px 16px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:6px;}
+  .adm-brand img{height:34px; width:auto; background:#fff; border-radius:9px; padding:3px 5px;}
+  .adm-brand b{display:block; font-family:'Space Grotesk',system-ui,sans-serif; font-size:1.05rem; line-height:1.1;}
+  .adm-brand small{color:var(--amber); font-size:.7rem; letter-spacing:.04em;}
+  .adm-group{font-size:.66rem; letter-spacing:.09em; text-transform:uppercase; color:rgba(255,255,255,.45); padding:16px 10px 6px; font-weight:600;}
+  .adm-nav{position:relative; display:flex; align-items:center; gap:11px; width:100%; background:none; border:none; color:rgba(255,255,255,.75); font-family:inherit; font-size:.88rem; font-weight:500; padding:10px 12px; border-radius:9px; cursor:pointer; text-align:left; min-height:42px; touch-action:manipulation;}
+  .adm-nav:hover{background:rgba(255,255,255,.07); color:#fff;}
+  .adm-nav.active{background:rgba(255,255,255,.13); color:#fff;}
+  .adm-nav.active::before{content:""; position:absolute; left:-12px; top:9px; bottom:9px; width:4px; border-radius:0 4px 4px 0; background:var(--amber);}
+  .adm-nav svg{flex:none; opacity:.9;}
+  .adm-badge{margin-left:auto; min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:var(--amber); color:var(--navy); font-size:.7rem; font-weight:700; display:none; align-items:center; justify-content:center;}
+  .adm-badge.on{display:inline-flex;}
+  .adm-side-foot{margin-top:auto; padding-top:14px; border-top:1px solid rgba(255,255,255,.1);}
+  .adm-main{flex:1; min-width:0; width:100%;}
+  .adm-top{position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:12px; background:var(--adm-card); border-bottom:1px solid var(--adm-line); padding:10px 16px; min-height:64px;}
+  .adm-burger{background:none; border:1px solid var(--adm-line); border-radius:9px; width:42px; height:42px; display:inline-flex; align-items:center; justify-content:center; color:var(--navy); cursor:pointer; touch-action:manipulation; flex:none;}
+  .adm-title h1{margin:0; font-size:1.15rem; line-height:1.2;}
+  .adm-crumb{font-size:.74rem; color:var(--slate);} .adm-crumb span{opacity:.7;}
+  .adm-top-right{margin-left:auto; display:flex; align-items:center; gap:10px;}
+  .adm-link{background:none; border:1px solid var(--adm-line); border-radius:9px; padding:9px 13px; min-height:40px; font-family:inherit; font-size:.8rem; font-weight:600; color:var(--navy); cursor:pointer; touch-action:manipulation;}
+  .adm-avatar{width:38px; height:38px; border-radius:50%; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.9rem; flex:none;}
+  .adm-body{padding:16px;}
+  .adm-sec{display:none;} .adm-sec.on{display:block;}
+  .adm .panel{border:1px solid var(--adm-line); border-radius:12px; padding:18px; background:var(--adm-card); box-shadow:0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.05); margin-bottom:16px;}
+  .adm .panel h2{font-size:1rem; margin:0 0 10px; padding-bottom:10px; border-bottom:1px solid var(--adm-line);}
+  .adm .task{border:none; border-bottom:1px solid var(--adm-line); border-radius:0; background:none; padding:12px 2px; margin:0;}
+  .adm .task:last-child{border-bottom:none;}
+  .adm .stat{padding:10px 0;}
+  .adm-stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:16px;}
+  .adm-card{background:var(--adm-card); border:1px solid var(--adm-line); border-radius:12px; padding:14px 16px; box-shadow:0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.05); position:relative; min-width:0;}
+  .adm-card .lbl{font-size:.76rem; color:var(--slate); font-weight:600; display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .adm-card .num{font-family:'Space Grotesk',system-ui,sans-serif; font-size:1.85rem; font-weight:700; line-height:1.2; margin-top:6px;}
+  .adm-card .sub{font-size:.72rem; color:var(--slate); margin-top:2px;}
+  .adm-ico{width:34px; height:34px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; flex:none;}
+  .adm-ico.blue{background:rgba(22,63,122,.12); color:var(--navy-soft);} .adm-ico.green{background:rgba(14,122,59,.13); color:var(--green);}
+  .adm-ico.amber{background:rgba(224,149,0,.16); color:var(--amber-deep);} .adm-ico.red{background:rgba(177,75,62,.13); color:var(--red);}
+  .adm-metrics{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px;}
+  .adm-metric{border:1px solid var(--adm-line); border-radius:12px; padding:14px 16px; min-width:0;}
+  .adm-pill{display:inline-block; font-size:.68rem; font-weight:700; padding:3px 9px; border-radius:20px; white-space:nowrap;}
+  .adm-pill.good{background:rgba(14,122,59,.14); color:var(--green);} .adm-pill.watch{background:rgba(224,149,0,.18); color:#9A6500;}
+  .adm-pill.bad{background:rgba(177,75,62,.14); color:var(--red);} .adm-pill.early{background:var(--paper-raise); color:var(--slate);}
+  .adm-bar{height:6px; border-radius:6px; background:var(--paper-raise); overflow:hidden; margin-top:10px;}
+  .adm-bar i{display:block; height:100%; border-radius:6px;}
+  .adm-table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .adm-table{width:100%; border-collapse:collapse; font-size:.82rem; min-width:620px;}
+  .adm-table th{text-align:left; font-size:.68rem; letter-spacing:.05em; text-transform:uppercase; color:var(--slate); font-weight:600; padding:9px 10px; background:var(--adm-bg); white-space:nowrap;}
+  .adm-table th:first-child{border-radius:8px 0 0 8px;} .adm-table th:last-child{border-radius:0 8px 8px 0;}
+  .adm-table td{padding:11px 10px; border-bottom:1px solid var(--adm-line); vertical-align:middle;}
+  .adm-table tr:last-child td{border-bottom:none;}
+  .adm-table .desc{max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;}
+  .adm-s{display:inline-block; font-size:.68rem; font-weight:700; padding:3px 9px; border-radius:20px; text-transform:capitalize;}
+  .adm-s.open{background:rgba(22,63,122,.12); color:var(--navy-soft);} .adm-s.accepted{background:rgba(224,149,0,.18); color:#9A6500;}
+  .adm-s.completed{background:rgba(14,122,59,.14); color:var(--green);} .adm-s.flagged{background:rgba(177,75,62,.14); color:var(--red);}
+  .adm-s.cancelled{background:var(--paper-raise); color:var(--slate);}
+  @media (min-width:900px){
+    .adm-side{transform:none; box-shadow:none;}
+    .adm-scrim{display:none !important;}
+    .adm-main{margin-left:252px; width:calc(100% - 252px);}
+    .adm-burger{display:none;}
+    .adm-body{padding:22px 26px;}
+    .adm-top{padding:10px 26px;}
+    .adm-title h1{font-size:1.3rem;}
+  }
+  @media (max-width:520px){ .adm-link{display:none;} .adm-body{padding:12px;} .adm .panel{padding:14px;} }
 </style>
 </head>
 <body>
@@ -413,22 +487,67 @@
 
     <!-- ADMIN DASHBOARD -->
     <div class="view" id="view-admin">
-      <div class="panel"><h2>🎓 Sponsored jobs awaiting review</h2><div id="admin-sponsor-review"></div></div>
-      <div class="panel"><h2>💸 Weekly payouts</h2><p class="muted" style="margin:0 0 8px;">Erranders who chose weekly payout. Money becomes ready after the safety window. In this pilot "release" only marks the jobs paid; send the actual Mobile Money yourself.</p><div id="admin-payouts"></div></div>
-      <div class="panel"><h2>🔎 Verification queue</h2><p class="muted" style="margin:0 0 8px;">Jobs are held here until you have checked them. Bigger jobs get a bigger check; new or flagged people and a random 1-in-10 sample are also checked.</p><div id="admin-verify"></div></div>
-      <div class="panel"><h2>🛟 Support inbox</h2><div id="admin-support"></div></div>
-      <div class="panel"><h2>Pending Errander applications</h2><div id="admin-pending"></div></div>
-      <div class="panel"><h2>All users</h2><div id="admin-pin-result"></div><div id="admin-users"></div></div>
-      <div class="panel"><h2>Pilot categories</h2><p class="muted" style="margin:0 0 8px;">Only ticked categories can be posted. Start with the low-risk ones and open more as the pilot goes well.</p><div id="admin-cats"></div><button class="btn btn-primary btn-block" onclick="adminSaveCategories()">Save categories</button></div>
-      <div class="panel"><h2>Backup and ledger</h2><p class="muted" style="margin:0 0 8px;">Download a full backup of users, jobs, chats and support (contains personal data, keep it safe), and a payout ledger to match against the Mobile Money you send.</p><div class="task-actions"><button class="btn btn-ghost" onclick="adminDownloadAll()">Download full backup (JSON)</button><button class="btn btn-ghost" onclick="adminDownloadLedger()">Download payout ledger (CSV)</button></div></div>
-      <div class="panel"><h2>Task overview</h2><div id="admin-task-stats"></div></div>
-      <div class="panel"><h2>💰 Price bands (GHS)</h2>
+     <div class="adm">
+      <aside class="adm-side" id="adm-side">
+        <div class="adm-brand"><img src="/assets/logo-icon.png" alt=""><div><b>Errander</b><small>Admin console</small></div></div>
+        <div class="adm-group">Overview</div>
+        <button class="adm-nav" data-nav="dashboard" onclick="admNav('dashboard')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Dashboard</span></button>
+        <div class="adm-group">Operations</div>
+        <button class="adm-nav" data-nav="reviews" onclick="admNav('reviews')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><span>Reviews</span><span class="adm-badge" id="adm-b-reviews"></span></button>
+        <button class="adm-nav" data-nav="payouts" onclick="admNav('payouts')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Payouts</span><span class="adm-badge" id="adm-b-payouts"></span></button>
+        <button class="adm-nav" data-nav="support" onclick="admNav('support')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Support inbox</span><span class="adm-badge" id="adm-b-support"></span></button>
+        <div class="adm-group">People</div>
+        <button class="adm-nav" data-nav="people" onclick="admNav('people')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Applications and users</span><span class="adm-badge" id="adm-b-people"></span></button>
+        <div class="adm-group">Configuration</div>
+        <button class="adm-nav" data-nav="settings" onclick="admNav('settings')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg><span>Categories and prices</span></button>
+        <button class="adm-nav" data-nav="data" onclick="admNav('data')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg><span>Backup and data</span></button>
+        <div class="adm-side-foot">
+          <button class="adm-nav" onclick="switchView('home'); adminAuthed=false; adminPass='';"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Log out of admin</span></button>
+        </div>
+      </aside>
+      <div class="adm-scrim" id="adm-scrim" onclick="admToggleSide(false)"></div>
+      <div class="adm-main">
+        <div class="adm-top">
+          <button class="adm-burger" onclick="admToggleSide(true)" aria-label="Open menu"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+          <div class="adm-title"><h1 id="adm-title">Dashboard</h1><div class="adm-crumb">Admin <span>/</span> <span id="adm-crumb">Dashboard</span></div></div>
+          <div class="adm-top-right"><button class="adm-link" onclick="switchView(myProfile ? 'dashboard' : 'home')">Back to app</button><div class="adm-avatar" aria-hidden="true">A</div></div>
+        </div>
+        <div class="adm-body">
+          <section class="adm-sec on" data-sec="dashboard">
+            <div class="adm-stats" id="adm-glance"></div>
+                  <div class="panel"><h2>Pilot scorecard</h2><p class="muted" style="margin:0 0 8px;">Four numbers that tell you whether the pilot is working. Targets are suggestions. Numbers are only reliable after about 10 jobs have been taken.</p><div id="admin-scorecard"></div></div>
+            <div class="panel"><h2>Latest jobs</h2><div class="adm-table-wrap" id="admin-latest"><p class="muted">Loading…</p></div></div>
+                  <div class="panel"><h2>Task overview</h2><div id="admin-task-stats"></div></div>
+          </section>
+          <section class="adm-sec" data-sec="reviews">
+                  <div class="panel"><h2>Sponsored jobs awaiting review</h2><div id="admin-sponsor-review"></div></div>
+                  <div class="panel"><h2>Verification queue</h2><p class="muted" style="margin:0 0 8px;">Jobs are held here until you have checked them. Bigger jobs get a bigger check; new or flagged people and a random 1-in-10 sample are also checked.</p><div id="admin-verify"></div></div>
+          </section>
+          <section class="adm-sec" data-sec="payouts">
+                  <div class="panel"><h2>Weekly payouts</h2><p class="muted" style="margin:0 0 8px;">Erranders who chose weekly payout. Money becomes ready after the safety window. In this pilot "release" only marks the jobs paid; send the actual Mobile Money yourself.</p><div id="admin-payouts"></div></div>
+          </section>
+          <section class="adm-sec" data-sec="support">
+                  <div class="panel"><h2>Support inbox</h2><div id="admin-support"></div></div>
+          </section>
+          <section class="adm-sec" data-sec="people">
+                  <div class="panel"><h2>Pending Errander applications</h2><div id="admin-pending"></div></div>
+                  <div class="panel"><h2>All users</h2><div id="admin-pin-result"></div><div id="admin-users"></div></div>
+          </section>
+          <section class="adm-sec" data-sec="settings">
+                  <div class="panel"><h2>Pilot categories</h2><p class="muted" style="margin:0 0 8px;">Only ticked categories can be posted. Start with the low-risk ones and open more as the pilot goes well.</p><div id="admin-cats"></div><button class="btn btn-primary btn-block" onclick="adminSaveCategories()">Save categories</button></div>
+                  <div class="panel"><h2>Price bands (GHS)</h2>
         <p class="muted" style="margin:0 0 8px;">Placeholder guesses until you replace them with real Kumasi prices. Typical = base + per-km × km + per-extra-stop × stops + per-hour × hours (×(1+urgent uplift) if urgent). Sponsored jobs are capped at the top of the range.</p>
         <div id="admin-price-editor"></div>
         <button class="btn btn-primary btn-block" onclick="savePriceConfig()">Save price bands</button>
       </div>
-      <button class="btn btn-ghost" onclick="resetDemo()">Reset all task data</button>
-      <button class="btn btn-ghost" onclick="switchView('home'); adminAuthed=false; adminPass='';">Log out of admin</button>
+          </section>
+          <section class="adm-sec" data-sec="data">
+                  <div class="panel"><h2>Backup and ledger</h2><p class="muted" style="margin:0 0 8px;">Download a full backup of users, jobs, chats and support (contains personal data, keep it safe), and a payout ledger to match against the Mobile Money you send.</p><div class="task-actions"><button class="btn btn-ghost" onclick="adminDownloadAll()">Download full backup (JSON)</button><button class="btn btn-ghost" onclick="adminDownloadLedger()">Download payout ledger (CSV)</button></div></div>
+            <div class="panel"><h2>Danger zone</h2><p class="muted" style="margin:0 0 8px;">Removes every job and chat. Users stay. Only use this to clear test data before the real pilot starts.</p><button class="btn btn-danger" onclick="resetDemo()">Reset all task data</button></div>
+          </section>
+        </div>
+      </div>
+     </div>
     </div>
 
   </div>
@@ -799,6 +918,7 @@
       if(el) el.classList.toggle('show', v===view);
       else console.error('switchView: missing element #view-'+v);
     });
+    document.body.classList.toggle('adm-on', view==='admin');
     window.scrollTo(0,0);
   }
   function goHome(){ switchView(myProfile ? 'dashboard' : 'home'); }
@@ -1481,10 +1601,112 @@
     errEl.style.display = 'none';
     adminAuthed = true; adminPass = pass;
     switchView('admin');
+    admNav('dashboard');
     loadPriceEditor();
     refreshAdmin();
     refreshAdminSupport();
     renderAdminCategories(CATEGORIES);
+  }
+  const SCORE_LABELS = {
+    jobsPerBoss:    { name: 'Jobs per Boss',        hint: 'Average jobs each Boss has posted', target: 'Aim: 2 or more' },
+    repeatBosses:   { name: 'Repeat Bosses',        hint: 'Bosses who posted 2 or more jobs',  target: 'Aim: 40% or more' },
+    completionRate: { name: 'Completion rate',      hint: 'Of jobs an Errander took, how many finished', target: 'Aim: 80% or more' },
+    disputesPer10:  { name: 'Problems per 10 jobs', hint: 'Flagged or reported jobs, per 10 taken', target: 'Aim: 1 or fewer' }
+  };
+  async function refreshScorecard(){
+    const wrap = document.getElementById('admin-scorecard');
+    if(!wrap) return;
+    try{
+      const r = await api('admin-scorecard','GET');
+      if(!r || !r.metrics){ wrap.innerHTML = '<p class="muted">Scorecard unavailable.</p>'; return; }
+      renderScorecard(r);
+    }catch(e){ console.error('scorecard failed', e); }
+  }
+  function scoreState(m, enough){
+    if(m.value === null || m.value === undefined) return { cls: 'early', label: 'No data yet', color: 'var(--muted, #888)' };
+    const ok = m.goodWhen === 'atLeast' ? m.value >= m.target : m.value <= m.target;
+    if(!enough) return { cls: 'early', label: 'Too early to judge', color: 'var(--muted, #888)' };
+    if(ok) return { cls: 'good', label: 'On track', color: 'var(--green, #1a7f37)' };
+    const near = m.goodWhen === 'atLeast' ? m.value >= m.target * 0.75 : m.value <= m.target * 2;
+    return near ? { cls: 'watch', label: 'Watch', color: '#b7791f' } : { cls: 'bad', label: 'Needs attention', color: 'var(--red, #c0392b)' };
+  }
+  const ADM_TITLES = { dashboard:'Dashboard', reviews:'Reviews', payouts:'Payouts', support:'Support inbox', people:'Applications and users', settings:'Categories and prices', data:'Backup and data' };
+  const admBadges = { reviews:0, payouts:0, support:0, people:0 };
+  let lastScore = null;
+  function admToggleSide(open){
+    const side = document.getElementById('adm-side'), scrim = document.getElementById('adm-scrim');
+    if(!side) return;
+    side.classList.toggle('open', !!open);
+    scrim.classList.toggle('show', !!open);
+  }
+  function admNav(sec){
+    if(!ADM_TITLES[sec]) sec = 'dashboard';
+    document.querySelectorAll('.adm-sec').forEach(el=> el.classList.toggle('on', el.dataset.sec === sec));
+    document.querySelectorAll('.adm-nav[data-nav]').forEach(el=> el.classList.toggle('active', el.dataset.nav === sec));
+    const t = document.getElementById('adm-title'), c = document.getElementById('adm-crumb');
+    if(t) t.textContent = ADM_TITLES[sec];
+    if(c) c.textContent = ADM_TITLES[sec];
+    admToggleSide(false);
+    window.scrollTo(0,0);
+  }
+  function admSetBadge(sec, n){
+    admBadges[sec] = n;
+    const el = document.getElementById('adm-b-'+sec);
+    if(el){ el.textContent = n > 99 ? '99+' : String(n); el.classList.toggle('on', n > 0); }
+    renderGlance();
+  }
+  function admIcon(kind){
+    const p = {
+      jobs:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 9h8M8 13h5"/>',
+      done:'<path d="M20 6L9 17l-5-5"/>',
+      open:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+      alert:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>'
+    }[kind];
+    return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+  }
+  function renderGlance(){
+    const wrap = document.getElementById('adm-glance');
+    if(!wrap) return;
+    const c = (lastScore && lastScore.counts) || {};
+    const attention = (admBadges.reviews||0) + (admBadges.payouts||0) + (admBadges.support||0) + (admBadges.people||0);
+    const card = (cls, ico, label, num, sub)=> `<div class="adm-card"><div class="lbl"><span>${label}</span><span class="adm-ico ${cls}">${admIcon(ico)}</span></div><div class="num">${num}</div><div class="sub">${sub}</div></div>`;
+    wrap.innerHTML =
+      card('blue','jobs','Jobs posted', c.jobsPosted||0, (c.bosses||0)+' Bosses') +
+      card('green','done','Completed', c.completed||0, (c.jobsTaken||0)+' taken by Erranders') +
+      card('amber','open','Still open', c.stillOpen||0, 'waiting for an Errander') +
+      card(attention ? 'red' : 'green','alert','Needs your attention', attention, attention ? 'reviews, payouts, support, applications' : 'all clear');
+  }
+  function renderScorecard(r){
+    lastScore = r;
+    const wrap = document.getElementById('admin-scorecard');
+    const c = r.counts || {};
+    const tiles = Object.keys(SCORE_LABELS).map(k => {
+      const m = r.metrics[k], L = SCORE_LABELS[k], s = scoreState(m, r.enoughData);
+      const has = !(m.value === null || m.value === undefined);
+      const v = has ? (m.value + (m.unit || '')) : '—';
+      let pct = 0;
+      if(has) pct = m.goodWhen === 'atLeast' ? Math.min(100, (m.value / m.target) * 100) : (m.value <= m.target ? 100 : Math.max(8, (m.target / m.value) * 100));
+      return `<div class="adm-metric">
+        <div class="lbl" style="display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.78rem; font-weight:600; color:var(--slate);"><span>${L.name}</span><span class="adm-pill ${s.cls}">${s.label}</span></div>
+        <div style="font-family:'Space Grotesk',system-ui,sans-serif; font-size:1.9rem; font-weight:700; line-height:1.2; margin-top:6px;">${v}</div>
+        <div class="adm-bar"><i style="width:${Math.round(pct)}%; background:${s.color};"></i></div>
+        <div class="muted" style="font-size:.72rem; margin-top:6px;">${L.hint} · ${L.target}</div>
+      </div>`;
+    }).join('');
+    wrap.innerHTML = `<div class="adm-metrics">${tiles}</div><p class="muted" style="font-size:.76rem; margin:12px 0 0;">
+      ${c.paidJobs||0} paid and ${c.sponsoredJobs||0} sponsored jobs · ${c.disputes||0} with problems.
+      ${(c.paidJobs||0) === 0 ? '<br><strong>No paid jobs yet.</strong> Sponsored jobs show people will try the app, not that they will pay the fee. Add a few paid jobs early.' : ''}
+    </p>`;
+    renderGlance();
+  }
+  function renderLatestJobs(tasks){
+    const wrap = document.getElementById('admin-latest');
+    if(!wrap) return;
+    const rows = tasks.filter(t=> !String(t.id).startsWith('seed-')).slice().sort((a,b)=> (b.createdAt||0)-(a.createdAt||0)).slice(0,8);
+    if(!rows.length){ wrap.innerHTML = '<p class="muted">No jobs posted yet.</p>'; return; }
+    wrap.innerHTML = `<table class="adm-table"><thead><tr><th>Job</th><th>Boss</th><th>Errander</th><th>Amount</th><th>Type</th><th>Status</th><th>Posted</th></tr></thead><tbody>${
+      rows.map(t=> `<tr><td class="desc" title="${escapeHtml(t.desc)}">${escapeHtml(t.desc)}</td><td>${escapeHtml(t.clientName||'—')}</td><td>${escapeHtml(t.erranderName||'—')}</td><td>GHS ${t.budget}</td><td>${t.sponsored?'Sponsored':'Paid'}</td><td><span class="adm-s ${t.status}">${t.status==='accepted'?'in progress':t.status}</span></td><td>${t.createdAt?timeAgo(t.createdAt):'—'}</td></tr>`).join('')
+    }</tbody></table>`;
   }
   let lastAdminKey = '';
   async function refreshAdmin(){
@@ -1495,6 +1717,15 @@
     const akey = JSON.stringify([users, tasks]);
     if(akey === lastAdminKey) return;   // unchanged: don't rebuild the page under the admin's finger
     lastAdminKey = akey;
+    refreshScorecard();
+    try{ renderLatestJobs(tasks); }catch(e){ console.error('latest jobs failed', e); }
+    try{
+      const sp = tasks.filter(t => t.sponsored && t.reviewStatus === 'pending').length;
+      const vp = tasks.filter(t => t.verify && t.verify.status === 'pending').length;
+      admSetBadge('reviews', sp + vp);
+      admSetBadge('payouts', tasks.filter(t => t.payout && t.payout.status === 'held' && t.status === 'completed').length);
+      admSetBadge('people', users.filter(u => u.errander && u.errander.status === 'pending').length);
+    }catch(e){ console.error('badges failed', e); }
     try{ renderPayoutQueue(tasks); }catch(e){ console.error('payout queue failed', e); }
     try{ renderVerifyQueue(tasks); }catch(e){ console.error('verify queue failed', e); }
 
@@ -1684,6 +1915,7 @@
     const k = JSON.stringify(r.tickets);
     if(k === lastSupportKey) return;
     lastSupportKey = k; adminTickets = r.tickets;
+    try{ admSetBadge('support', r.tickets.filter(x=> x.status==='open' && x.awaiting==='admin').length); }catch(e){}
     const wrap = document.getElementById('admin-support');
     const vals = {}, opens = {};
     wrap.querySelectorAll('input[id]').forEach(i=>{ if(i.value) vals[i.id] = i.value; });
@@ -1860,7 +2092,7 @@
   }
 
   /* ---------- init ---------- */
-  const BUILD_TAG = 'v10.4';
+  const BUILD_TAG = 'v10.6';
   console.log('Errander pilot build:', BUILD_TAG);
   const footerBuild = document.getElementById('footer-build');
   if(footerBuild) footerBuild.textContent = ' · build ' + BUILD_TAG;
